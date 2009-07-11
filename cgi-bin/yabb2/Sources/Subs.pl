@@ -169,6 +169,7 @@ sub template {
 	$yytitle         = "$mbname - $yytitle";
 	$yyimages        = $imagesdir;
 	$yydefaultimages = $defaultimagesdir;
+    my $forumstylesurl = "$yyhtml_root/$templatesdir/Forum";
 
 	$yystyle  = qq~<link rel="stylesheet" href="$forumstylesurl/$usestyle.css" type="text/css" />\n~;
 	$yystyle  =~ s~$usestyle\/~~g;

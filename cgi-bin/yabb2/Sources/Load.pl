@@ -598,6 +598,9 @@ sub WhatTemplate {
 	}
 	($usestyle, $useimages, $usehead, $useboard, $usemessage, $usedisplay, $usemycenter, $UseMenuType) = split(/\|/, $templateset{$template});
 
+    my $forumstylesdir = "$htmldir/$templatesdir/Forum";
+    my $forumstylesurl = "$yyhtml_root/$templatesdir/Forum";
+    
 	if (!-e "$forumstylesdir/$usestyle.css") { $usestyle = 'default'; }
 	if (!-e "$templatesdir/$usehead/$usehead.html") { $usehead = 'default'; }
 	if (!-e "$templatesdir/$useboard/BoardIndex.template") { $useboard = 'default'; }
