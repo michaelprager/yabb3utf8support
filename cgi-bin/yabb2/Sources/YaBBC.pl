@@ -332,17 +332,17 @@ sub DoUBBC {
 	}
 
 	if ($stealthurl) {
-		#$message =~ s~\[url\]\s*www\.\s*(.+?)\s*\[/url\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=http://www.$1" target="_blank">www.$1</a>~isg;
-		$message =~ s~\[url=\s*(\w+\://.+?)\](.+?)\s*\[/url\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=$1" target="_blank">$2</a>~isg;
-		$message =~ s~\[url=\s*(.+?)\]\s*(.+?)\s*\[/url\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=http://$1" target="_blank">$2</a>~isg;
-		#$message =~ s~\[url\]\s*(.+?)\s*\[/url\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=$1" target="_blank">$1</a>~isg;
+		#$message =~ s~\[url\]\s*www\.\s*(.+?)\s*\[/url\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=http://www.$1" target="_blank">www.$1</a>~isg;
+		$message =~ s~\[url=\s*(\w+\://.+?)\](.+?)\s*\[/url\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=$1" target="_blank">$2</a>~isg;
+		$message =~ s~\[url=\s*(.+?)\]\s*(.+?)\s*\[/url\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=http://$1" target="_blank">$2</a>~isg;
+		#$message =~ s~\[url\]\s*(.+?)\s*\[/url\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=$1" target="_blank">$1</a>~isg;
 
-		$message =~ s~\[link\]\s*www\.\s*(.+?)\s*\[/link\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=http://www.$1">www.$1</a>~isg;
-		$message =~ s~\[link=\s*(\w+\://.+?)\](.+?)\s*\[/link\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=$1">$2</a>~isg;
-		$message =~ s~\[link=\s*(.+?)\]\s*(.+?)\s*\[/link\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=http://$1">$2</a>~isg;
-		$message =~ s~\[link\]\s*(.+?)\s*\[/link\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=$1">$1</a>~isg;
+		$message =~ s~\[link\]\s*www\.\s*(.+?)\s*\[/link\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=http://www.$1">www.$1</a>~isg;
+		$message =~ s~\[link=\s*(\w+\://.+?)\](.+?)\s*\[/link\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=$1">$2</a>~isg;
+		$message =~ s~\[link=\s*(.+?)\]\s*(.+?)\s*\[/link\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=http://$1">$2</a>~isg;
+		$message =~ s~\[link\]\s*(.+?)\s*\[/link\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=$1">$1</a>~isg;
 
-		$message =~ s~\[ftp\]\s*(.+?)\s*\[/ftp\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=$1" target="_blank">$1</a>~isg;
+		$message =~ s~\[ftp\]\s*(.+?)\s*\[/ftp\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=$1" target="_blank">$1</a>~isg;
 	} else {
 		#$message =~ s~\[url\]\s*www\.(\S+?)\s*\[/url\]~<a href="http://www.$1" target="_blank">www.$1</a>~isg;
 		$message =~ s~\[url=\s*(\S\w+\://\S+?)\s*\](.+?)\[/url\]~<a href="$1" target="_blank">$2</a>~isg;

@@ -23,7 +23,7 @@ if (${$uid.$username}{'lastips'} !~ /^$user_ip\|/) {
 	${$uid.$username}{'lastips'} =~ s/^(.*?\|.*?\|.*?)\|.*/$1/;
 }
 
-$scripturl = "$boardurl/$yyexec.$yyext";
+$scripturl = "$boardurl/$GLOBAL::EXEC.$yyext";
 $adminurl  = "$boardurl/AdminIndex.$yyaext";
 
 # BIG board check

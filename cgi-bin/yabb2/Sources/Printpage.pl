@@ -519,13 +519,13 @@ sub do_print {
 	}
 
 	if ($stealthurl) {
-		$threadpost =~ s~\[url=\s*(\w+\://.+?)\](.+?)\s*\[/url\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=$1" target="_blank">$2</a>~isg;
-		$threadpost =~ s~\[url=\s*(.+?)\]\s*(.+?)\s*\[/url\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=http://$1" target="_blank">$2</a>~isg;
-		$threadpost =~ s~\[link\]\s*www\.\s*(.+?)\s*\[/link\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=http://www.$1">www.$1</a>~isg;
-		$threadpost =~ s~\[link=\s*(\w+\://.+?)\](.+?)\s*\[/link\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=$1">$2</a>~isg;
-		$threadpost =~ s~\[link=\s*(.+?)\]\s*(.+?)\s*\[/link\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=http://$1">$2</a>~isg;
-		$threadpost =~ s~\[link\]\s*(.+?)\s*\[/link\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=$1">$1</a>~isg;
-		$threadpost =~ s~\[ftp\]\s*(.+?)\s*\[/ftp\]~<a href="$boardurl/$yyexec.$yyext?action=dereferer;url=$1" target="_blank">$1</a>~isg;
+		$threadpost =~ s~\[url=\s*(\w+\://.+?)\](.+?)\s*\[/url\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=$1" target="_blank">$2</a>~isg;
+		$threadpost =~ s~\[url=\s*(.+?)\]\s*(.+?)\s*\[/url\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=http://$1" target="_blank">$2</a>~isg;
+		$threadpost =~ s~\[link\]\s*www\.\s*(.+?)\s*\[/link\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=http://www.$1">www.$1</a>~isg;
+		$threadpost =~ s~\[link=\s*(\w+\://.+?)\](.+?)\s*\[/link\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=$1">$2</a>~isg;
+		$threadpost =~ s~\[link=\s*(.+?)\]\s*(.+?)\s*\[/link\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=http://$1">$2</a>~isg;
+		$threadpost =~ s~\[link\]\s*(.+?)\s*\[/link\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=$1">$1</a>~isg;
+		$threadpost =~ s~\[ftp\]\s*(.+?)\s*\[/ftp\]~<a href="$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=$1" target="_blank">$1</a>~isg;
 	} else {
 		$threadpost =~ s~\[url=\s*(\S\w+\://\S+?)\s*\](.+?)\[/url\]~<a href="$1" target="_blank">$2</a>~isg;
 		$threadpost =~ s~\[url=\s*(\S+?)\](.+?)\s*\[/url\]~<a href="http://$1" target="_blank">$2</a>~isg;

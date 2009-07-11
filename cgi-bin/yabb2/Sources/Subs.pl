@@ -53,7 +53,7 @@ if ($user_ip eq "127.0.0.1") {
 # Search Engine identification and display will be turned off
 $user_host = (gethostbyaddr(pack("C4", split(/\./, $user_ip)), 2))[0];
 
-if (-e "$yyexec.cgi") { $yyext = "cgi"; }
+if (-e "$GLOBAL::EXEC.cgi") { $yyext = "cgi"; }
 else { $yyext = "pl"; }
 if (-e "AdminIndex.cgi") { $yyaext = "cgi"; }
 else { $yyaext = "pl"; }

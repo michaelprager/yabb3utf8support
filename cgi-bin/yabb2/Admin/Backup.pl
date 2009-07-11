@@ -285,7 +285,7 @@ sub backupsettings {
 	$input = qq~name="backupmethod" value="/usr/bin/tar" onclick="domodulecheck('/usr/bin/tar')" $methodchecklist{'/usr/bin/tar'}~;
 	$newcommand = &CheckPath('/usr/bin/tar');
 	if ($newcommand) {
-		if (&ak_system("tar -cf $vardir/backuptest.$curtime.tar ./$yyexec.$yyext")) {
+		if (&ak_system("tar -cf $vardir/backuptest.$curtime.tar ./$GLOBAL::EXEC.$yyext")) {
 			($style,$disabledtext) = ('','');
 			&delete_DBorFILE("$vardir/backuptest.$curtime.tar");
 		} else {
@@ -308,7 +308,7 @@ sub backupsettings {
 	$input = qq~name="backupmethod" value="/usr/bin/zip" onclick="domodulecheck('/usr/bin/zip')" $methodchecklist{'/usr/bin/zip'}~;
 	$newcommand = &CheckPath('/usr/bin/zip');
 	if ($newcommand) {
-		if (&ak_system("zip -gq $vardir/backuptest.$curtime.zip ./$yyexec.$yyext")) {
+		if (&ak_system("zip -gq $vardir/backuptest.$curtime.zip ./$GLOBAL::EXEC.$yyext")) {
 			($style,$disabledtext) = ('','');
 			&delete_DBorFILE("$vardir/backuptest.$curtime.zip");
 		} else {

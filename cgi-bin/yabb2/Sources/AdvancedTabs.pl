@@ -98,7 +98,7 @@ sub AddNewTab2 {
 
 		if ($taburl !~ /^\http:\/\//) { $taburl = qq~http://$taburl~; }
 
-		if($taburl =~ /$boardurl\/$yyexec\.$yyaext/i && $taburl =~ /action\=(.*?)(\;|\Z)/i) {
+		if($taburl =~ /$boardurl\/$GLOBAL::EXEC\.$yyaext/i && $taburl =~ /action\=(.*?)(\;|\Z)/i) {
 			$taburl = 1;
 			$tabaction = $1;
 			$tmpisaction = 1;

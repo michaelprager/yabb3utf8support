@@ -174,9 +174,9 @@ function uncheckAll() {
 			$ids = "?board=$tmp_board";
 		}
 		if ($tmp_action eq '' && $tmp_board eq '') {
-			$all = "$boardurl/$yyexec.$yyext";
+			$all = "$boardurl/$GLOBAL::EXEC.$yyext";
 		} else {
-			$all = "$boardurl/$yyexec.$yyext$ids$numb";
+			$all = "$boardurl/$GLOBAL::EXEC.$yyext$ids$numb";
 		}
 		if ($tmp_error eq $admin_txt{'39'} || $tmp_error eq $admin_txt{'40'}) {
 			$tmp_error = $tmp_error . " - (<span style=\"color: #FF0000;\">$tmp_password</span>)";

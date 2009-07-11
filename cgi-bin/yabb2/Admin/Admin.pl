@@ -916,7 +916,7 @@ sub ipban_update {
 sub ver_detail {
 	&is_admin_or_gmod;
 
-	require "$boarddir/$yyexec.$yyext";
+	require "$boarddir/$GLOBAL::EXEC.$yyext";
 	$adminindexplver =~ s/\$Revision\: (.*?) \$/Build $1/ig;
 	$YaBBplver =~ s/\$Revision\: (.*?) \$/Build $1/ig;
 
@@ -946,7 +946,7 @@ sub ver_detail {
 		<td class="windowbg2" align="left">$admin_txt{'496'}</td>
 		<td class="windowbg2" align="left"><i>$YaBBversion</i></td>
 	</tr><tr>
-		<td class="windowbg2" align="left">$yyexec.$yyext</td>
+		<td class="windowbg2" align="left">$GLOBAL::EXEC.$yyext</td>
 		<td class="windowbg2" align="left"><i>$YaBBplver</i></td>
 	</tr><tr>
 		<td class="windowbg2" align="left">AdminIndex.pl</td>

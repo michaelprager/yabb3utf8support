@@ -383,8 +383,8 @@ sub MakeStealthURL {
 	# if stealth urls are turned off, it just gives you the same value back
 	my $theurl = $_[0];
 	if ($stealthurl) {
-		$theurl =~ s~([^\w\"\=\[\]]|[\n\b]|\A)\\*(\w+://[\w\~\.\;\:\,\$\-\+\!\*\?/\=\&\@\#\%]+\.[\w\~\;\:\$\-\+\!\*\?/\=\&\@\#\%]+[\w\~\;\:\$\-\+\!\*\?/\=\&\@\#\%])~$boardurl/$yyexec.$yyext?action=dereferer;url=$2~isg;
-		$theurl =~ s~([^\"\=\[\]/\:\.(\://\w+)]|[\n\b]|\A)\\*(www\.[^\.][\w\~\.\;\:\,\$\-\+\!\*\?/\=\&\@\#\%]+\.[\w\~\;\:\$\-\+\!\*\?/\=\&\@\#\%]+[\w\~\;\:\$\-\+\!\*\?/\=\&\@\#\%])~$boardurl/$yyexec.$yyext?action=dereferer;url=http://$2~isg;
+		$theurl =~ s~([^\w\"\=\[\]]|[\n\b]|\A)\\*(\w+://[\w\~\.\;\:\,\$\-\+\!\*\?/\=\&\@\#\%]+\.[\w\~\;\:\$\-\+\!\*\?/\=\&\@\#\%]+[\w\~\;\:\$\-\+\!\*\?/\=\&\@\#\%])~$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=$2~isg;
+		$theurl =~ s~([^\"\=\[\]/\:\.(\://\w+)]|[\n\b]|\A)\\*(www\.[^\.][\w\~\.\;\:\,\$\-\+\!\*\?/\=\&\@\#\%]+\.[\w\~\;\:\$\-\+\!\*\?/\=\&\@\#\%]+[\w\~\;\:\$\-\+\!\*\?/\=\&\@\#\%])~$boardurl/$GLOBAL::EXEC.$yyext?action=dereferer;url=http://$2~isg;
 	}
 	$theurl;
 }

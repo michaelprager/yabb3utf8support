@@ -399,7 +399,7 @@ sub LoadMiniUser {
 
 	$userlink = ${$uid.$user}{'realname'} || $user;
 	$userlink = qq~<b>$userlink</b>~;
-	if (!$scripturl) { $scripturl = qq~$boardurl/$yyexec.$yyext~; }
+	if (!$scripturl) { $scripturl = qq~$boardurl/$GLOBAL::EXEC.$yyext~; }
 	if ($bold != 1) { $memberinfo{$user} = qq~$title~; }
 	else { $memberinfo{$user} = qq~<b>$title</b>~; }
 
