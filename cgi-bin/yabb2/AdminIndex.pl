@@ -82,14 +82,14 @@ $maintenance = 2 if !$maintenance && -e "$vardir/maintenance.lock";
 # into server or browser timeout.
 $max_process_time = 15;
 
-$GLOBAL::ACTION  = $INFO{'action'};
+$GLOBAL::action = $INFO{'action'};
 $SIG{__WARN__} = sub { &fatal_error("error_occurred","@_"); };
 eval { &yymain; };
 if ($@) { &fatal_error("untrapped",":<br />$@"); }
 
 sub yymain {
 	# Choose what to do based on the form action
-	if ($maintenance && $GLOBAL::ACTION  eq 'login2') { require "$sourcedir/LogInOut.pl"; &Login2; }
+	if ($maintenance && $GLOBAL::action eq 'login2') { require "$sourcedir/LogInOut.pl"; &Login2; }
 
 	# Do Sessions Checking
 	if (!$iamguest && $sessions == 1 && $sessionvalid != 1) {
@@ -112,14 +112,14 @@ sub yymain {
 		}
 	}
 
-	if ($GLOBAL::ACTION  ne "") {
-		if ($GLOBAL::ACTION  eq $randaction) {
+	if ($GLOBAL::action ne "") {
+		if ($GLOBAL::action eq $randaction) {
 			require "$sourcedir/Decoder.pl"; &convert;
 		} else {
 			require "$admindir/AdminSubList.pl";
-			if ($director{$GLOBAL::ACTION }) {
-				my @act = split(/&/, $director{$GLOBAL::ACTION });
-				if ($GLOBAL::ACTION  =~ /^ext_/) {
+			if ($director{$action}) {
+				my @act = split(/&/, $director{$action});
+				if ($GLOBAL::action =~ /^ext_/) {
 					require "$sourcedir/$act[0]";
 				} else {
 					require "$admindir/$act[0]";
@@ -141,9 +141,9 @@ sub ParseNavArray {
 	foreach $element (@_) {
 
 		chomp $element;
-		($GLOBAL::ACTION _to_take, $vistext, $whatitdoes, $isheader) = split(/\|/, $element);
+		($action_to_take, $vistext, $whatitdoes, $isheader) = split(/\|/, $element);
 
-		if ($GLOBAL::ACTION _area eq $GLOBAL::ACTION _to_take) {
+		if ($action_area eq $action_to_take) {
 			$currentclass = "class=\"current\"";
 		} else {
 			$currentclass = "";
@@ -157,13 +157,13 @@ sub ParseNavArray {
 			next;
 		}
 
-		if ($iamgmod && $gmod_access{$GLOBAL::ACTION _to_take} ne "on") {
+		if ($iamgmod && $gmod_access{$action_to_take} ne "on") {
 			next;
 		}
 
-		if ($GLOBAL::ACTION _to_take ne "#") {
+		if ($action_to_take ne "#") {
 			$leftmenu .= qq~
-			<li><a href="$adminurl?action=$GLOBAL::ACTION _to_take" title="$whatitdoes" $currentclass>$vistext</a></li>~;
+			<li><a href="$adminurl?action=$action_to_take" title="$whatitdoes" $currentclass>$vistext</a></li>~;
 		} else {
 			$leftmenu .= qq~
 			<li><a name="none" title="none">$vistext</a></li>~;
