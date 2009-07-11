@@ -15,7 +15,7 @@
 ###############################################################################
 
 $registrationlogplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('Register');
 
@@ -55,16 +55,16 @@ sub view_reglog {
 		$tmpa = 1;
 		if ($newstart >= (($postdisplaynum - 1) * 25)) { $startpage = $newstart - (($postdisplaynum - 1) * 25); $tmpa = int( $startpage / 25 ) + 1; }
 		if ($max >= $newstart + ($postdisplaynum * 25)) { $endpage = $newstart + ($postdisplaynum * 25); } else { $endpage = $max }
-		if ($startpage > 0) { $pageindex = qq~<a href="$adminurl?action=$action;newstart=0" style="font-weight: normal;">1</a>&nbsp;...&nbsp;~; }
-		if ($startpage == 25) { $pageindex = qq~<a href="$adminurl?action=$action;newstart=0" style="font-weight: normal;">1</a>&nbsp;~;}
+		if ($startpage > 0) { $pageindex = qq~<a href="$adminurl?action=$GLOBAL::ACTION;newstart=0" style="font-weight: normal;">1</a>&nbsp;...&nbsp;~; }
+		if ($startpage == 25) { $pageindex = qq~<a href="$adminurl?action=$GLOBAL::ACTION;newstart=0" style="font-weight: normal;">1</a>&nbsp;~;}
 		for ($counter = $startpage; $counter < $endpage; $counter += 25) {
-			$pageindex .= $newstart == $counter ? qq~<b>$tmpa</b>&nbsp;~ : qq~<a href="$adminurl?action=$action;newstart=$counter" style="font-weight: normal;">$tmpa</a>&nbsp;~;
+			$pageindex .= $newstart == $counter ? qq~<b>$tmpa</b>&nbsp;~ : qq~<a href="$adminurl?action=$GLOBAL::ACTION;newstart=$counter" style="font-weight: normal;">$tmpa</a>&nbsp;~;
 			$tmpa++;
 		}
 		$lastpn = int($logcount / 25) + 1;
 		$lastptn = ($lastpn - 1) * 25;
 		if ($endpage < $max - (25) ) { $pageindexadd = qq~...&nbsp;~; }
-		if ($endpage != $max) { $pageindexadd .= qq~<a href="$adminurl?action=$action;newstart=$lastptn">$lastpn</a>~; }
+		if ($endpage != $max) { $pageindexadd .= qq~<a href="$adminurl?action=$GLOBAL::ACTION;newstart=$lastptn">$lastpn</a>~; }
 		$pageindex .= $pageindexadd;
 
 		$pageindex = qq~

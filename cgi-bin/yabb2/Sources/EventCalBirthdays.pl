@@ -15,7 +15,7 @@
 ###############################################################################
 
 $eventcalbirthdayplver = 'YaBB 2.5 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('EventCal');
 

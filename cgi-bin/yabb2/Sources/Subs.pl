@@ -236,7 +236,7 @@ sub template {
 		}
 		if ($sessionvalid == 0 && !$iamguest) {
 			my $sesredir;
-			unless (!$testenv || $action eq "revalidatesession" || $action eq "revalidatesession2") {
+			unless (!$testenv || $GLOBAL::ACTION eq "revalidatesession" || $GLOBAL::ACTION eq "revalidatesession2") {
 				$sesredir = $testenv;
 				$sesredir =~ s/\=/\~/g;
 				$sesredir =~ s/;/x3B/g;
@@ -580,7 +580,7 @@ sub fatal_error_logging {
 
 	# This flaw was brought to our attention by S M <savy91@msn.com> Italy
 	# Thanks! We couldn't make YaBB successful without the help from the bug testers.
-	&ToHTML($action);
+	&ToHTML($GLOBAL::ACTION);
 	&ToHTML($INFO{'num'});
 	&ToHTML($currentboard);
 
@@ -601,9 +601,9 @@ sub fatal_error_logging {
 	}
 
 	if ($iamguest) {
-		push @errorlog, int(time()) . "|$date|$user_ip|$tmperror|$action|$INFO{'num'}|$currentboard|$FORM{'username'}|$FORM{'passwrd'}\n";
+		push @errorlog, int(time()) . "|$date|$user_ip|$tmperror|$GLOBAL::ACTION|$INFO{'num'}|$currentboard|$FORM{'username'}|$FORM{'passwrd'}\n";
 	} else {
-		push @errorlog, int(time()) . "|$date|$user_ip|$tmperror|$action|$INFO{'num'}|$currentboard|$username|$FORM{'passwrd'}\n";
+		push @errorlog, int(time()) . "|$date|$user_ip|$tmperror|$GLOBAL::ACTION|$INFO{'num'}|$currentboard|$username|$FORM{'passwrd'}\n";
 	}
 	&write_DBorFILE(0,ERRORLOG,$vardir,'errorlog','txt',@errorlog);
 }
@@ -711,15 +711,15 @@ sub readform {
 			&split_string(\$input, \%FORM);
 		}
 	}
-	$action = $INFO{'action'} || $FORM{'action'};
+	$GLOBAL::ACTION = $INFO{'action'} || $FORM{'action'};
 	# Formsession checking moved to YaBB.pl to fix a bug.
 	if ($INFO{'username'} && $do_scramble_id) { $INFO{'username'} = &decloak($INFO{'username'}); }
-	if ($FORM{'username'} && $do_scramble_id && $action ne "login2" && $action ne "reminder2" && $action ne "register2" && $action ne "profile2") { $FORM{'username'} = &decloak($FORM{'username'}); }
+	if ($FORM{'username'} && $do_scramble_id && $GLOBAL::ACTION ne "login2" && $GLOBAL::ACTION ne "reminder2" && $GLOBAL::ACTION ne "register2" && $GLOBAL::ACTION ne "profile2") { $FORM{'username'} = &decloak($FORM{'username'}); }
 	if ($INFO{'to'} && $do_scramble_id) { $INFO{'to'} = &decloak($INFO{'to'}); }
 	if ($FORM{'to'} && $do_scramble_id) { $FORM{'to'} = &decloak($FORM{'to'}); }
 
 	# Dont do this here or you get problems with foreign characters!!!!
-	#if ($action eq 'search2') { &FromHTML($FORM{'search'}); }
+	#if ($GLOBAL::ACTION eq 'search2') { &FromHTML($FORM{'search'}); }
 	#&ToHTML($INFO{'title'});
 	#&ToHTML($FORM{'title'});
 	#&ToHTML($INFO{'subject'});
@@ -798,16 +798,16 @@ sub jumpto {
 	# as guests don't have these
 	if (!$iamguest) {
 		$selecthtml .= qq~
-	<option value="action=im" class="~ . ($action eq 'im' ? 'forumcurrentboard">&raquo;&raquo;' : 'forumjumpcatm">&nbsp; -') . qq~ $jumpto_txt{'mess'}</option>~ if $PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod));
+	<option value="action=im" class="~ . ($GLOBAL::ACTION eq 'im' ? 'forumcurrentboard">&raquo;&raquo;' : 'forumjumpcatm">&nbsp; -') . qq~ $jumpto_txt{'mess'}</option>~ if $PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod));
 		$selecthtml .= qq~
-	<option value="action=shownotify" class="~ . ($action eq 'shownotify' ? 'forumcurrentboard">&raquo;&raquo;' : 'forumjumpcatmf">&nbsp; -') . qq~ $jumpto_txt{'note'}</option>
-	<option value="action=favorites" class="~ . ($action eq 'favorites' ? 'forumcurrentboard">&raquo;&raquo;' : 'forumjumpcatm">&nbsp; -') . qq~ $jumpto_txt{'fav'}</option>~;
+	<option value="action=shownotify" class="~ . ($GLOBAL::ACTION eq 'shownotify' ? 'forumcurrentboard">&raquo;&raquo;' : 'forumjumpcatmf">&nbsp; -') . qq~ $jumpto_txt{'note'}</option>
+	<option value="action=favorites" class="~ . ($GLOBAL::ACTION eq 'favorites' ? 'forumcurrentboard">&raquo;&raquo;' : 'forumjumpcatm">&nbsp; -') . qq~ $jumpto_txt{'fav'}</option>~;
 	}
 
 	# drop in recent topics/posts lists. guests can see if browsing permitted
 	$selecthtml .= qq~
-	<option value="action=recent;display=10" class="~ . ($action eq 'recent' ? 'forumcurrentboard">&raquo;&raquo;' : '">&nbsp; -') . qq~ $jumpto_txt{'recentposts'}</option>
-	<option value="action=recenttopics;display=10" class="~ . ($action eq 'recenttopics' ? 'forumcurrentboard">&raquo;&raquo;' : '">&nbsp; -') . qq~ $jumpto_txt{'recenttopic'}</option>\n~;
+	<option value="action=recent;display=10" class="~ . ($GLOBAL::ACTION eq 'recent' ? 'forumcurrentboard">&raquo;&raquo;' : '">&nbsp; -') . qq~ $jumpto_txt{'recentposts'}</option>
+	<option value="action=recenttopics;display=10" class="~ . ($GLOBAL::ACTION eq 'recenttopics' ? 'forumcurrentboard">&raquo;&raquo;' : '">&nbsp; -') . qq~ $jumpto_txt{'recenttopic'}</option>\n~;
 
 	foreach my $catid (@categoryorder) {
 		my @bdlist = split(/,/, $cat{$catid});
@@ -858,7 +858,7 @@ sub spam_protection {
 		}
 	}
 	if ($flood) {
-		if ($action eq 'post2') { &Preview("$maintxt{'409'} $timeout $maintxt{'410'}"); }
+		if ($GLOBAL::ACTION eq 'post2') { &Preview("$maintxt{'409'} $timeout $maintxt{'410'}"); }
 		&fatal_error("post_flooding","$timeout $maintxt{'410'}");
 	}
 	&write_DBorFILE(0,'',$vardir,'flood','txt',@floodcontrol);
@@ -1187,7 +1187,7 @@ sub WriteLog {
 	&delete_DB($vardir,'log','txt',($user_ip,$field,$onlinetime));
 	&write_DBorFILE(0,LOG,$vardir,'log','txt',@new_log);
 
-	if (!$action && $enableclicklog == 1) {
+	if (!$GLOBAL::ACTION && $enableclicklog == 1) {
 		$onlinetime = $date - ($ClickLogTime * 60);
 		@new_log = &read_DBorFILE(0,LOG,$vardir,'clicklog','txt');
 		print LOG "$field|$date|$ENV{'REQUEST_URI'}|" . ($ENV{'HTTP_REFERER'} =~ m~$boardurl~i ? '' : $ENV{'HTTP_REFERER'}) . "|$ENV{'HTTP_USER_AGENT'}\n";
@@ -1352,16 +1352,16 @@ sub CheckCensor {
 }
 
 sub referer_check {
-	return if !$action;
+	return if !$GLOBAL::ACTION;
 	my $referencedomain = substr($boardurl, 7, (index($boardurl, "/", 7)) - 7);
 	my $refererdomain = substr($ENV{HTTP_REFERER}, 7, (index($ENV{HTTP_REFERER}, "/", 7)) - 7);
 	if ($refererdomain !~ /$referencedomain/ && $ENV{QUERY_STRING} ne "" && length($refererdomain) > 0) {
 		my $goodaction = 0;
 		foreach my $allow (&read_DBorFILE(0,'',$vardir,'allowed','txt')) {
 			chomp $allow;
-			if ($action eq $allow) { $goodaction = 1; last; }
+			if ($GLOBAL::ACTION eq $allow) { $goodaction = 1; last; }
 		}
-		if (!$goodaction) { &fatal_error("referer_violation","$action<br />$reftxt{'7'} $referencedomain<br />$reftxt{'6'} $refererdomain"); }
+		if (!$goodaction) { &fatal_error("referer_violation","$GLOBAL::ACTION<br />$reftxt{'7'} $referencedomain<br />$reftxt{'6'} $refererdomain"); }
 	}
 }
 

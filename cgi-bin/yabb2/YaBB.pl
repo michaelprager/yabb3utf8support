@@ -101,7 +101,7 @@ $formsession = &cloak("$mbname$username");
 if ($ENV{REQUEST_METHOD} =~ /post/i) {
 	if ($CGI_query && $CGI_query->cgi_error()) { &fatal_error("denial_of_service", $CGI_query->cgi_error()); }
 	if (&decloak($FORM{'formsession'}) ne "$mbname$username") {
-		&fatal_error("logged_in_already",$username) if $GLOBAL::ACTION eq 'login2' && $username ne 'Guest';
+		&fatal_error("logged_in_already",$username) if $GLOBAL::ACTION  eq 'login2' && $username ne 'Guest';
 		&fatal_error("form_spoofing",$user_ip);
 	}
 }
@@ -137,26 +137,26 @@ if ($@) { &fatal_error("untrapped",":<br />$@"); }
 sub yymain {
 	# Choose what to do based on the form action
 	if ($maintenance) {
-		if    ($GLOBAL::ACTION eq 'login2')    { require "$sourcedir/LogInOut.pl"; &Login2; }
+		if    ($GLOBAL::ACTION  eq 'login2')    { require "$sourcedir/LogInOut.pl"; &Login2; }
 		# Allow password reminders in case admins forgets their admin password
-		elsif ($GLOBAL::ACTION eq 'reminder')  { require "$sourcedir/LogInOut.pl"; &Reminder; }
-		elsif ($GLOBAL::ACTION eq 'validate')  { require "$sourcedir/Decoder.pl"; &convert; }
-		elsif ($GLOBAL::ACTION eq 'reminder2') { require "$sourcedir/LogInOut.pl"; &Reminder2; }
-		elsif ($GLOBAL::ACTION eq 'resetpass') { require "$sourcedir/LogInOut.pl"; &Reminder3; }
+		elsif ($GLOBAL::ACTION  eq 'reminder')  { require "$sourcedir/LogInOut.pl"; &Reminder; }
+		elsif ($GLOBAL::ACTION  eq 'validate')  { require "$sourcedir/Decoder.pl"; &convert; }
+		elsif ($GLOBAL::ACTION  eq 'reminder2') { require "$sourcedir/LogInOut.pl"; &Reminder2; }
+		elsif ($GLOBAL::ACTION  eq 'resetpass') { require "$sourcedir/LogInOut.pl"; &Reminder3; }
 
 		if (!$iamadmin) { require "$sourcedir/LogInOut.pl"; &InMaintenance; }
 	}
 
 	# Guest can do the very few following actions
-	&KickGuest if $iamguest && !$guestaccess && $GLOBAL::ACTION !~ /^(login|register|reminder|validate|activate|resetpass|guestpm|checkavail|$randaction)2?$/;
+	&KickGuest if $iamguest && !$guestaccess && $GLOBAL::ACTION  !~ /^(login|register|reminder|validate|activate|resetpass|guestpm|checkavail|$randaction)2?$/;
 
-	if ($GLOBAL::ACTION ne "") {
-		if ($GLOBAL::ACTION eq $randaction) {
+	if ($GLOBAL::ACTION  ne "") {
+		if ($GLOBAL::ACTION  eq $randaction) {
 			require "$sourcedir/Decoder.pl"; &convert;
 		} else {
 			require "$sourcedir/SubList.pl";
-			if ($director{$GLOBAL::ACTION}) {
-				my @act = split(/&/, $director{$GLOBAL::ACTION});
+			if ($director{$GLOBAL::ACTION }) {
+				my @act = split(/&/, $director{$GLOBAL::ACTION });
 				require "$sourcedir/$act[0]";
 				&{$act[1]};
 			} else {

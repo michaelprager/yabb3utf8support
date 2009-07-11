@@ -15,7 +15,7 @@
 ###############################################################################
 
 $instantmessageplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 ## create the send IM section of the screen
 
@@ -1026,7 +1026,7 @@ var GB_ROOT_DIR = "$yyhtml_root/greybox/";
 			}\n~;
 	}
 
-	if ($action eq 'modify' || $action eq 'modify2') {
+	if ($GLOBAL::ACTION eq 'modify' || $GLOBAL::ACTION eq 'modify2') {
 		$displayname = $mename;
 	} else {
 		$displayname = ${$uid.$username}{'realname'};
@@ -1531,7 +1531,7 @@ sub pageLinksList {
 	if ($INFO{'viewfolder'} ne '') { $viewfolderinfo = qq~;viewfolder=$INFO{'viewfolder'}~; }
 	if ($INFO{'focus'} eq 'bmess') { $bmesslink = qq~;focus=bmess~;}
 	my @tempim = @dimmessages;
-	if ($action eq 'imstorage') {
+	if ($GLOBAL::ACTION eq 'imstorage') {
 		my $i = 0;
 		foreach (@dimmessages) {
 			if ((split(/\|/, $_))[13] ne $INFO{'viewfolder'}) {
@@ -1560,21 +1560,21 @@ sub pageLinksList {
 	if ($pagenumb > 1 || $all) {
 		if ($userthreadpage == 1 ) {
 			$pagetxtindexst = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;">~;
-			$pagetxtindexst .= qq~<a href="$scripturl?pmaction=$action$bmesslink;start=$start;action=pmpagetext$viewfolderinfo"><img src="$imagesdir/index_togl.gif" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" style="vertical-align: middle;" /></a> $display_txt{'139'}: ~; 
-			if ($startpage > 0) { $pagetxtindex = qq~<a href="$scripturl?action=$action$bmesslink/0$viewfolderinfo" style="font-weight: normal;">1</a>&nbsp;...&nbsp;~; }
-			if ($startpage == $maxmessagedisplay) { $pagetxtindex = qq~<a href="$scripturl?action=$action$bmesslink;start=0$viewfolderinfo" style="font-weight: normal;">1</a>&nbsp;~; }
+			$pagetxtindexst .= qq~<a href="$scripturl?pmaction=$GLOBAL::ACTION$bmesslink;start=$start;action=pmpagetext$viewfolderinfo"><img src="$imagesdir/index_togl.gif" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" style="vertical-align: middle;" /></a> $display_txt{'139'}: ~; 
+			if ($startpage > 0) { $pagetxtindex = qq~<a href="$scripturl?action=$GLOBAL::ACTION$bmesslink/0$viewfolderinfo" style="font-weight: normal;">1</a>&nbsp;...&nbsp;~; }
+			if ($startpage == $maxmessagedisplay) { $pagetxtindex = qq~<a href="$scripturl?action=$GLOBAL::ACTION$bmesslink;start=0$viewfolderinfo" style="font-weight: normal;">1</a>&nbsp;~; }
 			for ($counter = $startpage; $counter < $endpage; $counter += $maxmessagedisplay) {
-				$pagetxtindex .= $start == $counter ? qq~<b>$tmpa</b>&nbsp;~ : qq~<a href="$scripturl?action=$action$bmesslink;start=$counter$viewfolderinfo" style="font-weight: normal;">$tmpa</a>&nbsp;~;
+				$pagetxtindex .= $start == $counter ? qq~<b>$tmpa</b>&nbsp;~ : qq~<a href="$scripturl?action=$GLOBAL::ACTION$bmesslink;start=$counter$viewfolderinfo" style="font-weight: normal;">$tmpa</a>&nbsp;~;
 				$tmpa++;
 			}
 			if ($endpage < $max - ($maxmessagedisplay)) { $pageindexadd = qq~...&nbsp;~; }
-			if ($endpage != $max) { $pageindexadd .= qq~<a href="$scripturl?action=$action$bmesslink;start=$lastptn$viewfolderinfo" style="font-weight: normal;">$lastpn</a>~; }
+			if ($endpage != $max) { $pageindexadd .= qq~<a href="$scripturl?action=$GLOBAL::ACTION$bmesslink;start=$lastptn$viewfolderinfo" style="font-weight: normal;">$lastpn</a>~; }
 			$pagetxtindex .= qq~$pageindexadd~;
 			$pageindex1 = qq~$pagetxtindexst$pagetxtindex</span>~;
 			$pageindex2 = $pageindex1;
 		} else {
 			$pagedropindex1 = qq~<span style="float: left; width: 350px; margin: 0px; margin-top: 2px; border: 0px;">~;
-			$pagedropindex1 .= qq~<span style="float: left; height: 21px; margin: 0; margin-right: 4px;"><a href="$scripturl?pmaction=$action$bmesslink;start=$start;action=pmpagedrop$viewfolderinfo"><img src="$imagesdir/index_togl.gif" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" /></a></span>~;
+			$pagedropindex1 .= qq~<span style="float: left; height: 21px; margin: 0; margin-right: 4px;"><a href="$scripturl?pmaction=$GLOBAL::ACTION$bmesslink;start=$start;action=pmpagedrop$viewfolderinfo"><img src="$imagesdir/index_togl.gif" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" /></a></span>~;
 			$pagedropindex2 = $pagedropindex1;
 			$tstart = $start;
 			if (substr($INFO{'start'}, 0, 3) eq "all") { ($tstart, $start) = split(/\-/, $INFO{'start'}); }
@@ -1617,9 +1617,9 @@ sub pageLinksList {
 			$pagedropindexpvbl = qq~<img src="$imagesdir/index_left0.gif" height="14" width="13" border="0" alt="" style="margin: 0px; display: inline; vertical-align: middle;" />~;
 			$pagedropindexnxbl = qq~<img src="$imagesdir/index_right0.gif" height="14" width="13" border="0" alt="" style="margin: 0px; display: inline; vertical-align: middle;" />~;
 			if ($start < $maxmessagedisplay) { $pagedropindexpv .= qq~<img src="$imagesdir/index_left0.gif" height="14" width="13" border="0" alt="" style="display: inline; vertical-align: middle;" />~; }
-			else { $pagedropindexpv .= qq~<img src="$imagesdir/index_left.gif" border="0" height="14" width="13" alt="$pidtxt{'02'}" title="$pidtxt{'02'}" style="display: inline; vertical-align: middle; cursor: pointer;" onclick="location.href=\\'$scripturl?action=$action$bmesslink;start=$prevpage\\'" ondblclick="location.href=\\'$scripturl?action=$action$bmesslink;start=0\\'" />~; }
+			else { $pagedropindexpv .= qq~<img src="$imagesdir/index_left.gif" border="0" height="14" width="13" alt="$pidtxt{'02'}" title="$pidtxt{'02'}" style="display: inline; vertical-align: middle; cursor: pointer;" onclick="location.href=\\'$scripturl?action=$GLOBAL::ACTION$bmesslink;start=$prevpage\\'" ondblclick="location.href=\\'$scripturl?action=$GLOBAL::ACTION$bmesslink;start=0\\'" />~; }
 			if ($nextpage > $lastptn) { $pagedropindexnx .= qq~<img src="$imagesdir/index_right0.gif" border="0" height="14" width="13" alt="" style="display: inline; vertical-align: middle;" />~; }
-			else { $pagedropindexnx .= qq~<img src="$imagesdir/index_right.gif" height="14" width="13" border="0" alt="$pidtxt{'03'}" title="$pidtxt{'03'}" style="display: inline; vertical-align: middle; cursor: pointer;" onclick="location.href=\\'$scripturl?action=$action$bmesslink;start=$nextpage\\'" ondblclick="location.href=\\'$scripturl?action=$action$bmesslink;start=$lastptn\\'" />~; }
+			else { $pagedropindexnx .= qq~<img src="$imagesdir/index_right.gif" height="14" width="13" border="0" alt="$pidtxt{'03'}" title="$pidtxt{'03'}" style="display: inline; vertical-align: middle; cursor: pointer;" onclick="location.href=\\'$scripturl?action=$GLOBAL::ACTION$bmesslink;start=$nextpage\\'" ondblclick="location.href=\\'$scripturl?action=$GLOBAL::ACTION$bmesslink;start=$lastptn\\'" />~; }
 			$pageindex1 = qq~$pagedropindex1</span>~;
 			$pageindexjs = qq~
 			<script language="JavaScript1.2" type="text/javascript">
@@ -1635,7 +1635,7 @@ sub pageLinksList {
 				var pagedropindex = '<table border="0" cellpadding="0" cellspacing="0"><tr>';
 				for (i=vistart; i<=viend; i++) {
 					if (visel == pagstart) pagedropindex += '<td class="titlebg" height="14" style="height: 14px; padding-left: 1px; padding-right: 1px; font-size: 9px; font-weight: bold;">' + i + '</td>';
-					else pagedropindex += '<td height="14" class="droppages"><a href="$scripturl?action=$action$bmesslink;start=' + pagstart + '">' + i + '</a></td>';
+					else pagedropindex += '<td height="14" class="droppages"><a href="$scripturl?action=$GLOBAL::ACTION$bmesslink;start=' + pagstart + '">' + i + '</a></td>';
 					pagstart += maxpag;
 				}
 				~;
@@ -1643,7 +1643,7 @@ sub pageLinksList {
 					$pageindexjs .= qq~
 					if (vistart != viend) {
 						if(visel == 'all') pagedropindex += '<td class="titlebg" height="14" style="height: 14px; padding-left: 1px; padding-right: 1px; font-size: 9px; font-weight: normal;"><b>$pidtxt{"01"}</b></td>';
-						else pagedropindex += '<td height="14" class="droppages"><a href="$scripturl?action=$action$bmesslink;start=all-' + allpagstart + '">$pidtxt{"01"}</a></td>';
+						else pagedropindex += '<td height="14" class="droppages"><a href="$scripturl?action=$GLOBAL::ACTION$bmesslink;start=all-' + allpagstart + '">$pidtxt{"01"}</a></td>';
 					}
 					~;
 				}

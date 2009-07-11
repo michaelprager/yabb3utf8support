@@ -15,7 +15,7 @@
 ###############################################################################
 
 $attachmentsplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 sub Attachments {
 	&is_admin_or_gmod;

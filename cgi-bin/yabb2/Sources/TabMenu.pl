@@ -15,7 +15,7 @@
 ###############################################################################
 
 $tabmenuplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('TabMenu');
 
@@ -25,18 +25,18 @@ $tabsep = qq~<img src="$imagesdir/tabsep211.png" border="0" alt="" style="float:
 $tabfill = qq~<img src="$imagesdir/tabfill.gif" border="0" alt="" style="vertical-align: middle;" />~;
 
 sub mainMenu {
-	if ($action eq "addtab" && $iamadmin) { require "$sourcedir/AdvancedTabs.pl"; &AddNewTab; }
-	elsif ($action eq "edittab" && $iamadmin) { require "$sourcedir/AdvancedTabs.pl"; &EditTab; }
-	elsif ($action ne "") {
-		if ($action eq "search2") {
+	if ($GLOBAL::ACTION eq "addtab" && $iamadmin) { require "$sourcedir/AdvancedTabs.pl"; &AddNewTab; }
+	elsif ($GLOBAL::ACTION eq "edittab" && $iamadmin) { require "$sourcedir/AdvancedTabs.pl"; &EditTab; }
+	elsif ($GLOBAL::ACTION ne "") {
+		if ($GLOBAL::ACTION eq "search2") {
 			$tmpaction = "search";
-		} elsif ($action eq "favorites" || $action eq "shownotify" || $action eq "im" || $action eq "imdraft" || $action eq "imoutbox" || $action eq "imstorage" || $action eq "imsend" || $action eq "imsend2" || $action eq "imshow" || $action eq "profileCheck" || $action eq "myviewprofile" || $action eq "myprofile" || $action eq "myprofileContacts" || $action eq "myprofileOptions" || $action eq "myprofileBuddy" || $action eq "myprofileIM" || $action eq "myprofileAdmin" || $action eq "myusersrecentposts") {
+		} elsif ($GLOBAL::ACTION eq "favorites" || $GLOBAL::ACTION eq "shownotify" || $GLOBAL::ACTION eq "im" || $GLOBAL::ACTION eq "imdraft" || $GLOBAL::ACTION eq "imoutbox" || $GLOBAL::ACTION eq "imstorage" || $GLOBAL::ACTION eq "imsend" || $GLOBAL::ACTION eq "imsend2" || $GLOBAL::ACTION eq "imshow" || $GLOBAL::ACTION eq "profileCheck" || $GLOBAL::ACTION eq "myviewprofile" || $GLOBAL::ACTION eq "myprofile" || $GLOBAL::ACTION eq "myprofileContacts" || $GLOBAL::ACTION eq "myprofileOptions" || $GLOBAL::ACTION eq "myprofileBuddy" || $GLOBAL::ACTION eq "myprofileIM" || $GLOBAL::ACTION eq "myprofileAdmin" || $GLOBAL::ACTION eq "myusersrecentposts") {
 			$tmpaction = "mycenter";
-		} elsif ($action eq "messagepagetext" || $action eq "messagepagedrop" || $action eq "threadpagetext" || $action eq "threadpagedrop" || $action eq "post" || $action eq "notify" || $action eq "boardnotify" || $action eq "sendtopic" || $action eq "modify") {
+		} elsif ($GLOBAL::ACTION eq "messagepagetext" || $GLOBAL::ACTION eq "messagepagedrop" || $GLOBAL::ACTION eq "threadpagetext" || $GLOBAL::ACTION eq "threadpagedrop" || $GLOBAL::ACTION eq "post" || $GLOBAL::ACTION eq "notify" || $GLOBAL::ACTION eq "boardnotify" || $GLOBAL::ACTION eq "sendtopic" || $GLOBAL::ACTION eq "modify") {
 			$tmpaction = "home";
-		} elsif ($action eq "guestpm2") {
+		} elsif ($GLOBAL::ACTION eq "guestpm2") {
 			$tmpaction = "guestpm";
-		} else { $tmpaction = $action; }
+		} else { $tmpaction = $GLOBAL::ACTION; }
 
 	} else {
 		$tmpaction = "home";
@@ -61,7 +61,7 @@ sub mainMenu {
 	}
 	if ($sessionvalid == 0 && !$iamguest) {
 		my $sesredir;
-		unless (!$testenv || $action eq "revalidatesession" || $action eq "revalidatesession2") {
+		unless (!$testenv || $GLOBAL::ACTION eq "revalidatesession" || $GLOBAL::ACTION eq "revalidatesession2") {
 			$sesredir = $testenv;
 			$sesredir =~ s/\=/\~/g;
 			$sesredir =~ s/;/x3B/g;
@@ -121,8 +121,8 @@ sub mainMenu {
 
 	if ($iamadmin) {
 		my ($seladdtab, $seledittab);
-		if ($action eq "addtab") { $seladdtab = qq~class="selected"~; }
-		elsif ($action eq "edittab") { $seledittab = qq~class="selected"~; }
+		if ($GLOBAL::ACTION eq "addtab") { $seladdtab = qq~class="selected"~; }
+		elsif ($GLOBAL::ACTION eq "edittab") { $seledittab = qq~class="selected"~; }
 		$yytabadd = qq~<div style="float: right; width: 100px; height: 21px; text-align: right;">~;
 		$yytabadd .= qq~$tabsep<span $seladdtab><a href="$scripturl?action=addtab" title="$tabmenu_txt{'newtab'}" style="padding: 2px 0;">$tabfill<img src="$imagesdir/tabadd.gif" height="23" width="20" border="0" alt="$tabmenu_txt{'newtab'}" title="$tabmenu_txt{'newtab'}" />$tabfill</a></span>$tabsep~;
 		$yytabadd .= qq~<span $seledittab><a href="$scripturl?action=edittab" title="$tabmenu_txt{'edittab'}" style="padding: 2px 0;">$tabfill<img src="$imagesdir/tabedit.gif" height="23" width="20" border="0" alt="$tabmenu_txt{'edittab'}" title="$tabmenu_txt{'edittab'}" />$tabfill</a></span>$tabsep~;

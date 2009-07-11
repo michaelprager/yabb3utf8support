@@ -57,7 +57,7 @@ $yytabmenu = '';
 $yymenu = '';
 $yymain = '';
 
-if (!$GLOBAL::ACTION) {
+if (!$GLOBAL::ACTION ) {
 	&tempstarter;
 	$yytabmenu = qq~$tabsep<span onclick="location.href='$set_cgi?action=members2';"><a href="$set_cgi?action=members2" title="Update file structure">$tabfill Update file structure $tabfill</a></span>$tabsep~;
 	$yyim = 'Update file structure';
@@ -65,7 +65,7 @@ if (!$GLOBAL::ACTION) {
 	&FixFileTemplate;
 }
 
-if ($GLOBAL::ACTION eq 'members2') {
+if ($GLOBAL::ACTION  eq 'members2') {
 	&tempstarter;
 	&FixNopost;
 	$yytabmenu = qq~$tabsep<span onclick="location.href='$scripturl?action=login';"><a href="$scripturl?action=login" title="$img_txt{'34'}">$tabfill$img_txt{'34'}$tabfill</a></span>$tabsep~;

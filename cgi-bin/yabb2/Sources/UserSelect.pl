@@ -15,9 +15,9 @@
 ###############################################################################
 
 $userselectplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
-if ($iamguest && $INFO{'toid'} ne "userspec" && $action ne "checkavail") { &fatal_error("members_only"); }
+if ($iamguest && $INFO{'toid'} ne "userspec" && $GLOBAL::ACTION ne "checkavail") { &fatal_error("members_only"); }
 &LoadLanguage('UserSelect');
 
 $MembersPerPage = 10;

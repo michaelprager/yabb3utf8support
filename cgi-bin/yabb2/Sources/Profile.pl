@@ -15,7 +15,7 @@
 ###############################################################################
 
 $profileplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('Profile');
 
@@ -165,7 +165,7 @@ sub ProfileMenu {
 }
 
 sub ModifyProfile {
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	$menucolors[0] = "titlebg";
@@ -437,7 +437,7 @@ sub ModifyProfile {
 }
 
 sub ModifyProfileContacts {
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	$menucolors[1] = "titlebg";
@@ -600,7 +600,7 @@ sub ModifyProfileContacts {
 }
 
 sub ModifyProfileOptions {
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	$menucolors[2] = "titlebg";
@@ -972,7 +972,7 @@ sub ModifyProfileOptions {
 }
 
 sub ModifyProfileBuddy {
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	$menucolors[3] = "titlebg";
@@ -1053,7 +1053,7 @@ sub ModifyProfileBuddy {
 }
 
 sub ModifyProfileIM {
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	$menucolors[4] = "titlebg";
@@ -1205,7 +1205,7 @@ sub ModifyProfileIM {
 sub ModifyProfileAdmin {
 	&is_admin_or_gmod;
 
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	$menucolors[5] = "titlebg";
@@ -1420,7 +1420,7 @@ sub ModifyProfileAdmin {
 }
 
 sub ModifyProfile2 {
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	my (%member, $key, $value);
@@ -1590,7 +1590,7 @@ sub ModifyProfile2 {
 }
 
 sub ModifyProfileContacts2 {
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	my (%member, $key, $value, $newpassemail, $tempname, $stealth);
@@ -1736,7 +1736,7 @@ sub ModifyProfileContacts2 {
 }
 
 sub ModifyProfileOptions2 {
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	my (%member, $key, $value, $tempname);
@@ -1963,7 +1963,7 @@ sub ModifyProfileOptions2 {
 }
 
 sub ModifyProfileBuddy2 {
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	my (%member, $key, $value, $tempname);
@@ -2007,7 +2007,7 @@ sub ModifyProfileBuddy2 {
 }
 
 sub ModifyProfileIM2 {
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	my (%member, $key, $value, $ignorelist);
@@ -2065,7 +2065,7 @@ sub ModifyProfileIM2 {
 sub ModifyProfileAdmin2 {
 	&is_admin_or_gmod;
 
-	&SidCheck($action);
+	&SidCheck($GLOBAL::ACTION);
 	&PrepareProfile;
 
 	my (%member, $key, $value);
@@ -2673,7 +2673,7 @@ sub usersrecentposts {
 	if ($INFO{'username'} =~ /\//) { &fatal_error("no_user_slash"); }
 	if ($INFO{'username'} =~ /\\/) { &fatal_error("no_user_backslash"); }
 	if (!&checkfor_DBorFILE("$memberdir/$INFO{'username'}.vars")) { &fatal_error("no_profile_exists"); }
-	&spam_protection if $action =~ /^(?:my)?usersrecentposts$/;
+	&spam_protection if $GLOBAL::ACTION =~ /^(?:my)?usersrecentposts$/;
 
 	my $curuser = $INFO{'username'};
 	&LoadUser($curuser);

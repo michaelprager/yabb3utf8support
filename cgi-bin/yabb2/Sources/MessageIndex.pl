@@ -15,7 +15,7 @@
 ###############################################################################
 
 $messageindexplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('MessageIndex');
 require "$templatesdir/$usemessage/MessageIndex.template";
@@ -848,7 +848,7 @@ sub MessageIndex {
 	if ($postlink and $enable_quickpost) {
 		$yymain =~ s~(<!-- Icon and access info end -->)~$1\n<div style="text-align: right; padding-top: 10px; padding-bottom: 10px;">{yabb forumjump}</div>~;
 		require "$sourcedir/Post.pl";
-		$action = 'post';
+		$GLOBAL::ACTION = 'post';
 		$INFO{'title'} = 'StartNewTopic';
 		$Quick_Post = 1;
 		&Post;

@@ -15,7 +15,7 @@
 ###############################################################################
 
 $settings_advancedplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 my $uploaddiriscorrect = qq~<span style="color: red;">$admin_txt{'164'}</span>~;
 if(-w $uploaddir && -d $uploaddir) {$uploaddiriscorrect = qq~<span style="color: green;">$admin_txt{'163'}</span>~;}

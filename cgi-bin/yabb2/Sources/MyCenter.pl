@@ -15,7 +15,7 @@
 ###############################################################################
 
 $mycenterplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('InstantMessage');
 &LoadLanguage('MyCenter');
@@ -44,17 +44,17 @@ sub mycenter {
 	my $otherStoreSelect = '';
 	$replyguest = $INFO{'replyguest'} || $FORM{'replyguest'};
 	## select view by action
-	if ($action =~ /^im/ || $action eq 'deletemultimessages' || $action eq 'pmsearch') { $view = 'pm'; }
-	elsif ($action eq 'mycenter') { $view = 'mycenter'; }
-	elsif ($action eq 'shownotify' || $action=~ /^notify/ || $action eq 'boardnotify2') { $view = 'notify'; $mctitle = $img_txt{'418'}; }
-	elsif ($action eq 'myusersrecentposts') { $view = 'recentposts'; }
-	elsif ($action eq 'favorites') { $view = 'favorites'; $mctitle = $img_txt{'70'}; }
-	elsif ($action =~ /^my/) { $view = 'profile'; }
+	if ($GLOBAL::ACTION =~ /^im/ || $GLOBAL::ACTION eq 'deletemultimessages' || $GLOBAL::ACTION eq 'pmsearch') { $view = 'pm'; }
+	elsif ($GLOBAL::ACTION eq 'mycenter') { $view = 'mycenter'; }
+	elsif ($GLOBAL::ACTION eq 'shownotify' || $GLOBAL::ACTION=~ /^notify/ || $GLOBAL::ACTION eq 'boardnotify2') { $view = 'notify'; $mctitle = $img_txt{'418'}; }
+	elsif ($GLOBAL::ACTION eq 'myusersrecentposts') { $view = 'recentposts'; }
+	elsif ($GLOBAL::ACTION eq 'favorites') { $view = 'favorites'; $mctitle = $img_txt{'70'}; }
+	elsif ($GLOBAL::ACTION =~ /^my/) { $view = 'profile'; }
 	## viewing PMs
 	if ($view eq 'pm') { # pm views
 		## viewing a message box
 		require "$sourcedir/InstantMessage.pl";
-		if ($action eq 'im' || $action eq 'imoutbox' || $action eq 'imstorage') {
+		if ($GLOBAL::ACTION eq 'im' || $GLOBAL::ACTION eq 'imoutbox' || $GLOBAL::ACTION eq 'imstorage') {
 			my $foundextra = 0;
 			foreach my $storefolder (split(/\|/, ${$username}{'PMfolders'})) {
 				if($storefolder ne $INFO{'viewfolder'}) {
@@ -74,7 +74,7 @@ sub mycenter {
 			}
 		}
 		## inbox
-		if ($action eq 'im' || ($action eq 'imshow' && $INFO{'caller'} == 1)) {
+		if ($GLOBAL::ACTION eq 'im' || ($GLOBAL::ACTION eq 'imshow' && $INFO{'caller'} == 1)) {
 			$mctitle = $inmes_txt{'inbox'};
 			$status = $inmes_imtxt{'status'};
 			$senderinfo = $inmes_txt{'318'};
@@ -86,7 +86,7 @@ sub mycenter {
 			$PMfileToOpen = 'msg';
 		}
 		##  draft box
-		elsif ($action eq 'imdraft') {
+		elsif ($GLOBAL::ACTION eq 'imdraft') {
 			$mctitle = $inmes_txt{'draft'};
 			$status = $inmes_imtxt{'status'};
 			$senderinfo = $inmes_txt{'324'};
@@ -97,7 +97,7 @@ sub mycenter {
 			$PMfileToOpen = 'imdraft';
 		}
 		## outbox
-		elsif ($action eq 'imoutbox' || ($action eq 'imshow' && $INFO{'caller'} == 2)) {
+		elsif ($GLOBAL::ACTION eq 'imoutbox' || ($GLOBAL::ACTION eq 'imshow' && $INFO{'caller'} == 2)) {
 			$mctitle = $inmes_txt{'773'};
 			$status = $inmes_imtxt{'status'};
 			$senderinfo = $inmes_txt{'324'};
@@ -108,7 +108,7 @@ sub mycenter {
 			$PMfileToOpen = 'outbox';
 		}
 		# store
-		elsif ($action eq 'imstorage' || ($action eq 'imshow' && $INFO{'caller'} == 3)) {
+		elsif ($GLOBAL::ACTION eq 'imstorage' || ($GLOBAL::ACTION eq 'imshow' && $INFO{'caller'} == 3)) {
 			$mctitle = $inmes_txt{'774'};
 			$status = '';
 			$senderinfo = $inmes_txt{'318'};
@@ -123,7 +123,7 @@ sub mycenter {
 			$PMfileToOpen = 'imstore';
 		}
 		## sending a message / previewing
-		elsif ($action eq 'imsend' || ($action eq 'imsend2' && $FORM{'previewim'})) {
+		elsif ($GLOBAL::ACTION eq 'imsend' || ($GLOBAL::ACTION eq 'imsend2' && $FORM{'previewim'})) {
 			$IM_box = $inmes_txt{'148'};
 			if ($INFO{'forward'} == 1) { $IM_box = $inmes_txt{'forward'}; }
 			if ($INFO{'reply'}) { $IM_box = $inmes_txt{'replymess'}; }
@@ -132,13 +132,13 @@ sub mycenter {
 			&doshowims;
 		}
 		## posting the message or draft
-		elsif ($action eq 'imsend2' || $FORM{'draft'}) {
+		elsif ($GLOBAL::ACTION eq 'imsend2' || $FORM{'draft'}) {
 			$IM_box = $inmes_txt{'148'};
 			if($INFO{'forward'} == 1) { $IM_box = $inmes_txt{'forward'}; }
 			if($INFO{'reply'}) { $IM_box = $inmes_txt{'replymess'}; }
 			&IMsendMessage;
 		}
-		elsif ($action eq 'imshow' && $INFO{'caller'} == 5) {
+		elsif ($GLOBAL::ACTION eq 'imshow' && $INFO{'caller'} == 5) {
 			$mctitle = $inmes_txt{'broadcast'};
 			$status = $inmes_imtxt{'status'};
 			$senderinfo = $inmes_txt{'318'};
@@ -794,12 +794,12 @@ function insert_user (oElement,username,userid) {
 </script>
 	~;
 
-	if ($action =~ /^im/ && (!@dimmessages && $INFO{'focus'} ne 'bmess') && ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod)))) {
+	if ($GLOBAL::ACTION =~ /^im/ && (!@dimmessages && $INFO{'focus'} ne 'bmess') && ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod)))) {
 		if (!@dimmessages) {
-			if    ($action eq 'im')        { &delete_DBorFILE("$memberdir/$username.msg"); }
-			elsif ($action eq 'imoutbox')  { &delete_DBorFILE("$memberdir/$username.outbox"); }
-			elsif ($action eq 'imstorage') { &delete_DBorFILE("$memberdir/$username.imstore"); }
-			elsif ($action eq 'imdraft')   { &delete_DBorFILE("$memberdir/$username.imdraft"); }
+			if    ($GLOBAL::ACTION eq 'im')        { &delete_DBorFILE("$memberdir/$username.msg"); }
+			elsif ($GLOBAL::ACTION eq 'imoutbox')  { &delete_DBorFILE("$memberdir/$username.outbox"); }
+			elsif ($GLOBAL::ACTION eq 'imstorage') { &delete_DBorFILE("$memberdir/$username.imstore"); }
+			elsif ($GLOBAL::ACTION eq 'imdraft')   { &delete_DBorFILE("$memberdir/$username.imdraft"); }
 		}
 	}
 
@@ -922,7 +922,7 @@ function insert_user (oElement,username,userid) {
 	## the action goes to authenticate or straight to the page.
 	## The trick is to use $page to pass the intended page through and switch over on
 	## positive id.
-	if ($page && $page ne $action)  { $action = $page; }
+	if ($page && $page ne $GLOBAL::ACTION)  { $GLOBAL::ACTION = $page; }
 	my $profileLink;
 	my $sid = $INFO{'sid'};
 	my $thisLink = '';
@@ -1016,9 +1016,9 @@ function insert_user (oElement,username,userid) {
 ## end Posts div
 
 	if (!$replyguest) {
-		if ($view eq 'pm' && $action ne 'imsend' && $action ne 'imsend2') {
+		if ($view eq 'pm' && $GLOBAL::ACTION ne 'imsend' && $GLOBAL::ACTION ne 'imsend2') {
 			my $imstoreFolder;
-			if ($action eq 'imstorage') { $imstoreFolder = ";viewfolder=$INFO{'viewfolder'}"; }
+			if ($GLOBAL::ACTION eq 'imstorage') { $imstoreFolder = ";viewfolder=$INFO{'viewfolder'}"; }
 			$MCGlobalFormStart .= qq~
 			<form action="$scripturl?action=deletemultimessages;caller=$callerid$imstoreFolder" method="post" name="searchform" enctype="application/x-www-form-urlencoded">
 			~;
@@ -1201,7 +1201,7 @@ function insert_user (oElement,username,userid) {
 		~;
 
 	############### sending pm #######################
-	} elsif ($view eq 'pm' && ($action eq 'imsend' || $action eq 'imsend2')) {
+	} elsif ($view eq 'pm' && ($GLOBAL::ACTION eq 'imsend' || $GLOBAL::ACTION eq 'imsend2')) {
 		my $sendTitle = $inmes_txt{'sendmess'};
 		if ($sendBMess) { $sendTitle = $inmes_txt{'sendbroadmess'}; }
 		$MCContent .= qq~
@@ -1213,10 +1213,10 @@ function insert_user (oElement,username,userid) {
 		$MCGlobalFormStart = '';
 
 	# inbox/outbox/ storage/draft  viewing
-	} elsif ($view eq 'pm' && ($action eq 'im' || $action eq 'imoutbox' || $action eq 'imstorage' || $action eq 'imdraft')) {
+	} elsif ($view eq 'pm' && ($GLOBAL::ACTION eq 'im' || $GLOBAL::ACTION eq 'imoutbox' || $GLOBAL::ACTION eq 'imstorage' || $GLOBAL::ACTION eq 'imdraft')) {
 		&drawPMView;
 
-	} elsif ($view eq 'pm' && $action eq 'imshow') {
+	} elsif ($view eq 'pm' && $GLOBAL::ACTION eq 'imshow') {
 		$showIM = '';
 		if ($INFO{'id'} eq 'all') {
 			my $BC;
@@ -1240,7 +1240,7 @@ function insert_user (oElement,username,userid) {
 
 		$MCContent .= $showIM;
 
-	} elsif ($view eq 'pm' && $action eq 'pmsearch') {
+	} elsif ($view eq 'pm' && $GLOBAL::ACTION eq 'pmsearch') {
 		&spam_protection;
 		$yysearchmain = '';
 		require "$sourcedir/Search.pl";
@@ -1251,28 +1251,28 @@ function insert_user (oElement,username,userid) {
 	} elsif ($view eq 'profile') {
 		## if user has had to go via id check, this restores their intended page
 		$page = $INFO{'page'};
-		if($page && $action ne $page) { $action = $page; }
+		if($page && $GLOBAL::ACTION ne $page) { $GLOBAL::ACTION = $page; }
 		require "$sourcedir/Profile.pl";
-		if ($action eq 'myprofileIM') { &ModifyProfileIM; }
-		elsif ($action eq 'myprofileIM2') { &ModifyProfileIM2; }
-		elsif ($action eq 'myprofile') { &ModifyProfile; }
-		elsif ($action eq 'myprofile2') { &ModifyProfile2; }
-		elsif ($action eq 'myprofileContacts') { &ModifyProfileContacts; }
-		elsif ($action eq 'myprofileContacts2') { &ModifyProfileContacts2; }
-		elsif ($action eq 'myprofileOptions') { &ModifyProfileOptions; }
-		elsif ($action eq 'myprofileOptions2') { &ModifyProfileOptions2; }
-		elsif ($action eq 'myprofileBuddy') { &ModifyProfileBuddy; }
-		elsif ($action eq 'myprofileBuddy2') { &ModifyProfileBuddy2; }
-		elsif ($action eq 'myviewprofile') { &ViewProfile; }
-		elsif ($action eq 'myprofileAdmin') { &ModifyProfileAdmin; }
-		elsif ($action eq 'myprofileAdmin2') { &ModifyProfileAdmin2; }
+		if ($GLOBAL::ACTION eq 'myprofileIM') { &ModifyProfileIM; }
+		elsif ($GLOBAL::ACTION eq 'myprofileIM2') { &ModifyProfileIM2; }
+		elsif ($GLOBAL::ACTION eq 'myprofile') { &ModifyProfile; }
+		elsif ($GLOBAL::ACTION eq 'myprofile2') { &ModifyProfile2; }
+		elsif ($GLOBAL::ACTION eq 'myprofileContacts') { &ModifyProfileContacts; }
+		elsif ($GLOBAL::ACTION eq 'myprofileContacts2') { &ModifyProfileContacts2; }
+		elsif ($GLOBAL::ACTION eq 'myprofileOptions') { &ModifyProfileOptions; }
+		elsif ($GLOBAL::ACTION eq 'myprofileOptions2') { &ModifyProfileOptions2; }
+		elsif ($GLOBAL::ACTION eq 'myprofileBuddy') { &ModifyProfileBuddy; }
+		elsif ($GLOBAL::ACTION eq 'myprofileBuddy2') { &ModifyProfileBuddy2; }
+		elsif ($GLOBAL::ACTION eq 'myviewprofile') { &ViewProfile; }
+		elsif ($GLOBAL::ACTION eq 'myprofileAdmin') { &ModifyProfileAdmin; }
+		elsif ($GLOBAL::ACTION eq 'myprofileAdmin2') { &ModifyProfileAdmin2; }
 		$MCContent .= $showProfile;
 
 	} elsif ($view eq 'notify') {
 		require "$sourcedir/Notify.pl";
-		if ($action eq 'shownotify') { &ShowNotifications; }
-		elsif ($action eq 'boardnotify2') { &BoardNotify2; &ShowNotifications; }
-		elsif ($action eq 'notify4') { &Notify4; }
+		if ($GLOBAL::ACTION eq 'shownotify') { &ShowNotifications; }
+		elsif ($GLOBAL::ACTION eq 'boardnotify2') { &BoardNotify2; &ShowNotifications; }
+		elsif ($GLOBAL::ACTION eq 'notify4') { &Notify4; }
 		$MCContent .= $showNotifications;
 
 	} elsif ($view eq 'recentposts') {
@@ -1449,7 +1449,7 @@ function insert_user (oElement,username,userid) {
 				<label for="search">$pm_search{'desc'}</label><br />
 				<form action="$scripturl?action=pmsearch" method="post" onsubmit="return submitproc()" style="display: inline">~;
 
-			if ($view eq 'pm' && $action ne 'pmsearch') {
+			if ($view eq 'pm' && $GLOBAL::ACTION ne 'pmsearch') {
 				$MCPmMenu .= qq~
 				- <input type="radio" name="pmbox" id="pmboxall" value="" checked="checked" /> <label for="pmboxall">$pm_search{'all'}</label>
 				<input type="radio" name="pmbox" id="pmboxthis" value="$callerid" /> <label for="pmboxthis">$pm_search{'justthis'}</label><br />~;
@@ -1484,14 +1484,14 @@ sub drawPMView {
 	}
 	if ($INFO{'sort'} ne 'gpdate' && $INFO{'sort'} ne 'thread') { &pageLinksList; }
 	my $dateColhead = "$inmes_txt{'317'}";
-	if ($action eq 'imdraft') { $dateColhead = $inmes_txt{'datesave'}; }
+	if ($GLOBAL::ACTION eq 'imdraft') { $dateColhead = $inmes_txt{'datesave'}; }
 
 	$mctitle = $IM_box;
 	$MCContent .= qq~
 	<table border="0" width="100%" cellspacing="1" cellpadding="3" class="bordercolor">
 	~;
 
-	if (($#dimmessages >= $maxmessagedisplay || $INFO{'start'} =~ /all/) && $action ne 'imstorage') {
+	if (($#dimmessages >= $maxmessagedisplay || $INFO{'start'} =~ /all/) && $GLOBAL::ACTION ne 'imstorage') {
 		$MCContent .= qq~
 		<tr><td colspan="3" class="titlebg">$pageindex1$pageindexjs</td></tr>
 		~;
@@ -1501,12 +1501,12 @@ sub drawPMView {
 	if ($INFO{'focus'} eq 'bmess') { $vbmess = qq~;focus=bmess~; }
 	if ($INFO{'sort'} ne 'gpdate') { $sbgpdate = qq~;sort=gpdate~; }
 
-	unless ($action eq 'imstorage' && $INFO{'viewfolder'} eq '') {
+	unless ($GLOBAL::ACTION eq 'imstorage' && $INFO{'viewfolder'} eq '') {
 		$MCContent .= qq~
 	  <tr>
 	    <td class="titlebg"  width="65%"><b>$inmes_txt{'70'}</b></td>
 	    <td class="titlebg"  width="15%"><b>$senderinfo</b></td>
-	    <td class="titlebg"  width="20%"><b><a href="$scripturl?action=$action$sbgpdate$vfolder$vbmess">$dateColhead</a></b></td>
+	    <td class="titlebg"  width="20%"><b><a href="$scripturl?action=$GLOBAL::ACTION$sbgpdate$vfolder$vbmess">$dateColhead</a></b></td>
 	  </tr>
 		~;
 	}
@@ -1536,7 +1536,7 @@ sub drawPMView {
 		my $maxcounter;
 		$start = $start || 0;
 		## if on last page, adjust the maxcounter down
-		if ((($#dimmessages + 1) - $start) < $maxmessagedisplay || $sortBy eq 'gpdate' || $action eq 'imstorage') {
+		if ((($#dimmessages + 1) - $start) < $maxmessagedisplay || $sortBy eq 'gpdate' || $GLOBAL::ACTION eq 'imstorage') {
 		    $maxcounter = @dimmessages;
 		} else {
 		    $maxcounter = ($start + $maxmessagedisplay);
@@ -1592,7 +1592,7 @@ sub drawPMView {
 			my ($messageid, $musername, $musernameto, $musernamecc, $musernamebcc, $msub, $mdate, $immessage, $mpmessageid, $mreplyno, $mips, $messageStatus, $messageFlags, $storeFolder, $messageAttachment) = split(/\|/, $dimmessages[$counter]);
 			## if we are viewing  one of the storage folders, filter out the
 			##  PMs that don't match
-			if ($action eq 'imstorage' && $INFO{'viewfolder'} ne $storeFolder) {
+			if ($GLOBAL::ACTION eq 'imstorage' && $INFO{'viewfolder'} ne $storeFolder) {
 				$class_PM_list = $class_PM_list eq 'windowbg2' ? 'windowbg' : 'windowbg2';
 				next;
 			}
@@ -1615,7 +1615,7 @@ sub drawPMView {
 			my %usersRec;
 
 			my $usernameto = '';
-			if ($action eq 'imoutbox' || $action eq 'imstorage' || $action eq 'imdraft') {
+			if ($GLOBAL::ACTION eq 'imoutbox' || $GLOBAL::ACTION eq 'imstorage' || $GLOBAL::ACTION eq 'imdraft') {
 				if ($hasMultiRecs) {
 					my $switchComma = 0;
 					$usernameto = '';
@@ -1695,19 +1695,19 @@ sub drawPMView {
 			## start of message row 1
 			## for inbox or store, check from
 			my ($fromToName, $messageIcon, $callBack, $messageAction);
-			if ($action ne 'imstorage' && $action ne 'imdraft' && !$viewBMess) {
+			if ($GLOBAL::ACTION ne 'imstorage' && $GLOBAL::ACTION ne 'imdraft' && !$viewBMess) {
 				## detect multi-rec
 				my ($imnew, $imRepliedTo, $imOpened);
 				## outbox - has the recp opened the message? (allow for multi)
-				if ($action eq 'imoutbox' && !$hasMultiRecs ) {
+				if ($GLOBAL::ACTION eq 'imoutbox' && !$hasMultiRecs ) {
 					$imOpened = &checkIMS($musernameto, $messageid, 'messageopened');
-				} elsif ($action eq 'im') { ## inbox - has user opened ?
+				} elsif ($GLOBAL::ACTION eq 'im') { ## inbox - has user opened ?
 					$imOpened = &checkIMS($username, $messageid, 'messageopened');
 				}
-				if ($action eq 'im') { $imRepliedTo = &checkIMS($username, $messageid, 'messagereplied'); }
+				if ($GLOBAL::ACTION eq 'im') { $imRepliedTo = &checkIMS($username, $messageid, 'messagereplied'); }
 
 				## viewing inbox
-				if ($action eq 'im') {
+				if ($GLOBAL::ACTION eq 'im') {
 					## not opened
 					if (!$imOpened && !$hasMultiRecs) {
 						$messageIcon = qq~<img src="$imagesdir/imclose.gif" border="0" alt="$inmes_imtxt{'innotread'}" title="$inmes_imtxt{'innotread'}" style="vertical-align: middle;" />~;
@@ -1731,7 +1731,7 @@ sub drawPMView {
 				}
 
 				##  outbox
-				elsif ($action eq 'imoutbox') {
+				elsif ($GLOBAL::ACTION eq 'imoutbox') {
 					## not opened
 					if (!$imOpened && !$hasMultiRecs) {
 						&LoadUser($musernameto);
@@ -1773,7 +1773,7 @@ sub drawPMView {
 
 			## switch action if opening a draft - want this sending to the 'send' screen
 			my $actString = 'imshow';
-			if ($action eq 'imdraft') { $actString = 'imsend'; }
+			if ($GLOBAL::ACTION eq 'imdraft') { $actString = 'imsend'; }
 
 			## if grouping, check bar here
 			if ($stkmess && $sortBy ne 'gpdate' && $normDateSet && $viewBMess) {
@@ -1842,7 +1842,7 @@ sub drawPMView {
 			}
 
 			my $BCnew;
-			if ($action eq 'im' && $viewBMess && !${$username}{'PMbcRead' . $messageid}) {
+			if ($GLOBAL::ACTION eq 'im' && $viewBMess && !${$username}{'PMbcRead' . $messageid}) {
 				$BCnew = qq~&nbsp;<img src="$imagesdir/new.gif" alt="" border="0" style="vertical-align: middle;" />~;
 			}
 
@@ -1851,7 +1851,7 @@ sub drawPMView {
 	    <td class="$class_PM_list" align="left">$BCnew$messageIcon$messIcon<a href="$scripturl?action=$actString;caller=$callerid;id=$messageid">$msub</a></td>
 	    <td class="$class_PM_list">~;
 
-			if ($action eq 'im' || ($action eq 'imstorage' && $INFO{'viewfolder'} eq 'in')) {
+			if ($GLOBAL::ACTION eq 'im' || ($GLOBAL::ACTION eq 'imstorage' && $INFO{'viewfolder'} eq 'in')) {
 				if ($messageStatus eq 'g') {
 					my ($guestName, $guestEmail) = split(/ /, $musername);
 					$guestName =~ s/%20/ /g;
@@ -1862,7 +1862,7 @@ sub drawPMView {
 				}
 				$MCContent .= $usernamefrom; # [inbox / broadcast / storage in]
 
-			} elsif ($action eq 'imoutbox' || ($action eq 'imstorage' && $INFO{'viewfolder'} eq 'out')) {
+			} elsif ($GLOBAL::ACTION eq 'imoutbox' || ($GLOBAL::ACTION eq 'imstorage' && $INFO{'viewfolder'} eq 'out')) {
 				my @usernameto;
 				if ($messageStatus eq 'gr') {
 					my ($guestName, $guestEmail) = split(/ /, $musernameto);
@@ -1898,7 +1898,7 @@ sub drawPMView {
 				}
 				$MCContent .= join(', ', @usernameto); # [outbox / storage out]
 
-			} elsif ($action eq 'imdraft') {
+			} elsif ($GLOBAL::ACTION eq 'imdraft') {
 				my @usernameto;
 				if ($messageStatus =~ /b/) {
 					foreach my $uname (split(/,/, $musernameto)) {
@@ -2016,11 +2016,11 @@ sub drawPMView {
 			my ($actionsMenu, $actionsMenuselect, $storefolderView);
 			$mreplyno++;
 			## build actionsMenu for output
-			if ($action eq 'im' && !$viewBMess) { 
+			if ($GLOBAL::ACTION eq 'im' && !$viewBMess) { 
 				$actionsMenu = qq~<a href="$scripturl?action=imsend;caller=$callerid;quote=$mreplyno;to=$useraccount{$musername};id=$messageid">$inmes_txt{'145'}</a>$sepa<a href="$scripturl?action=imsend;caller=$callerid;reply=$mreplyno;to=$useraccount{$musername};id=$messageid">$inmes_txt{'146'}</a>$sepa<a href="$scripturl?action=imsend;caller=$callerid;forward=1;quote=$mreplyno;id=$messageid">$inmes_txt{'147'}</a>$sepa<a href="$scripturl?action=deletemultimessages;caller=$callerid;deleteid=$messageid" onclick="return confirm('$inmes_txt{'770'}')">$inmes_txt{'remove'}</a>~; 
 
 			## broadcast messages can only be quoted on!
-			} elsif ($action eq 'im' && $viewBMess) {
+			} elsif ($GLOBAL::ACTION eq 'im' && $viewBMess) {
 				if ($messageStatus eq 'g') {
 					$actionsMenu = qq~<a href="$scripturl?action=imsend;caller=$callerid;quote=$mreplyno;replyguest=1;id=$messageid">$inmes_txt{'146'}</a>~;
 				} else {
@@ -2032,12 +2032,12 @@ sub drawPMView {
 				}
 
 			## for others
-			} elsif ($action eq 'imdraft') { 
+			} elsif ($GLOBAL::ACTION eq 'imdraft') { 
 				$actionsMenu = qq~<a href="$scripturl?action=deletemultimessages;caller=$callerid;deleteid=$messageid" onclick="return confirm('$inmes_txt{'770'}')">$inmes_txt{'remove'}</a>~;
-			} elsif ($action eq 'imoutbox') { 
+			} elsif ($GLOBAL::ACTION eq 'imoutbox') { 
 				$actionsMenu = qq~$callBack<a href="$scripturl?action=deletemultimessages;caller=$callerid;deleteid=$messageid" onclick="return confirm('$inmes_txt{'770'}')">$inmes_txt{'remove'}</a>~;
 			} else {
-				if ($action eq 'imstorage') { $storefolderView = ";viewfolder=$INFO{'viewfolder'}"; }
+				if ($GLOBAL::ACTION eq 'imstorage') { $storefolderView = ";viewfolder=$INFO{'viewfolder'}"; }
 				if ($messageStatus =~ /gr/) {
 					$actionsMenu = qq~<a href="$scripturl?action=deletemultimessages;caller=$callerid;deleteid=$messageid$storefolderView" onclick="return confirm('$inmes_txt{'770'}')">$inmes_txt{'remove'}</a>~;
 				} else {
@@ -2046,7 +2046,7 @@ sub drawPMView {
 			}
 			if (!$viewBMess || ($viewBMess && ($iamadmin || $username eq $musername))) {
 				$actionsMenuselect = qq~<input type="checkbox" name="message$messageid" id="message$messageid" class="$class_PM_list" value="1" style="cursor: hand;" /> <label for="message$messageid">$inmes_txt{'delete'}</label>~;
-				if ($action ne 'imdraft' && !$viewBMess) { $actionsMenuselect .= qq~/<label for="message$messageid">$inmes_imtxt{'store'}</label>~; }
+				if ($GLOBAL::ACTION ne 'imdraft' && !$viewBMess) { $actionsMenuselect .= qq~/<label for="message$messageid">$inmes_imtxt{'store'}</label>~; }
 			}
 			$MCContent .= qq~
 	  </tr>
@@ -2104,7 +2104,7 @@ sub drawPMView {
 			my $imbar = 0;
 			my $imrest = 0;
 			my $messageCounter = @dimmessages;
-			if ($action eq 'im' && !$viewBMess) {
+			if ($GLOBAL::ACTION eq 'im' && !$viewBMess) {
 				if ($messageCounter != 0 && $numibox != 0) {
 					$impercent = int(100 / $numibox * $messageCounter);
 					$imbar = int(200 / $numibox * $messageCounter);
@@ -2113,7 +2113,7 @@ sub drawPMView {
 				$intext = qq~($inmes_imtxt{'13'} $messageCounter $inmes_imtxt{'01'} $numibox $inmes_imtxt{'19'} $inmes_txt{'inbox'} $inmes_txt{'folder'})~;
 			}
 
-			elsif ($action eq 'imoutbox') {
+			elsif ($GLOBAL::ACTION eq 'imoutbox') {
 				if ($messageCounter != 0 && $numobox != 0) {
 					$impercent = int(100 / $numobox * $messageCounter);
 					$imbar = int(200 / $numobox * $messageCounter);
@@ -2121,14 +2121,14 @@ sub drawPMView {
 				$intext = qq~($inmes_imtxt{'13'} $messageCounter $inmes_imtxt{'01'} $numobox $inmes_imtxt{'19'} $inmes_txt{'outbox'} $inmes_txt{'folder'})~;
 			}
 
-			elsif ($action eq 'imdraft') {
+			elsif ($GLOBAL::ACTION eq 'imdraft') {
 				if ($messageCounter != 0 && $numdraft != 0) {
 					$impercent = int(100 / $numdraft * $messageCounter);
 					$imbar = int(200 / $numdraft * $messageCounter);
 				}
 				$intext = qq~($inmes_imtxt{'13'} $messageCounter $inmes_imtxt{'01'} $numdraft $inmes_imtxt{'19'} $inmes_txt{'draft'} $inmes_txt{'folder'})~;
 			}
-			elsif ($action eq 'imstorage') {
+			elsif ($GLOBAL::ACTION eq 'imstorage') {
 				if ($messageCounter != 0 && $numstore != 0) {
 					$impercent = int(100 / $numstore * $messageCounter);
 					$imbar = int(200 / $numstore * $messageCounter);
@@ -2144,7 +2144,7 @@ sub drawPMView {
 			$intext = '';
 			$imbargfx = '';
 		}
-		unless ($action eq 'imstorage' && $INFO{'viewfolder'} eq '') { 
+		unless ($GLOBAL::ACTION eq 'imstorage' && $INFO{'viewfolder'} eq '') { 
 			$removeButton = qq~<input type="submit" name="imaction" value="$inmes_txt{'remove'}" class="button" onclick="return confirm('$inmes_txt{'delmultipms'}');" />~;
 			$inmes_txt{'777'} =~ s/REMOVE/$removeButton/;
 			$removeButton = $inmes_txt{'777'};
@@ -2157,7 +2157,7 @@ sub drawPMView {
 			if (!$viewBMess) {
 				$MCContent .= qq~
 		<span  class="small"><b>$imbargfx&nbsp;$intext</b><br /><br /></span>~ if $imbargfx || $intext;
-				unless ($action eq 'imstorage' && $INFO{'viewfolder'} eq '') { $MCContent .= $movebutton; }
+				unless ($GLOBAL::ACTION eq 'imstorage' && $INFO{'viewfolder'} eq '') { $MCContent .= $movebutton; }
 			}
 			if (!$viewBMess || ($viewBMess && ($iamadmin|| $deleteButton))) {
 				$MCContent .= qq~ $removeButton<br /><br />~;
@@ -2167,7 +2167,7 @@ sub drawPMView {
 	  </tr>
 			~;
 
-			if ((!$viewBMess || ($viewBMess && ($iamadmin || $deleteButton))) && !($action eq 'imstorage' && $INFO{'viewfolder'} eq '')) {
+			if ((!$viewBMess || ($viewBMess && ($iamadmin || $deleteButton))) && !($GLOBAL::ACTION eq 'imstorage' && $INFO{'viewfolder'} eq '')) {
 				$MCContent .= qq~
 	  <tr>
 	    <td class="windowbg" colspan="3" align="right">
@@ -2251,18 +2251,18 @@ sub LoadBuddyList {
 
 sub mcMenu {
 	my ($pmclass, $profclass, $postclass);
-	if ($action eq "mycenter" || $action eq "im" || $action eq "imdraft" || $action eq "imoutbox" || $action eq "imstorage" || $action eq "imsend" || $action eq "imsend2" || $action eq "imshow") {
+	if ($GLOBAL::ACTION eq "mycenter" || $GLOBAL::ACTION eq "im" || $GLOBAL::ACTION eq "imdraft" || $GLOBAL::ACTION eq "imoutbox" || $GLOBAL::ACTION eq "imstorage" || $GLOBAL::ACTION eq "imsend" || $GLOBAL::ACTION eq "imsend2" || $GLOBAL::ACTION eq "imshow") {
 		$pmclass = qq~ class="selected"~;
 		if ($PM_level == 0 || ($PM_level == 2 && !$staff) || ($PM_level == 3 && !$iamadmin && !$iamgmod)) {
 			$profclass = qq~ class="selected"~;
 		}
 	}
 
-	if ($action eq "profileCheck" || $action eq "myviewprofile" || $action eq "myprofile" || $action eq "myprofileContacts" || $action eq "myprofileOptions" || $action eq "myprofileBuddy" || $action eq "myprofileIM" || $action eq "myprofileAdmin") {
+	if ($GLOBAL::ACTION eq "profileCheck" || $GLOBAL::ACTION eq "myviewprofile" || $GLOBAL::ACTION eq "myprofile" || $GLOBAL::ACTION eq "myprofileContacts" || $GLOBAL::ACTION eq "myprofileOptions" || $GLOBAL::ACTION eq "myprofileBuddy" || $GLOBAL::ACTION eq "myprofileIM" || $GLOBAL::ACTION eq "myprofileAdmin") {
 		$profclass = qq~ class="selected"~;
 	}
 
-	if ($action eq "favorites" || $action eq "shownotify" || $action eq "myusersrecentposts") {
+	if ($GLOBAL::ACTION eq "favorites" || $GLOBAL::ACTION eq "shownotify" || $GLOBAL::ACTION eq "myusersrecentposts") {
 		$postclass = qq~ class="selected"~;
 	}
 

@@ -15,7 +15,7 @@
 ###############################################################################
 
 $newsettingsplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 # Figure out what tabset to use, depending on the page= parameter.
 my %settings_dispatch = (

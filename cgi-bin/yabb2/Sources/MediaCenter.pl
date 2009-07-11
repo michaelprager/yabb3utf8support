@@ -15,7 +15,7 @@
 ###############################################################################
 
 $mediacenterplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 sub embed {
 	if ($guest_media_disallowed && $iamguest){
@@ -27,7 +27,7 @@ sub embed {
 			if ($regtype) { $video .= qq~ $maintxt{'42'} <a href="$scripturl?action=register">$img{'register'}</a> !!~; }
 		}
 
-	} elsif ($action =~ /^RSS/) {
+	} elsif ($GLOBAL::ACTION =~ /^RSS/) {
 		$video = qq~$maintxt{'40a'}&nbsp;&nbsp;~;
 		$video .= qq~$maintxt{'41'} <a href="$scripturl?action=login;sesredir=num\~$curnum">$img{'login'}</a>~;
 		if ($regtype) { $video .= qq~ $maintxt{'42'} <a href="$scripturl?action=register">$img{'register'}</a> !!~; }

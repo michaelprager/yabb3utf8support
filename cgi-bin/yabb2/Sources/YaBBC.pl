@@ -15,7 +15,7 @@
 ###############################################################################
 
 $yabbcplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('Post');
 
@@ -99,7 +99,7 @@ sub quotemsg {
 	elsif ($qlink eq 'impost') {
 		$_ = $daytxt ? $post_txt{'600a_d'} : $post_txt{'600a'};
 		$_ =~ s~AUTHOR2~$scripturl?action=viewprofile;username=$useraccount{$qauthor}~g; }
-	elsif ($action ne 'imshow' && $action ne 'imsend' && $action ne 'imsend2') { $_ = $daytxt ? $post_txt{'600_d'} : $post_txt{'600'}; }
+	elsif ($GLOBAL::ACTION ne 'imshow' && $GLOBAL::ACTION ne 'imsend' && $GLOBAL::ACTION ne 'imsend2') { $_ = $daytxt ? $post_txt{'600_d'} : $post_txt{'600'}; }
 	else  { $_ = $daytxt ? $post_txt{'599_d'} : $post_txt{'599'}; }
 	$_ =~ s~AUTHOR~$fqauthor~g;
 	$_ =~ s~QUOTELINK~$scripturl?num=$qlink~g;

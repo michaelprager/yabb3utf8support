@@ -86,7 +86,7 @@ if ($currentboard ne '') {
 
 	unless ($iamadmin) {
 		my $accesstype = "";
-		if ($action eq "post") {
+		if ($GLOBAL::ACTION eq "post") {
 			if ($INFO{'title'} eq 'CreatePoll' || $INFO{'title'} eq 'AddPoll') {
 				$accesstype = 3;    # Post Poll
 			} elsif ($INFO{'num'}) {
@@ -124,9 +124,9 @@ sub is_admin { if (!$iamadmin) { &fatal_error("no_access"); } }
 sub is_admin_or_gmod {
 	if (!$iamadmin && !$iamgmod) { &fatal_error("no_access"); }
 
-	if ($iamgmod && $action ne "") {
+	if ($iamgmod && $GLOBAL::ACTION ne "") {
 		require "$vardir/gmodsettings.txt";
-		if ($gmod_access{"$action"} ne "on" && $gmod_access2{"$action"} ne "on") {
+		if ($gmod_access{"$GLOBAL::ACTION"} ne "on" && $gmod_access2{"$GLOBAL::ACTION"} ne "on") {
 			&fatal_error("no_access");
 		}
 	}
@@ -142,7 +142,7 @@ sub banning {
 	foreach (split(/,/, $ip_banlist)) { # IP BANNING
 		&write_banlog("$user_ip") if $user_ip =~ /^$_/;
 	}
-	if (!$iamguest || $action eq 'register2') {
+	if (!$iamguest || $GLOBAL::ACTION eq 'register2') {
 		foreach (split(/,/, $email_banlist)) { # EMAIL BANNING
 			&write_banlog("$_ ($user_ip)") if $ban_email =~ /$_/i;
 		}

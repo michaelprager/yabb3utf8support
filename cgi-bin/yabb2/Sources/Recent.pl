@@ -15,7 +15,7 @@
 ###############################################################################
 
 $recentplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 # Sub Recent_Topics_Posts shows
 # - all the most recently posted topics (recenttopics)
@@ -28,7 +28,7 @@ sub Recent_Topics_Posts {
 
 	my ($recent_topics, $display, @data, $numfound, %catid, %catname, $curboard, $boardperms, $i, $c, @mess, @messages, $tnum, $tsub, $tname, $temail, $tdate, $treplies, $tusername, $ticon, $tstate, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $mns, $mtime, $board, $notify, $registrationdate, $icanbypass);
 
-	$recent_topics = $action eq 'recenttopics' ? 1 : 0;
+	$recent_topics = $GLOBAL::ACTION eq 'recenttopics' ? 1 : 0;
 
 	$display = $FORM{'display'} || $INFO{'display'} || 10;
 	if ($display < 0) { $display = 5; }

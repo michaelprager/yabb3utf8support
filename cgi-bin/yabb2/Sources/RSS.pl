@@ -17,7 +17,7 @@
 ###############################################################################
 
 $rssplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 # Change the error routine for here.
 $SIG{__WARN__} = sub { &RSS_error(@_) };

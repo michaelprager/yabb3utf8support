@@ -15,7 +15,7 @@
 ###############################################################################
 
 $displayplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('Display');
 &LoadLanguage('FA');
@@ -927,7 +927,7 @@ var GB_ROOT_DIR = "$yyhtml_root/greybox/";
 	if ($replybutton and $enable_quickreply) {
 		$yymain =~ s~(<!-- Threads Admin Button Bar start -->.*?</td>)~$1<td align="right">{yabb forumjump}</td>~s;
 		require "$sourcedir/Post.pl";
-		$action = 'post';
+		$GLOBAL::ACTION = 'post';
 		$INFO{'title'} = 'PostReply';
 		$Quick_Post = 1;
 		$message = '';

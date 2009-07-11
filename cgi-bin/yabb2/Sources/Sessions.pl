@@ -15,7 +15,7 @@
 ###############################################################################
 
 $sessionsplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('Sessions');
 
@@ -98,7 +98,7 @@ sub SessionReval2 {
 
 		require "$sourcedir/LogInOut.pl";
 		$sharedLogin_text   = $session_txt{'6'};
-		$action             = "login";
+		$GLOBAL::ACTION             = "login";
 		&Login;
 	} else {
 		$iamadmin     = ${$uid.$username}{'position'} eq 'Administrator' ? 1 : 0;

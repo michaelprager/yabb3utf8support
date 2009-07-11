@@ -15,7 +15,7 @@
 ###############################################################################
 
 $notifyplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('Notify');
 
@@ -133,7 +133,7 @@ sub BoardNotify2 {
 			&ManageBoardNotify("delete", $variable, $username);
 		}
 	}
-	if ($action eq "boardnotify3") {
+	if ($GLOBAL::ACTION eq "boardnotify3") {
 		$yySetLocation = qq~$scripturl?board=$INFO{'board'}~;
 	} else {
 		$yySetLocation = qq~$scripturl?action=shownotify~;
@@ -230,7 +230,7 @@ sub Notify4 {
 			&ManageThreadNotify("delete", $threadno, $username);
 		}
 	}
-	$action = 'shownotify';
+	$GLOBAL::ACTION = 'shownotify';
 	&ShowNotifications;
 }
 
@@ -457,7 +457,7 @@ sub NotificationAlert {
 		}
 	}
 
-	&LoadCensorList if $action eq 'shownotify';
+	&LoadCensorList if $GLOBAL::ACTION eq 'shownotify';
 
 	foreach $mythread (@tmaildir) { # number of next thread
 		# see if thread exists and search for it if moved
@@ -484,7 +484,7 @@ sub NotificationAlert {
 			## pull out board and last post
 			my $boardid = ${$mythread}{'board'};
 			my ($msub,$mname,$musername,$new,$username_link,$catname_link,$boardname_link);
-			if ($action eq 'shownotify') {
+			if ($GLOBAL::ACTION eq 'shownotify') {
 				unless (${${'notify'.$boardid.$mythread}}[0]) {
 					my ($messageid,$messagesubject);
 					foreach (&read_DBorFILE(0,'',$boardsdir,$boardid,'txt')) {

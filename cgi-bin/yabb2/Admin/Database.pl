@@ -12,10 +12,10 @@
 #               with assistance from the YaBB community.                      #
 # Sponsored by: Xnull Internet Media, Inc. - http://www.ximinc.com            #
 #               Your source for web hosting, web design, and domains.         #
-###############################################################################
+####################$###########################################################
 
 $databaseplver = 'YaBB Mod $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('Database');
 

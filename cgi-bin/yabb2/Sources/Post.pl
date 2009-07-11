@@ -15,7 +15,7 @@
 ###############################################################################
 
 $postplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 &LoadLanguage('Post');
 &LoadLanguage('Display');
@@ -376,7 +376,7 @@ function checkForm(theForm) {
 		if ($curnum) { $thecurboard = qq~num=$curnum\;action=$destination~; }
 		elsif ($destination eq "guestpm2") { $thecurboard = qq~action=$destination~; }
 		else { $thecurboard = qq~board=$currentboard\;action=$destination~; }
-		if (&AccessCheck($currentboard, 4) eq 'granted' && $allowattach && ${$uid.$currentboard}{'attperms'} == 1 && -d "$uploaddir" && $action =~ /^(post|modify)2?$/ && (($allowguestattach == 0 && !$iamguest) || $allowguestattach == 1)) {
+		if (&AccessCheck($currentboard, 4) eq 'granted' && $allowattach && ${$uid.$currentboard}{'attperms'} == 1 && -d "$uploaddir" && $GLOBAL::ACTION =~ /^(post|modify)2?$/ && (($allowguestattach == 0 && !$iamguest) || $allowguestattach == 1)) {
 			$yymain .= qq~<form action="$scripturl?$thecurboard" method="post" name="postmodify" enctype="multipart/form-data" onsubmit="if(!checkForm(this)) {return false} else {return submitproc()}">~;
 		} else {
 			$yymain .= qq~<form action="$scripturl?$thecurboard" method="post" name="postmodify" enctype="application/x-www-form-urlencoded" onsubmit="if(!checkForm(this)) {return false} else {return submitproc()}">~;
@@ -748,7 +748,7 @@ function checkForm(theForm) {
 			if ($mreplies >= $VeryHotTopic) { $threadclass = 'veryhotthread'; }
 			elsif ($mreplies >= $HotTopic) { $threadclass = 'hotthread'; }
 		}
-		if($action ne "modalert") {
+		if($GLOBAL::ACTION ne "modalert") {
 			if ($staff) {
 				my $stselect = $thestatus =~ /s/ ? qq~ selected="selected"~ : '';
 				my $lcselect = $thestatus =~ /l/ ? qq~ selected="selected"~ : '';
@@ -1155,7 +1155,7 @@ function checkForm(theForm) {
 	</tr>~;
 
 		# File Attachment's Browse Box Code
-		if (&AccessCheck($currentboard, 4) eq 'granted' && $allowattach && ${$uid.$currentboard}{'attperms'} == 1 && -d "$uploaddir" && $action =~ /^(post|modify)2?$/ && (($allowguestattach == 0 && !$iamguest) || $allowguestattach == 1)) {
+		if (&AccessCheck($currentboard, 4) eq 'granted' && $allowattach && ${$uid.$currentboard}{'attperms'} == 1 && -d "$uploaddir" && $GLOBAL::ACTION =~ /^(post|modify)2?$/ && (($allowguestattach == 0 && !$iamguest) || $allowguestattach == 1)) {
 			$mfn = $mfn || $FORM{'oldattach'};
 			my @files = split(/,/, $mfn);
 
@@ -1178,7 +1178,7 @@ function checkForm(theForm) {
 
 			my $startcount;
 			for (my $y = 1; $y <= $allowattach; $y++) {
-				if (($action eq 'modify' || $action eq 'modify2') && $files[$y-1] ne "" && &checkfor_DBorFILE("$uploaddir/$files[$y-1]")) {
+				if (($GLOBAL::ACTION eq 'modify' || $GLOBAL::ACTION eq 'modify2') && $files[$y-1] ne "" && &checkfor_DBorFILE("$uploaddir/$files[$y-1]")) {
 					$startcount++;
 					$yymain .= qq~
 			<div id="attform_a_$y" style="float:left; width:23%;~ . ($y > 1 ? qq~ padding-top:5px~ : '') . qq~"><b>$fatxt{'6'} $y:</b></div>
@@ -1416,7 +1416,7 @@ showtpstatus();
 </script>~;
 	}
 
-	if ($action eq "modify" || $action eq "modify2") {
+	if ($GLOBAL::ACTION eq "modify" || $GLOBAL::ACTION eq "modify2") {
 		$displayname = qq~$mename~;
 	} else {
 		$displayname = ${$uid.$username}{'realname'};
@@ -1793,7 +1793,7 @@ sub Preview {
 		$name .= "($post_txt{'772'})";
 	}
 
-	if ($action eq 'modify2') {
+	if ($GLOBAL::ACTION eq 'modify2') {
 		$displayname = $FORM{'mename'};
 	} else {
 		$displayname = ${$uid.$username}{'realname'};

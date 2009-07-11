@@ -14,7 +14,7 @@
 ###############################################################################
 
 $extendedprofilesplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 ###############################################################################
 # This file was part of the Extended Profiles Mod which has been created by   #
@@ -760,7 +760,7 @@ sub ext_validate_submition {
 			if (!$field{'name'}) { $output .= $lang_ext{'field_not_existing1'}.$id.$lang_ext{'field_not_existing2'}."<br />\n"; }
 
 			# check if user is allowed to modify this setting
-			if ($action eq "register2") {
+			if ($GLOBAL::ACTION eq "register2") {
 				# if we're on registration page, igonre the 'editable_by_user' setting in case that 'required_on_reg' is set
 				if ($field{'editable_by_user'} == 0 && $field{'required_on_reg'} == 0) {
 					$output .= $field{'name'}.": ".$lang_ext{'not_allowed_to_modify'}."<br />\n";
@@ -860,7 +860,7 @@ sub ext_validate_submition {
 			if ($newprofile{'ext_'.$id} eq "http://") { $newprofile{'ext_'.$id} = ""; }
 		}
 		# load old settings which where invisible/restricted
-		if ($action eq "register2") {
+		if ($GLOBAL::ACTION eq "register2") {
 			if ($field{'editable_by_user'} == 0 && $field{'required_on_reg'} == 0) {
 				$newprofile{'ext_'.$id} = $value;
 			}

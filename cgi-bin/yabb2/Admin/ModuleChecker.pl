@@ -17,7 +17,7 @@
 ###############################################################################
 
 $modulecheckerplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 if ($ENV{'SCRIPT_FILENAME'} =~ /ModuleChecker\.\w+$/) {
 	# This part is only needed if you call ModuleChecker.pl directly

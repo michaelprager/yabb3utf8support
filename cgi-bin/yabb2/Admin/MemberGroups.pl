@@ -15,7 +15,7 @@
 ###############################################################################
 
 $membergroupsplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 sub EditMemberGroups {
 	&is_admin_or_gmod;
@@ -349,7 +349,7 @@ sub editAddGroup {
 	if ($noshow) { $pc = ''; }
 	if ($additional) { $admg = qq~ checked="checked"~; }
 
-	if ($posts eq "" && $action ne "editgroup1") { $post2 = qq~ checked="checked"~; $pt = qq~ disabled="disabled"~; }
+	if ($posts eq "" && $GLOBAL::ACTION ne "editgroup1") { $post2 = qq~ checked="checked"~; $pt = qq~ disabled="disabled"~; }
 	else { $post1 = qq~ checked="checked"~; $pd = qq~ disabled="disabled"~; }
 
 	if ($viewperms == 1) { $vc  = qq~ checked="checked"~; }
@@ -362,7 +362,7 @@ sub editAddGroup {
 
 <form name="groups" action="$adminurl?action=editAddGroup2" method="post">
 <input type="hidden" name="original" value="$INFO{'group'}" />
-<input type="hidden" name="origin" value="$action" />
+<input type="hidden" name="origin" value="$GLOBAL::ACTION" />
 
 <div class="bordercolor" style="padding: 0px; width: 99%; margin-left: 0px; margin-right: auto;">
 <table width="100%" cellspacing="1" cellpadding="4">
@@ -462,7 +462,7 @@ sub editAddGroup {
 	}
 
 	if ($addmemgroup_enabled > 0) {
-		if ($choosable || (!$choosable && $action ne 'editgroup1' && !$INFO{'group'})) {
+		if ($choosable || (!$choosable && $GLOBAL::ACTION ne 'editgroup1' && !$INFO{'group'})) {
 			$yymain .= qq~
 	<tr>
 		<td class="windowbg"><label for="additional">$amgtxt{'83'}</label></td>

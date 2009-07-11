@@ -15,7 +15,7 @@
 ###############################################################################
 
 $favoritesplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 sub Favorites {
 	&LoadLanguage('MessageIndex');
@@ -417,11 +417,11 @@ sub RemFav {
 	&UserAccount($username, "update");
 
 	return if $_[1] eq "nonexist";
-	if ($INFO{'ref'} ne "delete" && $action ne "multiremfav" && $INFO{'oldaddfav'}) {
+	if ($INFO{'ref'} ne "delete" && $GLOBAL::ACTION ne "multiremfav" && $INFO{'oldaddfav'}) {
 		$yySetLocation = qq~$scripturl?num=$favo/$goto~;
 		&redirectexit;
 	}
-	if ($action eq 'remfav') {
+	if ($GLOBAL::ACTION eq 'remfav') {
 		$elenable = 0;
 		die ""; # This is here only to avoid server error log entries!
 	}

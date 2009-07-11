@@ -106,12 +106,12 @@ if (-e "$vardir/Setup.lock") {
 	&tempstarter;
 	&tabmenushow;
 
-	if ($GLOBAL::ACTION && !$INFO{'convert'}) {
+	if ($GLOBAL::ACTION  && !$INFO{'convert'}) {
 		# needed for: sub conv_stringtotime
 		require Time::Local;
 		import Time::Local 'timelocal';
 
-	} elsif (!$GLOBAL::ACTION || $INFO{'convert'}) {
+	} elsif (!$GLOBAL::ACTION  || $INFO{'convert'}) {
 		$yytabmenu = $NavLink1 . $NavLink2 . $NavLink3 . $NavLink4 . $NavLink5 . $NavLink6;
 
 		$yymain = qq~
@@ -161,7 +161,7 @@ if (-e "$vardir/Setup.lock") {
 		~;
 	}
 
-	if ($GLOBAL::ACTION eq "prepare") {
+	if ($GLOBAL::ACTION  eq "prepare") {
 		&UpdateCookie("delete");
 
 		$username = 'Guest';
@@ -248,7 +248,7 @@ EOF
 		~;
 
 
-	} elsif ($GLOBAL::ACTION eq "members") {
+	} elsif ($GLOBAL::ACTION  eq "members") {
 		unless (exists $INFO{'mstart1'}) { &PrepareConv; }
 
 		$INFO{'mstart2'} ? &ConvertMembers2 : &ConvertMembers1;
@@ -356,7 +356,7 @@ EOF
 		}
 
 
-	} elsif ($GLOBAL::ACTION eq "members2") {
+	} elsif ($GLOBAL::ACTION  eq "members2") {
 		&setup_fatal_error("Member conversion (members2) 'mstart1' ($INFO{'mstart1'}), 'mstart2' ($INFO{'mstart2'}) error!") if $INFO{'mstart1'} <= 0 || $INFO{'mstart2'} < 0;
 
 		$yytabmenu = $NavLink1 . $NavLink2 . $NavLink3 . $NavLink4 . $NavLink5 . $NavLink6;
@@ -432,7 +432,7 @@ EOF
 		~;
 
 
-	} elsif ($GLOBAL::ACTION eq "cats") {
+	} elsif ($GLOBAL::ACTION  eq "cats") {
 		unless (exists $INFO{'bstart'} && exists $INFO{'bfstart'}) {
 			&GetCats;
 			&CreateControl;
@@ -502,7 +502,7 @@ EOF
 		~;
 
 
-	} elsif ($GLOBAL::ACTION eq "cats2") {
+	} elsif ($GLOBAL::ACTION  eq "cats2") {
 		&setup_fatal_error("Boards conversion (cats2) 'bstart' ($INFO{'bstart'}) or 'bfstart' ($INFO{'bfstart'}) error!") if (!$INFO{'bstart'} && !$INFO{'bfstart'}) || $INFO{'bstart'} < 0 || $INFO{'bfstart'} < 0;
 
 		$yytabmenu = $NavLink1 . $NavLink2 . $NavLink3 . $NavLink4 . $NavLink5 . $NavLink6;
@@ -579,7 +579,7 @@ EOF
 		~;
 
 
-	} elsif ($GLOBAL::ACTION eq "messages") {
+	} elsif ($GLOBAL::ACTION  eq "messages") {
 		&ConvertMessages;
 
 		$yytabmenu = $NavLink1 . $NavLink2 . $NavLink3 . $NavLink4a . $NavLink5 . $NavLink6;
@@ -645,7 +645,7 @@ EOF
 		~;
 
 
-	} elsif ($GLOBAL::ACTION eq "messages2") {
+	} elsif ($GLOBAL::ACTION  eq "messages2") {
 		&setup_fatal_error("Message conversion (messages2) 'count' ($INFO{'count'}) or 'tcount' ($INFO{'tcount'}) error!", 1) if (!$INFO{'count'} && !$INFO{'tcount'}) || $INFO{'count'} < 0 || $INFO{'tcount'} < 0;
 
 		my $bwidth = int($INFO{'count'} / $INFO{'totboard'} * 100);
@@ -730,7 +730,7 @@ EOF
 		~;
 
 
-	} elsif ($GLOBAL::ACTION eq "dates") {
+	} elsif ($GLOBAL::ACTION  eq "dates") {
 		&ConvertTimeToString;
 
 		$yytabmenu = $NavLink1 . $NavLink2 . $NavLink3 . $NavLink4 . $NavLink5a . $NavLink6;
@@ -793,7 +793,7 @@ EOF
 		~;
 
 
-	} elsif ($GLOBAL::ACTION eq "dates2") {
+	} elsif ($GLOBAL::ACTION  eq "dates2") {
 		&setup_fatal_error("Date & Time conversion (dates2) error! pollfile($INFO{'pollfile'}), polledfile($INFO{'polledfile'})", 1) if $INFO{'pollfile'} <= 0 && $INFO{'polledfile'} <= 0;
 
 		my $pollwidth = ($INFO{'totalpolls'} && $INFO{'pollfile'}) ? int($INFO{'pollfile'} / $INFO{'totalpolls'} * 100) : 100;
@@ -885,7 +885,7 @@ EOF
 		~;
 
 
-	} elsif ($GLOBAL::ACTION eq "cleanup") {
+	} elsif ($GLOBAL::ACTION  eq "cleanup") {
 		require "$boardsdir/forum.master";
 
 		if (!$INFO{'clean'}) {
@@ -996,7 +996,7 @@ EOF
 		&CreateConvLock;
 
 
-	} elsif ($GLOBAL::ACTION eq "cleanup2") {
+	} elsif ($GLOBAL::ACTION  eq "cleanup2") {
 		&setup_fatal_error("Clean Up (cleanup2) error! pass_error($INFO{'pass_error'}), my_re_tot($INFO{'my_re_tot'}), memb_index($INFO{'memb_index'}), my_mail_n($INFO{'my_mail_n'})", 1) if (!$INFO{'pass_error'} && $INFO{'my_re_tot'} <= 0) && $INFO{'memb_index'} <= 0 && $INFO{'my_mail_n'} <= 0 && $INFO{'fix_nopost'} <= 1;
 
 		my $re_tot_width = ($INFO{'total_re_tot'} && $INFO{'my_re_tot'}) ? int($INFO{'my_re_tot'} / $INFO{'total_re_tot'} * 100) : ($INFO{'total_re_tot'} ? 100 : 0);
@@ -2326,7 +2326,7 @@ sub conv_stringtotime {
 # Setup starts here                         #
 #############################################
 
-if (!$GLOBAL::ACTION) {
+if (!$GLOBAL::ACTION ) {
 	$rand_integer   = int(rand(99999));
 	$rand_cook_user = "Y2User-$rand_integer";
 	$rand_cook_pass = "Y2Pass-$rand_integer";
@@ -2350,22 +2350,22 @@ $cookieusername = "$cookinfo[0]";
 $cookiepassword = "$cookinfo[1]";
 $cookiesession_name = "$cookinfo[2]";
 
-if    ($GLOBAL::ACTION eq "adminlogin2") { &adminlogin2; }
-elsif ($GLOBAL::ACTION eq "setup1")      { &autoconfig; }
-elsif ($GLOBAL::ACTION eq "setup2")      {
+if    ($GLOBAL::ACTION  eq "adminlogin2") { &adminlogin2; }
+elsif ($GLOBAL::ACTION  eq "setup1")      { &autoconfig; }
+elsif ($GLOBAL::ACTION  eq "setup2")      {
 	&BrdInstall;
 	&MemInstall;
 	&MesInstall;
 	&VarInstall;
 	&save_paths;
 }
-elsif ($GLOBAL::ACTION eq "checkmodules") { &SetInstall2; &checkmodules; }
-elsif ($GLOBAL::ACTION eq "setinstall")   { &SetInstall; }
-elsif ($GLOBAL::ACTION eq "setinstall2")  { &SetInstall2; }
-elsif ($GLOBAL::ACTION eq "setup3")       { &CheckInstall; }
-elsif ($GLOBAL::ACTION eq "ready")        { &ready; }
+elsif ($GLOBAL::ACTION  eq "checkmodules") { &SetInstall2; &checkmodules; }
+elsif ($GLOBAL::ACTION  eq "setinstall")   { &SetInstall; }
+elsif ($GLOBAL::ACTION  eq "setinstall2")  { &SetInstall2; }
+elsif ($GLOBAL::ACTION  eq "setup3")       { &CheckInstall; }
+elsif ($GLOBAL::ACTION  eq "ready")        { &ready; }
 
-$yymain = "End of script reached without action: $GLOBAL::ACTION";
+$yymain = "End of script reached without action: $GLOBAL::ACTION ";
 &SimpleOutput;
 
 
@@ -3572,7 +3572,7 @@ sub SetInstall {
 }
 
 sub SetInstall2 {
-	if ($GLOBAL::ACTION eq "checkmodules" || $GLOBAL::ACTION eq "setinstall2") {
+	if ($GLOBAL::ACTION  eq "checkmodules" || $GLOBAL::ACTION  eq "setinstall2") {
 		$settings_file_version = "YaBB 0.0.0";
 		$maintenance = 1;
 		$members_total = 1;
@@ -4177,7 +4177,7 @@ EOF
 	fopen(SETTING, ">$vardir/Settings.pl") || &setup_fatal_error("$maintext_23 $vardir/Settings.pl: ", 1);
 	print SETTING &nicely_aligned_file($setfile);
 	fclose(SETTING);
-	if ($GLOBAL::ACTION eq "setinstall2") {
+	if ($GLOBAL::ACTION  eq "setinstall2") {
 		LoadUser('admin');
         ${$uid.'admin'}{'email'} = $webmaster_email;
         ${$uid.'admin'}{'timeoffset'} = $timeoffset; # must set before &timetostring($date)	 

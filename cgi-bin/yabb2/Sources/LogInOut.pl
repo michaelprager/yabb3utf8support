@@ -15,7 +15,7 @@
 ###############################################################################
 
 $loginoutplver = 'YaBB 2.4 $Revision$';
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 if ($regcheck) { require "$sourcedir/Decoder.pl"; }
 &LoadLanguage('LogInOut');
@@ -133,7 +133,7 @@ sub Logout {
 }
 
 sub sharedLogin {
-	if ($action eq 'login' || $maintenance) {
+	if ($GLOBAL::ACTION eq 'login' || $maintenance) {
 		$yynavigation = qq~&rsaquo; $loginout_txt{'34'}~;
 		$border = qq~<div class="bordercolor" style="width: 100%; margin-bottom: 8px; margin-left: auto; margin-right: auto;">~;
 		$border_with_title = qq~<div class="bordercolor" style="width: 700px; margin-bottom: 8px; margin-left: auto; margin-right: auto;">~;

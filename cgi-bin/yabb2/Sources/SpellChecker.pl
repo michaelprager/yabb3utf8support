@@ -18,7 +18,7 @@
 
 $spellcheckerplver = 'YaBB 2.4 $Revision$';
 
-if ($action eq 'detailedversion') { return 1; }
+if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 
 # Take the following comment out to see the error message if you
 # call the script directly from a new window of your browser
