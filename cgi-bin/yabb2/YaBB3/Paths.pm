@@ -50,12 +50,12 @@ our ($uploadurl);
 
 ###
 
-$lastsaved = "YaBB Administrator";
-$lastdate = "1247062983";
+$lastsaved = "";
+$lastdate = "";
 
 ########## Directories ##########
 
-$boardurl = "http://bftc/inst/dev/yabb/cgi-bin";  # URL of your board's folder (without trailing '/')
+$boardurl = "";  # URL of your board's folder (without trailing '/')
 $boarddir = ".";                                  # The server path to the board's folder (usually can be left as '.')
 $boardsdir = "./Boards";                          # Directory with board data files
 $datadir = "./Messages";                          # Directory with messages
@@ -66,15 +66,15 @@ $vardir = "./Variables";                          # Directory with variable file
 $langdir = "./Languages";                         # Directory with Language files and folders
 $helpfile = "./Help";                             # Directory with Help files and folders
 $templatesdir = "./Templates";                    # Directory with template files and folders
-$htmldir = "/var/www/html/inst/dev/yabb/public_html/yabbfiles"; # Base Path for all public-html files and folders
-$facesdir = "/var/www/html/inst/dev/yabb/public_html/yabbfiles/avatars"; # Base Path for all avatar files
-$uploaddir = "/var/www/html/inst/dev/yabb/public_html/yabbfiles/Attachments"; # Base Path for all attachment files
+$htmldir = ""; # Base Path for all public-html files and folders
+$facesdir = ""; # Base Path for all avatar files
+$uploaddir = ""; # Base Path for all attachment files
 
 ########## URL's ##########
 
-$yyhtml_root = "http://bftc/inst/dev/yabb/public_html/yabbfiles"; # Base URL for all html/css files and folders
-$facesurl = "http://bftc/inst/dev/yabb/public_html/yabbfiles/avatars"; # Base URL for all avatar files
-$uploadurl = "http://bftc/inst/dev/yabb/public_html/yabbfiles/Attachments"; # Base URL for all attachment files
+$yyhtml_root = ""; # Base URL for all html/css files and folders
+$facesurl = ""; # Base URL for all avatar files
+$uploadurl = ""; # Base URL for all attachment files
 
 # deprecated values removed, major version changes let you do that :-)
 
