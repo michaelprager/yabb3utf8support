@@ -45,7 +45,7 @@ $script_root =~ s/\/AdminIndex\.(pl|cgi)//ig;
 #require "Paths.pl";
 use YaBB3::Paths qw(:all);
 require "$vardir/Settings.pl";
-my $forumstylesurl = "$yyhtml_root/$templatesdir/Forum";
+my $adminstylesurl = "$yyhtml_root/$templatesdir/Admin";
 
 # Check allways for Time::HiRes
 eval { require Time::HiRes; import Time::HiRes qw(time); };
