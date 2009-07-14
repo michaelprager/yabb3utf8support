@@ -1,9 +1,9 @@
-package YaBB3::DataSource::MySQL;
+package YaBB3::DataSource::SQLite;
 use base 'YaBB3::DataSource::sql_base';
 use strict;
 
 ###############################################################################
-# YaBB3::DataSource::MySQL
+# YaBB3::DataSource::SQLite
 ###############################################################################
 # YaBB: Yet another Bulletin Board
 # Open-Source Community Software for Webmasters
@@ -23,11 +23,12 @@ use strict;
 
 (our $VERSION = '$Revision$') =~ s~^\$ R e v i s i o n: \s (.*) \s \$$~$1~x;
 
-# sql_base works fine for MySQL without any changes
+
+# sql_base works fine for SQLite without any changes
 # see YaBB3::DataSource::sql_base for more documentation
 
 sub initialize {
-    $_[0]->{config}{db_type} = "MySQL";
+    $_[0]->{config}{db_type} = "SQLite";
 }
 
 1;

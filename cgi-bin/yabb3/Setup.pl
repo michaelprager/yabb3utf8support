@@ -43,7 +43,9 @@ $script_root =~ s/\/Setup\.(pl|cgi)//ig;
 if (-e "./Paths.pl") { require "./Paths.pl"; }
 elsif (-e "$script_root/Paths.pl") { require "$script_root/Paths.pl"; }
 elsif (-e "$script_root/Variables/Paths.pl") { require "$script_root/Variables/Paths.pl"; }
-elsif (-e "$script_root/YaBB3/Paths.pm" { use YaBB3::Paths qw(:all); }
+elsif (-e "$script_root/YaBB3/Paths.pm") { use YaBB3::Paths qw(:all); }
+
+my $forumstylesurl = "$yyhtml_root/$templatesdir/Admin";
 
 # Check if it's blank Paths.pl or filled in one
 unless ($lastsaved) {
