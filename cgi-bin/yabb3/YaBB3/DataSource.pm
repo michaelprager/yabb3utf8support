@@ -59,7 +59,7 @@ sub new {
     }
 
     require $module_for{$args{type}};
-    return "YaBB3::DataSource::$args{type}"->new();
+    return "YaBB3::DataSource::$args{type}"->new( %args );
 }
 
 1;

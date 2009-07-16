@@ -29,11 +29,11 @@ sub new {
     my $self  = {};
     bless $self, $class;
 
-    carp "YaBB3::DataSource object not properly initialized: odd number of args"
+    die "YaBB3::DataSource object not properly initialized: odd number of args"
         if @_ % 2 == 1;
     my %args = @_;
 
-    croak "Database must be specified" unless defined $args{database};
+    die "Database must be specified" unless defined $args{database};
 
     $self->{config}     = \%args;
     $self->{connected}  = 0;
@@ -87,7 +87,7 @@ sub _connect {
     }
     $self->{dbh} = DBI->connect($dsn,
         $self->{config}->{user}, $self->{config}->{password})
-        or croak "Error connecting to database! $DBI::errstr";
+        or die "Error connecting to database! $DBI::errstr";
     $self->{connected} = 1;
 }
 
