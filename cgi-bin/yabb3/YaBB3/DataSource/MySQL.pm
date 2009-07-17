@@ -26,8 +26,8 @@ use strict;
 # sql_base works fine for MySQL without any changes
 # see YaBB3::DataSource::sql_base for more documentation
 
-sub initialize {
-    $_[0]->{config}{db_type} = "MySQL";
+sub _initialize {
+    $_[0]->{config}{db_type} = "mysql";
 }
 
 1;

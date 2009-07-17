@@ -22,13 +22,22 @@ use strict;
 #
 
 (our $VERSION = '$Revision$') =~ s~^\$ R e v i s i o n: \s (.*) \s \$$~$1~x;
+use YaBB3::Paths qw( $vardir );
+$YaBB3::Paths::DatabaseDir = "$vardir/database";
 
 
 # sql_base works fine for SQLite without any changes
 # see YaBB3::DataSource::sql_base for more documentation
 
-sub initialize {
+
+sub _initialize {
     $_[0]->{config}{db_type} = "SQLite";
+}
+
+sub _get_dsn {
+    my $self = shift;
+    my $loc = "$YaBB3::Paths::DatabaseDir/$self->{config}->{database}.sqlite"; 
+    return "dbi:SQLite:$loc";
 }
 
 1;

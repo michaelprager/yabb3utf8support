@@ -21,7 +21,7 @@ use strict;
 
 (our $VERSION = '$Revision$') =~ s~^\$ R e v i s i o n: \s (.*) \s \$$~$1~x;
 
-use File::Find ();
+use lib '.';
 use File::Basename ();
 use YaBB3::Language qw/ERROR/;
 use YaBB3::Settings;
@@ -32,14 +32,13 @@ $SETTINGS::ModuleDir = "YaBB3";
 my $DS_LOADED = 0;
 
 # this code finds the installed data source modules
-my @modules;
-File::Find::find( {wanted => \&perl_modules} ,
-                  "$SETTINGS::ModuleDir/DataSource" );
+opendir my $dir, "$SETTINGS::ModuleDir/DataSource"
+    or die "Can't read DataSource directory";
 my %module_for = 
-    map { (File::Basename::fileparse($_, qr/\.[^.]*/))[0] => $_ }
-    @modules;
-sub perl_modules { /^.*\.pm\z/s && push(@modules, $File::Find::name); }
-
+    map  { (File::Basename::fileparse($_, qr/\.[^.]*/))[0] => 1 }
+    grep { /^.*\.pm\z/s && -f "$SETTINGS::ModuleDir/DataSource/$_" }
+    readdir $dir;
+closedir $dir;
 
 sub new {
     my $class = shift;
@@ -58,7 +57,7 @@ sub new {
         die "Invalid data source." #$LANG::ERROR{INVALID_DS};
     }
 
-    require $module_for{$args{type}};
+    require "YaBB3/DataSource/$args{type}.pm";
     return "YaBB3::DataSource::$args{type}"->new( %args );
 }
 

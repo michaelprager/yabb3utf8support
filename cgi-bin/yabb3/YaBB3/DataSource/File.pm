@@ -219,52 +219,120 @@ use Fcntl qw( :flock );
 sub col_names { return $_[0]->{col_names}; }
 sub col_nums  { return $_[0]->{col_nums};  }
 sub column_num {
-    return $_[0]->{col_nums}->{$_[1]};
+    return $_[0]->{col_nums}->{uc($_[1])};
 }
 
 sub _get_cols {
     my ($self) = @_;
 
-    my ($col_names, $col_nums);
+    my ($col_names, $col_types, $col_nums, $pk_name);
 
     open my $col_fh, '<', "$self->{file_base}.cols"
         or die "Could not read columns $self->{file_base}.cols: $!";
-    my $columns = <$col_fh>;
-    chomp $columns;
-    @$col_names = split /\|/, $columns;
+    flock $col_fh, LOCK_SH
+        or die "Can't lock $self->{file_base}.cols: $!";
+    my @lines = <$col_fh>;
     close $col_fh;
+
+    for (@lines) { chomp; }
+
+    @$col_names = split /\|/, uc($lines[0]);
+    @$col_types = split /\|/, uc($lines[1]);
+    $pk_name    = uc($lines[2]);
 
     my $num_cols = scalar @$col_names;
     for (my $i = 0; $i < $num_cols; $i++) {
         $col_nums->{$col_names->[$i]} = $i;
     }
 
-    $self->{col_nums}  = $col_nums;
-    $self->{col_names} = $col_names;
+    $self->{col_nums}      = $col_nums;
+    $self->{col_names}     = $col_names;
+    $self->{col_datatypes} = $col_types;
+    $self->{primary_key}   = $pk_name;
 
     return;
 }
 
 #TODO
-=pod
-sub delete_one_row {
-    my ($self, $data, $fields) = @_;
+sub _check_pk {
 }
 
-sub update_one_row {
-    my ($self, $data, $new_fields) = @_;
+=oops, i got auto_increment and primary_key confused
+sub _get_next_pk {
+    my ($self) = @_;
+
+    open my $col_fh, '+<', "$self->{file_base}.cols"
+        or die "Could not read columns $self->{file_base}.cols: $!";
+    flock $col_fh, LOCK_EX
+        or die "Can't lock $self->{file_base}.cols: $!";
+
+    my @lines = <$col_fh>;
+    if (not defined $lines[3]) { $lines[3] = 0; }
+    chomp $lines[3];
+    $lines[3]++;
+    my $pk_val = $lines[3];
+    $lines[3] .= "\n";
+
+    # rewrite the file
+    seek $col_fh, 0, 0
+        or die "Seek error for $self->{file_base}.tbl: $!";
+    truncate $col_fh, 0
+        or die "Truncate error for $self->{file_base}.tbl: $!";
+    print $col_fh @lines;
+
+    close $col_fh;
+
+    return $pk_val;
 }
 
-sub update_specific_row {
-    my ($self, $data, $new_fields, $orig_fields) = @_;
+sub _update_next_pk {
+    my ($self, $pk_req) = @_;
+
+    open my $col_fh, '+<', "$self->{file_base}.cols"
+        or die "Could not read columns $self->{file_base}.cols: $!";
+    flock $col_fh, LOCK_EX
+        or die "Can't lock $self->{file_base}.cols: $!";
+
+    my @lines = <$col_fh>;
+    chomp $lines[3];
+    my $pk_val = $lines[3];
+
+    if ($pk_req > $pk_val) {
+        $lines[3] = "$pk_req\n";
+
+        # rewrite the file
+        seek $col_fh, 0, 0
+            or die "Seek error for $self->{file_base}.tbl: $!";
+        truncate $col_fh, 0
+            or die "Truncate error for $self->{file_base}.tbl: $!";
+        print $col_fh @lines;
+    }
+
+    close $col_fh;
+
+    return;
 }
+=cut
+
+#TODO
+
+#sub delete_one_row {
+#    my ($self, $data, $fields) = @_;
+#}
+
+#sub update_one_row {
+#    my ($self, $data, $new_fields) = @_;
+#}
+
+#sub update_specific_row {
+#    my ($self, $data, $new_fields, $orig_fields) = @_;
+#}
 
 # not sure how this one works yet
 #sub fetch_one_row { }
 
 # not sure what this one does
 #sub display_name { }
-=cut
 
 # corresponds to a SQL command to drop the table
 sub drop {
@@ -298,14 +366,30 @@ sub fetch_row {
 sub push_row {
     my ($self, $data, $fields) = @_;
 
+    # make sure undefined fields still get put in & write.
+    # added bonus of stopped a bunch of undef warnings
+    @$fields = map { defined $_ ? $_ : '' } @$fields;
+
     # we have to nuke all |s, because that's our delimeter...
-    for (@$fields) {
-        $_ =~ s/\|/&#124;/g;
+    for (@$fields) { $_ =~ s/\|/&#124;/g; }
+
+    # handle primary key
+    if (defined $self->{primary_key} and $self->{primary_key} ne "") {
+        my $col = $self->{col_nums}{uc($self->{primary_key})};
+        if ($fields->[$col] eq "") {
+            die "Primary Key field ($self->{primary_key}) cannot be empty!";
+        #    $fields->[$col] = $self->_get_next_pk();
+        }
+        else {
+        #    $self->_check_pk();
+        }
+        #else {
+        #    $self->_update_next_pk($fields->[$col]);
+        #}
     }
 
     my $fh = $self->{fh};
-    # make sure undefined fields still get put in & write.
-    print $fh join('|', map { defined $_ ? $_ : '' } @$fields);
+    print $fh join('|', @$fields);
     print $fh "\n";
 
     return 1;
@@ -314,8 +398,17 @@ sub push_row {
 sub push_names {
     my ($self, $data, $row) = @_;
 
-    open my $col_fh, '>', "$self->{file_base}.cols"
-        or die "Could not read columns $self->{file_base}.cols: $!";
+    my $col_fh;
+    my $created = 0;
+    if (not -e "$self->{file_base}.cols") {
+        $created = 1;
+        open $col_fh, '>', "$self->{file_base}.cols"
+            or die "Could not create columns $self->{file_base}.cols: $!";
+    }
+    else {
+        open $col_fh, '+<', "$self->{file_base}.cols"
+            or die "Could not read/write columns $self->{file_base}.cols: $!";
+    }
     if ($YaBB3::DataSource::File::can_lock) {
         flock $col_fh, LOCK_EX
             or die "Can't lock $self->{file_base}.cols: $!";
@@ -327,14 +420,44 @@ sub push_names {
         }
     }
 
+    # if we didn't just create this table, get the PK value
+    my $pk_val = 0;
+    if (not $created) {
+        my @lines = <$col_fh>;
+        $pk_val = $lines[3];
+        chomp $pk_val;
+        # rewind & nuke current contents
+        seek $col_fh, 0, 0
+            or die "Seek error for $self->{file_base}.tbl: $!";
+        truncate $col_fh, 0
+            or die "Truncate error for $self->{file_base}.tbl: $!";
+    }
+
+    # store fields in object
     push @{$self->{col_names}}, @$row;
     $self->{col_nums}{$row} = scalar @{$self->{col_names}} - 1;
 
-#    for my $col (@$row) {
-        $self->{col_defs} = $data->{stmt}->{column_defs};
-#    
+    # store data types and PK
+    my $cols = $self->{col_names};
+    my @types;
+    my $pk = undef;
+    for my $col (@$row) {
+        my $cd = $data->{stmt}{column_defs}{$col};
+        push @types, $cd->{data_type};
+        if (not defined $pk and $cd->{constraints}) {
+            if (scalar grep {$_ eq "PRIMARY KEY"} @{$cd->{constraints}}) {
+                $pk = $col;
+            }
+        }
+    }
 
-    print $col_fh join('|', @{$self->{col_names}});
+    $self->{col_datatypes} = \@types;
+    if (defined $pk) { $self->{primary_key} = uc($pk); }
+
+    print $col_fh uc(join('|', @{$self->{col_names}})), "\n";
+    print $col_fh uc(join('|', @types)), "\n";
+    print $col_fh ( defined $pk ? $pk : '' ), "\n";
+    #print $col_fh ( defined $pk_val ? $pk_val : 0 );
 
     close $col_fh;
 }

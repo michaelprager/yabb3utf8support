@@ -38,15 +38,8 @@ sub new {
     $self->{config}     = \%args;
     $self->{connected}  = 0;
 
-    if ( not defined $args{db_type} or $args{db_type} eq "") {
-        $self->{config}->{db_type}  = undef;
-        $self->{config}->{user}     = undef;
-        $self->{config}->{password} = undef;
-    }
-    else {
-        if (not defined $args{user} or $args{user} eq "") {
-            $self->{config}->{user} = $self->{config}->{database};
-        }
+    if (not defined $args{user} or $args{user} eq "") {
+        $self->{config}->{user} = $self->{config}->{database};
     }
 
     # subclasses should override initialize
@@ -78,8 +71,8 @@ sub _connect {
     return if( $self->{connected} );
     die "db_type not set!" if not defined $self->{config}{db_type};
     my $dsn = "";
-    if ($self->{config}->{db_type} eq "SQLite") {
-        $dsn = "dbi:SQLite:dbname=$self->{config}->{database}";
+    if ($self->can('_get_dsn')) {
+        $dsn = $self->_get_dsn();
     }
     else {
         $dsn = "dbi:$self->{config}->{db_type}:database="
@@ -201,6 +194,22 @@ A hash reference to the hash of arguments passed into the new method.
 =head3 Return Value
 
 Does not return a value.
+
+=head2 _get_dsn( )
+
+This method returns a DSN for calling DBI. If this method is not available a
+generic DSN will be built like shown below:
+
+  $dsn = "dbi:$self->{config}->{db_type}:database="
+        ."$self->{config}->{database}";
+
+=head3 Arguments
+
+None
+
+=head3
+
+Returns a dsn usable for DBI.
 
 =head2 _connect( )
 
