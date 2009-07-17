@@ -89,4 +89,4 @@ for my $var (qw/
     eval "\$PATHS::$var = \$$var";
 }
 
-1;
+$YaBB3::Paths::DatabaseDir = "$vardir/database";
