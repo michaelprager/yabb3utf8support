@@ -711,6 +711,7 @@ sub ModifyProfileOptions {
 	}
 
 	$signature = ${$uid.$user}{'signature'};
+	$signature =~ s{(?:&&)|(?:&amp;&amp;)}{\n}g;
 	$signature =~ s/<br.*?>/\n/g;
 
 	$showProfile .= qq~
@@ -2371,6 +2372,7 @@ sub ViewProfile {
 	if (${$uid.$user}{'signature'} && (!$hide_signat_for_guests || !$iamguest)) {
 		# do some ubbc on the signature to display in the view profile area
 		$message     = ${$uid.$user}{'signature'};
+		$message =~ s{(?:&&)|(?:&amp;&amp;)}{<br />}g;
 		$displayname = ${$uid.$user}{'realname'};
 
 		if ($enable_ubbc) {
