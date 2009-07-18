@@ -244,26 +244,25 @@ sub Mailing2 {
 	if (!$FORM{'mailsend'} && !$FORM{'convert'}) { &fatal_error('no_access'); }
 	@convlist = ();
 	if ($FORM{'mailsend'} && $FORM{'emailtext'} ne '') {
-		$emailsubject = $FORM{'emailsubject'};
-		$emailsubject =~ s~\|~&#124;~g;
-		$emailtext = $FORM{'emailtext'};
-		$emailtext =~ s~\|~&#124;~g;
-		$emailtext =~ s/\r(?=\n*)//g;
+		$FORM{'emailsubject'} =~ s~\|~&#124;~g;
+		$FORM{'emailtext'} =~ s~\|~&#124;~g;
+		$FORM{'emailtext'} =~ s~\r~~g;
 		$mailline = qq~$date|$FORM{'emailsubject'}|$FORM{'emailtext'}|$username~;
 		&MailList($mailline);
 	}
 	(@mailgroups) = split(/\, /, $FORM{'field1'});
 	&ManageMemberinfo("load");
 	$i = 0;
+	my ($emailsubject,$emailtext);
 	foreach my $user (keys %memberinf) {
 		(undef, $memrealname, $mememail, $memposition, $memposts, $memaddgrp, undef) = split(/\|/, $memberinf{$user}, 7);
 		&FromHTML($memrealname);
 
 		if ($FORM{'mailsend'} && $FORM{'emailtext'} ne '') {
 			$emailsubject = $FORM{'emailsubject'};
-			$emailtext = $FORM{'emailtext'};
 			$emailsubject =~ s~\[name\]~$memrealname~ig;
 			$emailsubject =~ s~\[username\]~$user~ig;
+			$emailtext = $FORM{'emailtext'};
 			$emailtext =~ s~\[name\]~$memrealname~ig;
 			$emailtext =~ s~\[username\]~$user~ig;
 		}
