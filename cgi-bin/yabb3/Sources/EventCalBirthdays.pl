@@ -49,7 +49,8 @@ sub cal_birthdaylist {
 	#<--------------------------------------------->#
 
 	my $boxdays = qq~ <label for="selday"><span class="small">$var_cal{'calday'}</span></label>
-	<select class="input" name="selday" id="selday">\n~;
+	<select class="input" name="selday" id="selday">
+	<option value="0">---</option>\n~;
 	for ($i = 1; $i < 32; $i++) {
 		my $sel = "";
 		if ($mday == $i && !$sel_day) {
