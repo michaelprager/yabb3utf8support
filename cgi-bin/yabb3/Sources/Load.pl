@@ -268,7 +268,6 @@ sub LoadUserDisplay {
 
 	if (${$uid.$user}{'signature'}) {
 		$message = ${$uid.$user}{'signature'};
-		$message =~ s{(?:&&)|(?:&amp;&amp;)}{<br />}g;
 
 		if ($enable_ubbc) {
 			if (!$yyYaBBCloaded) { require "$sourcedir/YaBBC.pl"; }
