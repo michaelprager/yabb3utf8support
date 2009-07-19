@@ -1487,7 +1487,7 @@ $YaBBC_calout
 		$cal_display = qq~
 <tr>
 	<td align="left" class="$title_class" colspan="2">
-		<div style="float: left; width: 30%; padding-top: 1px; padding-bottom: 1px; text-align: left;"><img src="$imagesdir/eventcalicon.gif" border="0" alt="" /> $var_cal{'caltitle'}</div>
+		<div style="float: left; width: 30%; padding-top: 1px; padding-bottom: 1px; text-align: left;">$var_cal{'caltitle'}</div>
 		<div style="float: left; width: 70%; padding-top: 1px; padding-bottom: 1px; text-align: right;">$calgotobox</div>
 	</td>
 </tr>
@@ -1499,7 +1499,7 @@ $YaBBC_calout
 		&nbsp;
 	</td>
 	<td class="tabtitle" width="29%" height="25" valign="middle" align="left">
-		<img src="$imagesdir/eventcalicon.gif" border="0" alt="" /> $var_cal{'caltitle'}
+		$var_cal{'caltitle'}
 	</td>
 	<td class="tabtitle" width="69%" height="25" valign="middle" align="right">
 		$calgotobox
