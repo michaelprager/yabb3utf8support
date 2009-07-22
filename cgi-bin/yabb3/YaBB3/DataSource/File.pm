@@ -85,7 +85,12 @@ sub do_query {
 
 sub prepare {
     my ($self, $sql) = @_;
+
+    # add a couple things that SQL::Parser/Statement don't seem to support
+    $sql =~ s/(--.*)$/$2/mg; # /m makes $ match any EOL
     my $stmt = YaBB3::DataSource::File::Statement->new($sql, $parser);
+
+
     my $sth = {
         database        => $self->{config}{database},
         stmt            => $stmt,
