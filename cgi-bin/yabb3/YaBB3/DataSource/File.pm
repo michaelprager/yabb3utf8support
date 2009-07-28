@@ -23,6 +23,7 @@
 
 # Beware, ye who enter. There be dragons here.
 use strict;
+use DB_File;
 use SQL::Parser;
 use YaBB3::Paths qw( $vardir );
 $YaBB3::Paths::DatabaseDir = "$vardir/database";
@@ -86,8 +87,19 @@ sub do_query {
 sub prepare {
     my ($self, $sql) = @_;
 
+    return _empty() if not defined $sql;
+
     # add a couple things that SQL::Parser/Statement don't seem to support
-    $sql =~ s/(--.*)$/$2/mg; # /m makes $ match any EOL
+    $sql =~ s/(\-\-.*)$//mg; # /m makes $ match any EOL
+
+    return _empty() if $sql eq "" or $sql =~ /\A\s*\z/ms;
+
+    if ($sql =~ /CREATE INDEX (\w+) ON (\w+) \(\s*(\w+)\s*\)/i) {
+        my ($index_name, $table, $column) = ($1, $2, $3);
+      #  warn "create index $index_name on table $table, using $column";
+        return $self->_index_creator( $index_name, $table, $column );
+    }
+
     my $stmt = YaBB3::DataSource::File::Statement->new($sql, $parser);
 
 
@@ -100,6 +112,37 @@ sub prepare {
     bless $sth, 'YaBB3::DataSource::File::st';
     return $sth;
 }
+
+sub _index_creator {
+    my ($self, $index_name, $table, $column) = @_;
+    my $sth = {
+        database    => $self->{config}{database},
+        table       => $table,
+        index_name  => $index_name,
+        column      => $column,
+    };
+    bless $sth, 'YaBB3::DataSource::File::indexmaker';
+    return $sth;
+}
+
+sub _empty {
+    my $empty = {};
+    bless $empty, 'YaBB3::DataSource::File::empty';
+    return $empty;
+}
+
+package YaBB3::DataSource::File::empty;
+use strict;
+
+sub execute { return 1; }
+sub fetch {}
+
+package YaBB3::DataSource::File::indexmaker;
+use strict;
+
+# need to have this create an index on the column
+sub execute { return 1; }
+sub fetch {}
 
 package YaBB3::DataSource::File::st;
 use strict;
@@ -171,7 +214,7 @@ sub open_table {
     my ($self, $data, $table_name, $create_table, $lock_mode) = @_;
     my $file_base = $self->get_file($data, $table_name);
 
-    my $fh;
+    my %db;
 
     if ($create_table) {
         if( -e $file_base ) {
@@ -181,6 +224,8 @@ sub open_table {
             or die "Cannot create $file_base.tbl: $!";
         seek $fh, 0, 0
             or die "Seek Error: $!";
+        #tie %db, "DB_File", "$file_base.tbl", ORDWR|O_CREAT, 0666, $DB_BTREE
+        #    or die "Cannot create $file_base.tbl: $!";
     }
     else {
         open $fh, ($lock_mode ? "+<" : "<"), "$file_base.tbl"
@@ -430,7 +475,7 @@ sub push_names {
     if (not $created) {
         my @lines = <$col_fh>;
         $pk_val = $lines[3];
-        chomp $pk_val;
+        chomp $pk_val if defined $pk_val;
         # rewind & nuke current contents
         seek $col_fh, 0, 0
             or die "Seek error for $self->{file_base}.tbl: $!";

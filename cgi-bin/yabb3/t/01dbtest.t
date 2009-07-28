@@ -7,6 +7,12 @@ use lib '.';
 use lib './Modules';
 use YaBB3::DataSource;
 
+open my $schema, '<', 'db/schema.sql' or die "crappers! $!";
+my $data = do { local $/; <$schema> };
+close $schema;
+
+my @tests = map { { $_ => undef } } (split /;/, $data)[0];
+=oid
 my @tests = (
  {"  DROP TABLE IF EXISTS group_id" => undef,},
  {"  CREATE TABLE group_id (username CHAR(26),uid INT, gid INT)" => undef,},
@@ -104,10 +110,13 @@ MP3 PLAYERS
 FLASH
 }, } ,
 );
+=cut
 
-plan tests => 3 + 3 * scalar @tests;
+#plan tests => 3 + 3 * scalar @tests;
+plan tests => 1 + scalar @tests;
 
-for my $type (qw/File MySQL SQLite/) {
+#for my $type (qw/File MySQL SQLite/) {
+for my $type (qw/File/) {
     my $ds;
     ok($ds = YaBB3::DataSource->new(
         type => $type,
