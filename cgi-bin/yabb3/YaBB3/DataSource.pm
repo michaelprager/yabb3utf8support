@@ -30,6 +30,7 @@ use YaBB3::Settings;
 $SETTINGS::ModuleDir = "YaBB3";
 
 my $DS_LOADED = 0;
+my $tb_prefix;
 
 # this code finds the installed data source modules
 opendir my $dir, "$SETTINGS::ModuleDir/DataSource"
@@ -57,8 +58,17 @@ sub new {
         die "Invalid data source." #$LANG::ERROR{INVALID_DS};
     }
 
+    if (defined $args{prefix}) {
+        $tb_prefix = $args{prefix};
+    }
+
     require "YaBB3/DataSource/$args{type}.pm";
     return "YaBB3::DataSource::$args{type}"->new( %args );
+}
+
+sub parse_tables {
+    my $sql = $_[0];
+    $sql =~ s/{([^}]+)}/$tb_prefix$1/g;
 }
 
 1;
@@ -77,13 +87,13 @@ __END__
     my $ds = YaBB3::DataSource->new(type => "some_type");
 
     # SELECT
-    my $sth = $ds->do_query("SELECT * FROM somewhere");
+    my $sth = $ds->do_query("SELECT * FROM {somewhere}");
     while (defined(my $row = $sth->fetch)) {
         print "@$row\n";
     }
 
     # INSERT
-    my $sth = $ds->prepare("INSERT INTO somewhere ( ?, ?, ?)");
+    my $sth = $ds->prepare("INSERT INTO {somewhere} ( ?, ?, ?)");
     $ds->execute($val1, $val2, $val3);
 
 
@@ -101,7 +111,7 @@ document.
 
 =head1 FUNCTIONS
 
-=head2 new( type => "SourceType" );
+=head2 new( type => "SourceType", prefix => "y3_" );
 
 Creates a DataSource object which supports the data source type requested.
 Currently, the only argument is type. It defaults to "File" if left blank. The
@@ -114,6 +124,27 @@ DataSource types that are planned to ship with YaBB are:
 =item File -- For hosts who do not provide database connectivity.
 
 =back
+
+The prefix argument is optional and will set a prefix to be used for the table 
+names.
+
+=head2 parse_tables( $sql );
+
+Will parse $sql for table name placeholders and replace them with the proper
+table names. Currently, it only puts prefixes on the table names when
+required. For example, with a prefix of y3_, passing {Users} will yield
+y3_Users. This functions modifies the argument and does not return a
+meaningful value.
+
+    sub prepare {
+        my ($self, $sql) = @_;
+
+        # ... DataSource module code ...
+
+        YaBB3::DataSource::parse_tables( $sql );
+
+        # ... DataSource module code ...
+    }
 
 =head1 VALID SQL
 
@@ -353,7 +384,9 @@ Executes a query immediatly. Is equivalent to calling:
 
 =item $statement
 
-Contains a query written in SQL.
+Contains a query written in SQL. Table names will be enclosed in curly braces. 
+The SQL must be run through YaBB3::DataSource::parse_tables() before using it
+to change these into actual table names.
 
 =item [$val1, $val2, ...]
 
@@ -377,7 +410,9 @@ query must executed multiple times with different values
 
 =item $statement
 
-Contains a query written in SQL.
+Contains a query written in SQL. Table names will be enclosed in curly braces. 
+The SQL must be run through YaBB3::DataSource::parse_tables() before using it
+to change these into actual table names.
 
 =back
 

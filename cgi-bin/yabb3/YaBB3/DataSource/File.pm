@@ -39,6 +39,7 @@ $YaBB3::DataSource::File::can_lock = eval { flock STDOUT, 0; 1 };
 ###############################################################################
 package YaBB3::DataSource::File;
 use strict;
+use YaBB3::DataSource;
 
 # only need one parser object, ever
 my $parser = undef;
@@ -93,6 +94,8 @@ sub prepare {
     $sql =~ s/(\-\-.*)$//mg; # /m makes $ match any EOL
 
     return _empty() if $sql eq "" or $sql =~ /\A\s*\z/ms;
+
+    YaBB3::DataSource::parse_tables( $sql );
 
     if ($sql =~ /CREATE INDEX (\w+) ON (\w+) \(\s*(\w+)\s*\)/i) {
         my ($index_name, $table, $column) = ($1, $2, $3);
@@ -214,7 +217,7 @@ sub open_table {
     my ($self, $data, $table_name, $create_table, $lock_mode) = @_;
     my $file_base = $self->get_file($data, $table_name);
 
-    my %db;
+    my $fh;#%db;
 
     if ($create_table) {
         if( -e $file_base ) {
@@ -306,63 +309,6 @@ sub _get_cols {
 #TODO
 sub _check_pk {
 }
-
-=oops, i got auto_increment and primary_key confused
-sub _get_next_pk {
-    my ($self) = @_;
-
-    open my $col_fh, '+<', "$self->{file_base}.cols"
-        or die "Could not read columns $self->{file_base}.cols: $!";
-    flock $col_fh, LOCK_EX
-        or die "Can't lock $self->{file_base}.cols: $!";
-
-    my @lines = <$col_fh>;
-    if (not defined $lines[3]) { $lines[3] = 0; }
-    chomp $lines[3];
-    $lines[3]++;
-    my $pk_val = $lines[3];
-    $lines[3] .= "\n";
-
-    # rewrite the file
-    seek $col_fh, 0, 0
-        or die "Seek error for $self->{file_base}.tbl: $!";
-    truncate $col_fh, 0
-        or die "Truncate error for $self->{file_base}.tbl: $!";
-    print $col_fh @lines;
-
-    close $col_fh;
-
-    return $pk_val;
-}
-
-sub _update_next_pk {
-    my ($self, $pk_req) = @_;
-
-    open my $col_fh, '+<', "$self->{file_base}.cols"
-        or die "Could not read columns $self->{file_base}.cols: $!";
-    flock $col_fh, LOCK_EX
-        or die "Can't lock $self->{file_base}.cols: $!";
-
-    my @lines = <$col_fh>;
-    chomp $lines[3];
-    my $pk_val = $lines[3];
-
-    if ($pk_req > $pk_val) {
-        $lines[3] = "$pk_req\n";
-
-        # rewrite the file
-        seek $col_fh, 0, 0
-            or die "Seek error for $self->{file_base}.tbl: $!";
-        truncate $col_fh, 0
-            or die "Truncate error for $self->{file_base}.tbl: $!";
-        print $col_fh @lines;
-    }
-
-    close $col_fh;
-
-    return;
-}
-=cut
 
 #TODO
 

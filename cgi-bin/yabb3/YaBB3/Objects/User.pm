@@ -1,6 +1,7 @@
+package YaBB3::Objects::User;
+use strict;
 ###############################################################################
-# YaBB3::Objects::User                                                        #
-# YaBB3::Objects::UserData                                                    #
+# DateTime.pl                                                                 #
 ###############################################################################
 # YaBB: Yet another Bulletin Board                                            #
 # Open-Source Community Software for Webmasters                               #
@@ -20,97 +21,157 @@
 
 (our $VERSION = '$Revision$') =~ s~^\$ R e v i s i o n: \s (.*) \s \$$~$1~x;
 
-{
-    package YaBB3::Objects::User;
-    use strict;
+my @USER_FIELDS = 
+qw/ id         username   password    name        email     signature
+    registered posts      last_online last_post   time_zone time_format
+    avatar     customtext lang        permissions flags /;
+my @FIELD_MAP{@USER_FIELDS} = @USER_FIELDS;
+my %RESERVED = (
+    id       => 'id',
+    username => 'username', 
+    password => 'password',
+);
 
-    my %_ucache;
+sub new {
+    my $class = shift;
+    die "Hash required when calling YaBB3::Objects::User->new()" if @_%2 == 1;
 
-    sub new {
-        my $class = shift;
-        my $self = {};
-        bless $self, $class;
-        return $self;
+    my $args = { @_ };
+    die "userid argument must be set!" if (not defined $args->{userid});
+    my $userid = $args->{userid};
+
+    my $self = {
+        id => $args->{userid},
+#        args = { @_ },
+    };
+
+    bless $self, $class;
+    return $self;
+}
+
+# make a new user, also a constructor
+sub create {
+}
+
+####################
+
+sub load {
+    my $self = shift;
+
+    my $fields = join ',', @user_fields;
+    my $sth = $GLOBAL::DS->do_query( 
+        "SELECT $fields FROM {Users} WHERE id = ?", 
+        [$self->{id}]);
+    my $row = $sth->fetch;
+
+    # LANG
+    die "Unknown User" if not defined $row;
+
+    my %data;
+    @data{@user_fields} = @$row;
+    $self->{data} = \%data;
+}
+
+sub get {
+    my ($self, $attr) = @_;
+
+    # extended attr.
+    if (not exists $FIELD_MAP{$attr}) {
+        get_attr_grp($attr);
+        return $self->{ext}{$attr};
     }
-
-    sub mass_load {
-        my ($self, @userids) = @_;
-        my @to_load = grep {not exists $_ucache{$_}} @userids;
-
-        for my $userid (@to_load) {
-        # load them
-        # get basic user settings
-        # get user permissions
-        # make the users into objects
-            my $data = {
-                settings => {},
-                perms    => {},
-            };
-            $_ucache{$userid} = YaBB3::Objects::UserData->new($data);
-        }
-
-        return { @_ucache{@userids} };
+    else {
+        return defined $attr ? $self->{data}{$attr} : $self->{data};
     }
+}
 
-    sub load {
-        my ($self, $userid) = @_;
-        if (exists $_ucache{$userid}) {
-            return $_ucache{$userid};
+sub set {
+    my ($self, $attr, $val) = @_;
+
+    if (not exists $FIELD_MAP{$attr}) {
+        # already in DB ?
+        if (exists $self->{ext}{$attr}) {
+            $GLOBAL::DS->do_query(
+                "UPDATE {UsersExtendedInfo} SET fieldvalue = ? WHERE ufid = ?", 
+                [$val, $self->{userid}.$attr]);
         }
         else {
-            # do stuff
+            $GLOBAL::DS->do_query(
+                "INSERT INTO {UsersExtendedInfo} "
+               ."(ufid, userid, fieldname, fieldvalue) VALUES (?,?,?,?)"
+                [$self->{userid}.$attr, $self->{userid}, $attr, $val]);
+        }
+        $self->{ext}{$attr} = $val;
+    }
+    else {
+        if (exists $RESERVED{$attr}) {
+            #LANG
+            die "Cannot use ->set on '$RESERVED{$attr}'";
+        }
+        $GLOBAL::DS->do_query(
+            "UPDATE {Users} SET $FIELD_MAP{$attr} = ? WHERE id = ?", 
+            [$val, $self->{userid}]);
+        $self->{data}{$attr} = $val;
+    }
+}
+
+sub change_password {
+    my ($self, $old_password, $new_password) = @_;
+    if ($self->check_password($old_password)) {
+        _update_db_password($self->{userid}, $self->{data}{username}, $new_password);
+    }
+    else {
+    }
+}
+
+sub check_password {
+    my ($self, $password) = @_;
+
+    my $correct = generate_password($self->{data}{username}, $password);
+    if ($self->{data}{password} eq $correct) {
+        return 1;
+    }
+    else {
+        # backwards compatibility
+        require Digest::MD5;
+        if ($self->{data}{password} eq Digest::MD5::md5_base64($password)) {
+            _update_db_password($self->{userid}, $self->{data}{username}, $password);
+            return 1;
+        }
+        else {
+            return 0;
         }
     }
 }
 
-{
-    package YaBB3::Objects::UserData;
-    use strict;
+sub is_admin {
+}
 
-    sub new {
-        my $class   = shift;
-        my $data    = shift;
-        my $self    = defined $data ? $data : {};
-        bless $self, $class;
-        return $self;
-    }
+sub is_moderator {
+}
 
-    sub get_setting {
-        return $_[0]->{settings}{$_[1]};
-    }
+sub is_member {
+}
 
-    sub get_extinfo {
-        my ($self, $setting) = @_;
-        if (not exists $self->{extended}{$setting}) {
-            # get extended settings from db
-        }
-        return $self->{extended}{$setting};
-    }
+# MD5 sucks, but it's sufficient. If the NSA wants to use YaBB, we can swap it
+# out for SHA-2 or something. MD5 is still the most widely hosted Digest
+# module. Crypto in pure Perl sucks.
+sub generate_password {
+    my ($user, $pass) = @_;
 
-    sub can {
-        return $_[0]->{perms}{$_[1]};
-    }
+    require Digest::MD5;
 
-    sub is_admin {
-        return $_[0]->{perms}{is_admin};
-    }
+    my $salt = substr $pass, 0, 2;
+    return Digest::MD5::md5_base64( $user.$salt.$pass );
+}
 
-    sub set_setting {
-        return $_[0]->{settings}{$_[1]} = $_[2];
-    }
+sub _update_db_password {
+    my ($uid, $uname, $pass) = @_;
 
-    sub set_extinfo {
-        return $_[0]->{extinfo}{$_[1]} = $_[2];
-    }
-
-    sub set_permission {
-        return $_[0]->{perms}{$_[1]} = $_[2];
-    }
-
-    sub store {
-        my ($self) = @_;
-        # save user back to db
-    }
+    my $newpass = generate_password($uname, $pass);
+    $GLOBAL::DS->do_query(
+        "UPDATE {Users} SET password = ? WHERE id = ?",
+        [$newpass, $uid]);
 }
 
 1;

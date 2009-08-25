@@ -23,6 +23,7 @@ use strict;
 (our $VERSION = '$Revision$') =~ s~^\$ R e v i s i o n: \s (.*) \s \$$~$1~x;
 
 use DBI;
+use YaBB3::DataSource;
 
 sub new {
     my $class = shift;
@@ -59,6 +60,8 @@ sub prepare {
     die "EMPTY QUERY" if ($sql eq "");
 
     $self->_connect if not $self->{connected};
+
+    YaBB3::DataSource::parse_tables( $sql );
 
     # the statement object from DBI has a execute and fetch method. Handy, eh?
     return $self->{dbh}->prepare( $sql );
