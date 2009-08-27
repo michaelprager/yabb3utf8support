@@ -631,7 +631,7 @@ sub Display {
 		&ToChars($msub);
 		$msub = &Censor($msub);
 
-		$message = $postmessage;
+		$message = &Censor($postmessage);
 		&wrap;
 		($message,$movedflag) = &Split_Splice_Move($message,$viewnum);
 		if ($enable_ubbc) {
@@ -640,7 +640,6 @@ sub Display {
 		}
 		&wrap2;
 		&ToChars($message);
-		$message = &Censor($message);
 
 		$template_modify = '';
 		if ($mstate !~ /l/i || $icanbypass) {
