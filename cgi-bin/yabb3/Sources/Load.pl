@@ -56,7 +56,7 @@ sub LoadBoardControl {
 }
 
 sub LoadIMs {
-	return if ($iamguest || $PM_level == 0 || ($maintenance && !$iamadmin) || ($PM_level == 2 && !$staff) || ($PM_level == 3 && (!$iamadmin && !$iamgmod)));
+	return if ($iamguest || $PM_level == 0 || ($GLOBAL::SETTING::maintenance && !$iamadmin) || ($PM_level == 2 && !$staff) || ($PM_level == 3 && (!$iamadmin && !$iamgmod)));
 
 	&buildIMS($username, 'load') unless exists ${$username}{'PMmnum'};
 
@@ -100,7 +100,7 @@ sub LoadUserSettings {
 		# Make sure that if the password doesn't match,
 		# or the forum is in maintenace and you are not the admin,
 		# you get FULLY Logged out
-		if (${$uid.$username}{'password'} eq $password && (!$maintenance || ${$uid.$username}{'position'} eq 'Administrator')) {
+		if (${$uid.$username}{'password'} eq $password && (!$GLOBAL::SETTING::maintenance || ${$uid.$username}{'position'} eq 'Administrator')) {
 			if    (${$uid.$username}{'position'} eq 'Administrator')    { $staff = $iamadmin = 1; }
 			elsif (${$uid.$username}{'position'} eq 'Global Moderator') { $staff = $iamgmod  = 1; }
 			$iammod = &is_moderator($username);
@@ -802,7 +802,7 @@ sub load_IMS {
 }
 
 sub LoadBroadcastMessages { #check broadcast messages
-	return if ($iamguest || $PM_level == 0 || ($maintenance && !$iamadmin) || ($PM_level == 2 && !$staff) || ($PM_level == 3 && (!$iamadmin && !$iamgmod)));
+	return if ($iamguest || $PM_level == 0 || ($GLOBAL::SETTING::maintenance && !$iamadmin) || ($PM_level == 2 && !$staff) || ($PM_level == 3 && (!$iamadmin && !$iamgmod)));
 
 	my $builduser = shift;
 	$BCnewMessage = 0;

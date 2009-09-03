@@ -67,10 +67,10 @@ sub automaintenance {
 			&LoadLanguage('Error');
 			&alertbox($error_txt{'low_diskspace'}); 
 		}
-		$maintenance = 2 if !$maintenance;
+		$GLOBAL::SETTING::maintenance = 2 if !$GLOBAL::SETTING::maintenance;
 	} elsif (lc($maction) eq "off") {
 		&delete_DBorFILE("$vardir/maintenance.lock") || &fatal_error("cannot_open_dir","$vardir/maintenance.lock");
-		$maintenance = 0 if $maintenance == 2;
+		$GLOBAL::SETTING::maintenance = 0 if $GLOBAL::SETTING::maintenance == 2;
 	}
 }
 
@@ -183,7 +183,7 @@ sub template {
 	$output = join('', &read_DBorFILE(0,'',"$templatesdir/$usehead",$usehead,'html'));
 
 	if ($iamadmin || $iamgmod) {
-		if ($maintenance) { $yyadmin_alert .= qq~<br /><span class="highlight"><b>$load_txt{'616'}</b></span>~; }
+		if ($GLOBAL::SETTING::maintenance) { $yyadmin_alert .= qq~<br /><span class="highlight"><b>$load_txt{'616'}</b></span>~; }
 		if ($iamadmin && $rememberbackup) {
 			if ($lastbackup && $date > $rememberbackup + $lastbackup) {
 				$yyadmin_alert .= qq~<br /><span class="highlight"><b>$load_txt{'617'} ~ . &timeformat($lastbackup) . qq~</b></span>~;

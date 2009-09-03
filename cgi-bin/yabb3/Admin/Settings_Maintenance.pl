@@ -29,7 +29,7 @@ if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 		},
 		{
 			description => qq~<label for="maintenance">$admin_txt{'348'}</label>~,
-			input_html => qq~<input type="checkbox" name="maintenance" id="maintenance" value="1" ${ischecked($maintenance)}/>~,
+			input_html => qq~<input type="checkbox" name="maintenance" id="maintenance" value="1" ${ischecked($GLOBAL::SETTING::maintenance)}/>~,
 			name => 'maintenance',
 			validate => 'boolean',
 		},

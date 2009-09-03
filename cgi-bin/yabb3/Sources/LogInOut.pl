@@ -96,7 +96,7 @@ sub Login2 {
 	$sessionvalid = 1;
 	$iamguest = 0;
 
-	if ($maintenance && !$iamadmin) { $username = 'Guest'; &fatal_error("admin_login_only"); }
+	if ($GLOBAL::SETTING::maintenance && !$iamadmin) { $username = 'Guest'; &fatal_error("admin_login_only"); }
 	&banning;
 
 	if ($FORM{'cookielength'} == 1) { $ck{'len'} = 'Sunday, 17-Jan-2038 00:00:00 GMT'; }
@@ -133,7 +133,7 @@ sub Logout {
 }
 
 sub sharedLogin {
-	if ($GLOBAL::ACTION eq 'login' || $maintenance) {
+	if ($GLOBAL::ACTION eq 'login' || $GLOBAL::SETTING::maintenance) {
 		$yynavigation = qq~&rsaquo; $loginout_txt{'34'}~;
 		$border = qq~<div class="bordercolor" style="width: 100%; margin-bottom: 8px; margin-left: auto; margin-right: auto;">~;
 		$border_with_title = qq~<div class="bordercolor" style="width: 700px; margin-bottom: 8px; margin-left: auto; margin-right: auto;">~;

@@ -538,7 +538,7 @@ $templateset);						# Forum templates settings
 \$members_total = $members_total;			# Total number of Members
 \$last_member = "\Q$last_member\E";			# Name of the last Member
 
-\$maintenance = $maintenance;				# Set to 1 to enable Maintenance mode
+\$maintenance = $GLOBAL::SETTING::maintenance;				# Set to 1 to enable Maintenance mode
 \$rememberbackup = $rememberbackup;			# seconds past since last backup until alert is displayed
 \$maintenancetext = "\Q$maintenancetext\E";		# Admin-defined text for Maintenance mode
 
