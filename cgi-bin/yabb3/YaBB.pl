@@ -71,13 +71,24 @@ BEGIN {
     }
 } # END of BEGIN block
 
-no strict; # I can only do so much in a day...
+# load the data driver
+require "$YaBB3::Paths::vardir/dsn.txt";
+use YaBB3::DataSource;
+$GLOBAL::DS = YaBB3::DataSource->new(%GLOBAL::DSN);
 
 # If enabled: check if hard drive has enough space to safely operate the board
 my $hostchecked = &freespace;
 
 # Auto Maintenance Hook
-$maintenance = 2 if !$maintenance && -e "$vardir/maintenance.lock";
+$GLOBAL::SETTING::maintenance = 2 
+    if !$GLOBAL::SETTING::maintenance and -e "$vardir/maintenance.lock";
+
+# load the user's session
+use CGI::Session;
+$GLOBAL::SESSION = CGI::Session->new("driver:y3datasource", undef, 
+                                     {DS => $GLOBAL::DS});
+
+no strict; # I can only do so much in a day...
 
 &LoadCookie;       # Load the user's cookie (or set to guest)
 &LoadUserSettings; # Load user settings
@@ -136,7 +147,7 @@ if ($@) { &fatal_error("untrapped",":<br />$@"); }
 
 sub yymain {
 	# Choose what to do based on the form action
-	if ($maintenance) {
+	if ($GLOBAL::SETTING::maintenance) {
 		if    ($GLOBAL::ACTION  eq 'login2')    { require "$sourcedir/LogInOut.pl"; &Login2; }
 		# Allow password reminders in case admins forgets their admin password
 		elsif ($GLOBAL::ACTION  eq 'reminder')  { require "$sourcedir/LogInOut.pl"; &Reminder; }

@@ -75,7 +75,7 @@ if ($referersecurity) { &referer_check; } # Check if the action is allowed from 
 require "$sourcedir/Security.pl";
 &banning;          # Check for banned people
 
-$maintenance = 2 if !$maintenance && -e "$vardir/maintenance.lock";
+$GLOBAL::SETTING::maintenance = 2 if !$GLOBAL::SETTING::maintenance && -e "$vardir/maintenance.lock";
 
 # some maintenance stuff will stop after $max_process_time
 # in seconds, than the browser will call the script again
@@ -90,7 +90,7 @@ if ($@) { &fatal_error("untrapped",":<br />$@"); }
 
 sub yymain {
 	# Choose what to do based on the form action
-	if ($maintenance && $GLOBAL::action eq 'login2') { require "$sourcedir/LogInOut.pl"; &Login2; }
+	if ($GLOBAL::SETTING::maintenance && $GLOBAL::action eq 'login2') { require "$sourcedir/LogInOut.pl"; &Login2; }
 
 	# Do Sessions Checking
 	if (!$iamguest && $sessions == 1 && $sessionvalid != 1) {
@@ -100,7 +100,7 @@ sub yymain {
 
 	# Other users can do nothing here.
 	if (!$iamadmin && !$iamgmod) {
-		if ($maintenance) { require "$sourcedir/LogInOut.pl"; &InMaintenance; }
+		if ($GLOBAL::SETTING::maintenance) { require "$sourcedir/LogInOut.pl"; &InMaintenance; }
 		$yySetLocation = qq~$scripturl~;
 		&redirectexit;
 	}
@@ -316,7 +316,7 @@ sub AdminTemplate {
 	$topmenu_tree = qq~<a href="$scripturl?action=help;section=admin">$admintxt{'35'}</a>~;
 	$topmenu_four = qq~<a href="http://www.yabbforum.com">$admintxt{'36'}</a>~;
 
-	if ($maintenance) {
+	if ($GLOBAL::SETTING::maintenance) {
 		$yyadmin_alert .= qq~<br /><span style="font-size: 12px; background-color: #FFFF33;"><b>$load_txt{'616'}</b></span><br /><br />~;
 	}
 	if ($iamadmin && $rememberbackup) {

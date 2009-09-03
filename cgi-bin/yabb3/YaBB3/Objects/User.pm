@@ -1,11 +1,11 @@
 package YaBB3::Objects::User;
 use strict;
 ###############################################################################
-# DateTime.pl                                                                 #
+# Objects::User.pm                                                            #
 ###############################################################################
 # YaBB: Yet another Bulletin Board                                            #
 # Open-Source Community Software for Webmasters                               #
-# Version:        YaBB 2.4                                                    #
+# Version:        YaBB 3.0                                                    #
 # Packaged:       April 12, 2009                                              #
 # Distributed by: http://www.yabbforum.com                                    #
 # =========================================================================== #
@@ -46,6 +46,9 @@ sub new {
     };
 
     bless $self, $class;
+
+    $self->load;
+
     return $self;
 }
 
@@ -58,18 +61,36 @@ sub create {
 sub load {
     my $self = shift;
 
-    my $fields = join ',', @user_fields;
-    my $sth = $GLOBAL::DS->do_query( 
-        "SELECT $fields FROM {Users} WHERE id = ?", 
-        [$self->{id}]);
-    my $row = $sth->fetch;
+    {
+        my $fields = join ',', @user_fields;
+        my $sth = $GLOBAL::DS->do_query( 
+            "SELECT $fields FROM {Users} WHERE id = ?", 
+            [$self->{id}]);
+        my $row = $sth->fetch;
 
-    # LANG
-    die "Unknown User" if not defined $row;
+        # LANG
+        die "Unknown User" if not defined $row;
 
-    my %data;
-    @data{@user_fields} = @$row;
-    $self->{data} = \%data;
+        my %data;
+        @data{@user_fields} = @$row;
+        $self->{data} = \%data;
+    }
+
+    {
+        my $sth = $GLOBAL::DS->do_query( 
+            "SELECT {MemberInGroup}.gid, "
+             ."{MemberGroups}.name, {MemberGroups}.display, {MemberGroups}.permissions "
+          .  "FROM {MemberInGroup} "
+             ."JOIN {MemberGroups} ON {MemberInGroup}.gid = {MemberGroups}.id "
+          .  "WHERE {MemberInGroup}.userid = ?", 
+            [$self->{id}]);
+        while(defined(my $row = $sth->fetch)) {
+            $self->{groups}{$row->[0]} = $row;
+            if ($row->[3] =! /[\A,]admin,/) {
+                $self->{isadmin} = 1;
+            }
+        }
+    }
 }
 
 sub get {
@@ -121,6 +142,8 @@ sub change_password {
         _update_db_password($self->{userid}, $self->{data}{username}, $new_password);
     }
     else {
+        # LANG
+        die "PasswordFailure\n";
     }
 }
 
@@ -144,10 +167,14 @@ sub check_password {
     }
 }
 
+# $obj->is_admin
 sub is_admin {
+    return defined $_[0]->{isadmin} ? $_[0]->{isadmin} : 0;
 }
 
+# $obj->is_moderator($gid)
 sub is_moderator {
+    return defined $_[0]->{mod}{$_[1]} ? $_[0]->{mod}{$_[1]} : 0;
 }
 
 sub is_member {

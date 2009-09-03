@@ -3576,7 +3576,7 @@ sub SetInstall {
 sub SetInstall2 {
 	if ($GLOBAL::ACTION  eq "checkmodules" || $GLOBAL::ACTION  eq "setinstall2") {
 		$settings_file_version = "YaBB 0.0.0";
-		$maintenance = 1;
+		$GLOBAL::SETTING::maintenance = 1;
 		$members_total = 1;
 		$last_member = "admin";  
 		$rememberbackup = 0;
@@ -3754,7 +3754,7 @@ sub SetInstall2 {
 \$members_total = $members_total;                   # Total number of Members
 \$last_member = "\Q$last_member\E";                 # Name of the last Member
 
-\$maintenance = $maintenance;                       # Set to 1 to enable Maintenance mode
+\$maintenance = $GLOBAL::SETTING::maintenance;                       # Set to 1 to enable Maintenance mode
 \$rememberbackup = $rememberbackup;                 # seconds past since last backup until alert is displayed
 \$guestaccess = $guestaccess;                       # Set to 0 to disallow guests from doing anything but login or register
 
