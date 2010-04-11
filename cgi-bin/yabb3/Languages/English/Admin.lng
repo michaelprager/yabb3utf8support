@@ -437,6 +437,8 @@ $yycharset = 'ISO-8859-1';
 'diskspacecheck' => 'Enable free disk space check?<br /><span class="small">This checks for the available physical disk space on the Linux or Windows server. Be aware that not all of that disk space may be usable by you. It may show a number greater than allowed by your personal hosting plan!<br />If your available disk space drops below 100&thinsp;000 Bytes (100 KB), the forum will automatically go into Maintenance Mode to prevent running out of space and losing data.<br />Reminder: Only Admins can access the forum when in Maintenance Mode.</span>',
 'minlinkpost' => 'Minimum number of posts a member must have before links and images can be posted',
 'minlinkpost_exp' => 'This prevents spambots from spamposting directly after registering',
+'minlinksig' => 'Number of posts a member must have before links and images can be created in signature',
+'minlinksig_exp' => 'This avoids spambots from creating spam-signatures directly after registering',
 'stealth' => 'Enable \'Stealth\' mode for Admins and Global Mods?<br /><span class="small">If checked, Admins and Global Mods will not appear "online" to any other Member Groups or Guests.</span>',
 'by_pass_lock' => 'Select which Staff Member Groups may bypass the lock on threads:<br /><span class="small">This allows the selected groups to reply, modify, delete, etc. within a locked thread.</span>',
 'mlview' => 'Select the Member Groups allowed to view the Member List?',

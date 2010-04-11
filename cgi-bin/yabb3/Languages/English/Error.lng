@@ -140,6 +140,7 @@ $errorlngver = 'YaBB 2.4 $Revision$';
 'guest_taken'			=> "The username or email address given is already taken by a member.<br />Conflicting name or email: ",
 'quote_too_long'		=> "The message you have tried to quote is too long. Please shorten it.",
 'no_links_allowed'		=> "Sorry, you are not allowed to post messages containing active links to websites or images before you have posted $minlinkpost normal messages.",
+'no_siglinks_allowed'		=> "Sorry, you are not allowed to create a signature containing active links to websites or images before you have posted $minlinksig normal messages.",
 
 ## MoveTopic ##
 'move_not_allowed'		=> "You are not allowed to move topics...",

@@ -1604,6 +1604,13 @@ sub ModifyProfileContacts2 {
 	$member{'username'} = $user;
 
 	&fatal_error("not_allowed") if $member{'moda'} ne $profile_txt{'88'};
+	
+	if (!$minlinksig){ $minlinksig = 0 ;}
+	if (${$uid.$user}{'postcount'} < $minlinksig && !$iamadmin && !$iamgmod) {
+		if ($member{'signature'} =~ m~http:\/\/~ || $member{'signature'} =~ m~https:\/\/~ || $member{'signature'} =~ m~ftp:\/\/~ || $member{'signature'} =~ m~www.~ || $member{'signature'} =~ m~ftp.~ =~ m~\[url~ || $member{'signature'} =~ m~\[link~ || $member{'signature'} =~ m~\[img~ || $member{'signature'} =~ m~\[ftp~) {
+			&fatal_error("no_siglinks_allowed");
+		}
+	}
 
 	if ($emailnewpass && lc $member{'email'} ne lc ${$uid.$user}{'email'} && !$iamadmin) {
 		srand();

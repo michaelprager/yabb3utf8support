@@ -692,6 +692,7 @@ $use_MySQL_comment use DBI;				# Add DBI only if needed, comment out otherwise!
 \$spd_detention_time = $spd_detention_time;		# Time in seconds before a speedposting ban is lifted again
 \$min_post_speed = $min_post_speed;			# Minimum time in seconds between entering a post form and submitting a post
 \$minlinkpost = $minlinkpost;				# Minimum amount of posts a member needs to post links and images
+\$minlinksig = $minlinksig;				# Minimum amount of posts a member needs to create links and images in signature
 \$post_speed_count = $post_speed_count;			# Maximum amount of abuses befor a user gets banned
 \$fontsizemin = $fontsizemin;				# Minimum Allowed Font height in pixels
 \$fontsizemax = $fontsizemax;				# Maximum Allowed Font height in pixels

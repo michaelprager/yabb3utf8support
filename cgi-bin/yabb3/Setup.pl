@@ -3709,6 +3709,7 @@ sub SetInstall2 {
 		$min_post_speed = 2;
 		$post_speed_count = 3;
 		$minlinkpost = 0;
+		$minlinksig = 0;
 
 		$maxsteps = 40;
 		$stepdelay = 75;
@@ -3888,6 +3889,7 @@ sub SetInstall2 {
 \$spd_detention_time = $spd_detention_time;         # Time in seconds before a speedposting ban is lifted again
 \$min_post_speed = $min_post_speed;                 # Minimum time in seconds between entering a post form and submitting a post
 \$minlinkpost = $minlinkpost;                       # Minimum amount of posts a member needs to post links and images
+\$minlinksig = $minlinksig;                         # Minimum amount of posts a member needs to create links and images in signature
 \$post_speed_count = $post_speed_count;             # Maximum amount of abuses befor a user gets banned
 \$MaxSigLen = $MaxSigLen;                           # Maximum Allowed Characters in Signatures
 \$MaxAwayLen = $MaxAwayLen;                         # Maximum Allowed Characters in Away message

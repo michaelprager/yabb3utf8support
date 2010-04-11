@@ -46,6 +46,12 @@ $bdomains =~ s~,~\n~g;
 			validate => 'number',
 		},
 		{
+			description => qq~<label for="minlinksig">$admin_txt{'minlinksig'}<br /><span class="small">$admin_txt{'minlinksig'}</span></label>~,
+			input_html => qq~<input type="text" name="minlinksig" id="minlinksig" size="5" value="$minlinksig" />~,
+			name => 'minlinksig',
+			validate => 'number',
+		},
+		{
 			description => qq~<label for="spd_detention_time">$admin_txt{'92'}<br /><span class="small">$admin_txt{'93'}</span></label>~,
 			input_html => qq~<input type="text" name="spd_detention_time" id="spd_detention_time" size="5" value="$spd_detention_time" />~,
 			name => 'spd_detention_time',
