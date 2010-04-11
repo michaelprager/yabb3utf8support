@@ -124,7 +124,6 @@ function get_selection(msg_id) {
 	}
 	quote_selection[msg_id] = '' + quote_selection[msg_id] + '';
 	// quote_selection[msg_id] = quote_selection[msg_id].replace(/\\r\\n/g, "_caret_");
-	while (quote_selection[msg_id].indexOf("  ") != -1) quote_selection[msg_id] = quote_selection[msg_id].replace(/  /gi, "");
 	// quote_selection[msg_id] = quote_selection[msg_id].replace(/_caret_/g, "\\r\\n");
 }
 
