@@ -1696,7 +1696,7 @@ sub userOnLineStatus {
 
 	&LoadUser($userToCheck);
 
-	if (exists $users_online{$userToCheck} && (!${$uid.$userToCheck}{'stealth'} || !$iamadmin || !$iamgmod)) {
+	if (exists $users_online{$userToCheck} && (!${$uid.$userToCheck}{'stealth'} || $iamadmin || $iamgmod)) {
 		${$uid.$userToCheck}{'offlinestatus'} = 'online';
 		$users_online{$userToCheck} = qq~<span class="useronline">$maintxt{'60'}</span>~ . (${$uid.$userToCheck}{'stealth'} ? "*" : "");
 	} else {
