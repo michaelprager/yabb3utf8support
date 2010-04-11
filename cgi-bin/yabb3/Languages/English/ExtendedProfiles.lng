@@ -144,6 +144,8 @@ $extendedprofileslngver = 'YaBB 2.4 $Revision$';
 'converter_succeeded' => 'Converter succeeded!',
 'path_old_members_folder' => 'Path to your old \'Members\' folder',
 'path_old_variables_folder' => 'Path to your old \'Variables\' folder',
+'radiounselect' => 'None selected',
+'radiounselect_description' => 'Check this if you do not want the first radio button to be selected by default.',
 );
 
 1;

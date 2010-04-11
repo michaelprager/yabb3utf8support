@@ -99,8 +99,9 @@ sub ext_get {
 
 		} elsif ($field{'type'} eq "radiobuttons") {
 			@options = split(/\^/,$field{'options'});
-			if ($value > $#options || $value eq "") { $value = 0; }
-			$value = $options[$value];
+			if ($value > $#options) { $value = 0; }
+			if(!$field{'radiounselect'} && $value eq "") { $value = 0; }
+			if($value ne "") { $value = $options[$value]; }
 
 		} elsif ($field{'type'} eq "date" && $value ne "") {
 			$value = &ext_timeformat($value);
@@ -188,6 +189,7 @@ sub ext_get_field {
 	 $field{'pp_users'},
 	 $field{'pp_groups'},
 	 $field{'pp_displayfieldname'},
+	 $field{'radiounselect'},
 	 undef) = split(/\|/, $ext_prof_fields[$field{'id'}]);
 }
 
@@ -352,8 +354,8 @@ sub ext_viewprofile {
 			# format the output dependend of the field type
 			if (($field{'type'} eq "text" && $value ne "") ||
 			    ($field{'type'} eq "text_multi" && $value ne "") ||
-			    $field{'type'} eq "select" ||
-			    $field{'type'} eq "radiobuttons" ||
+			    ($field{'type'} eq "select" && $value ne " ") ||
+			    ($field{'type'} eq "radiobuttons" && $value ne "") ||
 			    ($field{'type'} eq "date" && $value ne "") ||
 			    $field{'type'} eq "checkbox") {
 				$output .= qq~
@@ -466,8 +468,8 @@ sub ext_viewinposts {
 				# format the output dependend of the field type
 				if (($field{'type'} eq "text" && $value ne "") ||
 				    ($field{'type'} eq "text_multi" && $value ne "") ||
-				    $field{'type'} eq "select" ||
-				    $field{'type'} eq "radiobuttons" ||
+				    ($field{'type'} eq "select" && $value ne " ") ||
+				    ($field{'type'} eq "radiobuttons" && $value ne "") ||
 				    ($field{'type'} eq "date" && $value ne "") ||
 				    $field{'type'} eq "checkbox") {
 					$output .= qq~$displayedfieldname$value<br />\n~;
@@ -651,10 +653,11 @@ sub ext_gen_editfield {
 	} elsif ($field{'type'} eq "radiobuttons") {
 		$output .= $template1;
 		@options = split(/\^/,$field{'options'});
-		if ($value > $#options || $value eq "") { $value = 0; }
+		if ($value > $#options) { $value = 0; }
+		if(!$field{'radiounselect'} && $value eq "") { $value = 0; }
 		$count = 0;
 		foreach (@options) {
-			if ($count == $value) { $selected = qq~ id="ext_$id" checked="checked"~; } else { $selected = ""; }
+			if ($value ne "" && $count == $value) { $selected = qq~ id="ext_$id" checked="checked"~; } else { $selected = ""; }
 			$output .= qq~<input type="radio" name="ext_$id" value="$count"$selected />$_\n~;
 			$count++;
 		}
@@ -853,8 +856,13 @@ sub ext_validate_submition {
 	foreach (@ext_prof_fields) {
 		&ext_get_field($id);
 		$value = &ext_get($pusername, $field{'name'}, 1);
-		if (defined $newprofile{'ext_'.$id} && ($field{'type'} eq "checkbox" || $field{'type'} eq "select" || $field{'type'} eq "radiobuttons")) {
+		if (defined $newprofile{'ext_'.$id} && ($field{'type'} eq "checkbox" || $field{'type'} eq "radiobuttons")) {
 			if ($newprofile{'ext_'.$id} eq "") { $newprofile{'ext_'.$id} = 0; }
+		}
+		if (defined $newprofile{'ext_'.$id} && $field{'type'} eq "select") {
+			if ($newprofile{'ext_'.$id} eq "") { $newprofile{'ext_'.$id} = 0; }
+			@options = split(/\^/,$field{'options'});
+			if($options[$newprofile{'ext_'.$id}] eq " ") { $newprofile{'ext_'.$id} = ""; }
 		}
 		if (defined $newprofile{'ext_'.$id} && $field{'type'} eq "image") {
 			if ($newprofile{'ext_'.$id} eq "http://") { $newprofile{'ext_'.$id} = ""; }
@@ -878,6 +886,9 @@ sub ext_validate_submition {
 			if ($options[3] ne "") { $newprofile{'ext_'.$id} = $options[3] }
 		} elsif ($field{'type'} eq "spacer") {
 			$newprofile{'ext_'.$id} = "";
+		}
+		elsif ($field{'type'} eq "select" && $newprofile{'ext_'.$id} eq "") {
+			$newprofile{'ext_'.$id} = 0;
 		}
 		$id++;
 	}
@@ -1159,7 +1170,7 @@ sub ext_admin_create {
 	&ToHTML($FORM{'name'});
 
 	push(@ext_prof_order, $FORM{'name'});
-	push(@ext_prof_fields, "$FORM{'name'}|$FORM{'type'}||1||0|1|||0|||0|0|||1|0|||0");
+	push(@ext_prof_fields, "$FORM{'name'}|$FORM{'type'}||1||0|1|||0|||0|0|||1|0|||0|0");
 
 	require "$admindir/NewSettings.pl";
 	&SaveSettingsTo('Settings.pl');
@@ -1222,7 +1233,7 @@ sub ext_admin_edit {
 		@fields = @ext_prof_fields;
 		@_ = split(/\|/,$fields[$FORM{'id'}]);
 		$oldname = $_[0];
-		$fields[$FORM{'id'}] = "$name|$type|$_[2]|$active|$_[4]|$_[5]|$_[6]|$_[7]|$_[8]|$_[9]|$_[10]|$_[11]|$_[12]|$_[13]|$_[14]|$_[15]|$_[16]|$_[17]|$_[18]|$_[19]|$_[20]";
+		$fields[$FORM{'id'}] = "$name|$type|$_[2]|$active|$_[4]|$_[5]|$_[6]|$_[7]|$_[8]|$_[9]|$_[10]|$_[11]|$_[12]|$_[13]|$_[14]|$_[15]|$_[16]|$_[17]|$_[18]|$_[19]|$_[20]|$_[21]";
 		@ext_prof_fields = @fields;
 
 		@order = @ext_prof_order;
@@ -1252,6 +1263,7 @@ sub ext_admin_edit {
 		if ($field{'p_displayfieldname'} == 1) { $p_d_check = " checked=\"checked\""; } else { $p_d_check = ""; }
 		if ($field{'pp_displayfieldname'} == 1) { $pp_d_check = " checked=\"checked\""; } else { $pp_d_check = ""; }
 		if ($field{'visible_in_memberlist'} == 1) { $m_check = " checked=\"checked\""; } else { $m_check = ""; }
+		if ($field{'radiounselect'} == 1) { $radiounselect = " checked=\"checked\""; } else { $radiounselect = ""; }
 		$editable_check[$field{'editable_by_user'}] = " selected=\"selected\"";
 		$yymain .= qq~
 <form action="$adminurl?action=ext_edit2" method="post">
@@ -1304,13 +1316,23 @@ $ext_template_contentstart
 				&ext_admin_gen_inputfield(qq~<label for="ubbc">$lang_ext{'ubbc'}</label>~,qq~<label for="ubbc">$lang_ext{'ubbc_description'}</label>~,
 					qq~<input name="ubbc" id="ubbc" type="checkbox" value="1"$ubbc />~);
 
-		} elsif ($field{'type'} eq "select" || $field{'type'} eq "radiobuttons") {
+		} elsif ($field{'type'} eq "select") {
 			@options = split(/\^/,$field{'options'});
 			$output = "";
 			foreach (@options) { $output .= qq~$_\n~; }
 			$yymain .= 
-				&ext_admin_gen_inputfield(qq~<label for="options">$lang_ext{'s_options'}</label>~,qq~<label for="options">$lang_ext{'s_options_description'}</label>~,
+				&ext_admin_gen_inputfield($lang_ext{'s_options'},$lang_ext{'s_options_description'},
 					qq~<textarea name="options" id="options" cols="30" rows="3">$output</textarea>~);
+
+		} elsif ($field{'type'} eq "radiobuttons") {
+			@options = split(/\^/,$field{'options'});
+			$output = "";
+			foreach (@options) { $output .= qq~$_\n~; }
+			$yymain .= 
+				&ext_admin_gen_inputfield($lang_ext{'s_options'},$lang_ext{'s_options_description'},
+					qq~<textarea name="options" id="options" cols="30" rows="3">$output</textarea>~).
+				&ext_admin_gen_inputfield($lang_ext{'radiounselect'},$lang_ext{'radiounselect_description'},
+					qq~<input name="radiounselect" id="radiounselect" type="checkbox" value="1"$radiounselect />~);
 
 		} elsif ($field{'type'} eq "spacer") {
 			@options = split(/\^/,$field{'options'});
@@ -1498,7 +1520,17 @@ sub ext_admin_edit2 {
 		if ($FORM{'ubbc'} eq "") { $FORM{'ubbc'} = 0; }
 		$FORM{'options'} = "$FORM{'limit_len'}^$FORM{'rows'}^$FORM{'cols'}^$FORM{'ubbc'}";
 
-	} elsif ($FORM{'type'} eq "select" || $FORM{'type'} eq "radiobuttons") {
+	} elsif ($FORM{'type'} eq "select") {
+		$FORM{'options'} =~ tr/\r//d;
+		$FORM{'options'} =~ s~\A[\s\n]+~ \n~;
+		$FORM{'options'} =~ s~[\s\n]+\Z~~;
+		$FORM{'options'} =~ s~\n\s*\n~\n~g;
+		@options = split(/\n/,$FORM{'options'});
+		$FORM{'options'} = "";
+		foreach (@options) { $FORM{'options'} .= "\^".$_; }
+		$FORM{'options'} =~ s/^\^//;
+
+	} elsif ($FORM{'type'} eq "radiobuttons") {
 		$FORM{'options'} =~ tr/\r//d;
 		$FORM{'options'} =~ s~\A[\s\n]+~~;
 		$FORM{'options'} =~ s~[\s\n]+\Z~~;
@@ -1507,6 +1539,7 @@ sub ext_admin_edit2 {
 		$FORM{'options'} = "";
 		foreach (@options) { $FORM{'options'} .= "\^".$_; }
 		$FORM{'options'} =~ s/^\^//;
+		if ($FORM{'radiounselect'} eq "") { $FORM{'radiounselect'} = 0; }
 
 	} elsif ($FORM{'type'} eq "spacer") {
 		if ($FORM{'visible_in_editprofile'} eq "") { $FORM{'visible_in_editprofile'} = 0; }
@@ -1519,7 +1552,7 @@ sub ext_admin_edit2 {
 	}
 
 	@fields = @ext_prof_fields;
-	$fields[$FORM{'id'}] = "$FORM{'name'}|$FORM{'type'}|$FORM{'options'}|$FORM{'active'}|$FORM{'comment'}|$FORM{'required_on_reg'}|$FORM{'visible_in_viewprofile'}|$FORM{'v_users'}|$FORM{'v_groups'}|$FORM{'visible_in_posts'}|$FORM{'p_users'}|$FORM{'p_groups'}|$FORM{'p_displayfieldname'}|$FORM{'visible_in_memberlist'}|$FORM{'m_users'}|$FORM{'m_groups'}|$FORM{'editable_by_user'}|$FORM{'visible_in_posts_popup'}|$FORM{'pp_users'}|$FORM{'pp_groups'}|$FORM{'pp_displayfieldname'}";
+	$fields[$FORM{'id'}] = "$FORM{'name'}|$FORM{'type'}|$FORM{'options'}|$FORM{'active'}|$FORM{'comment'}|$FORM{'required_on_reg'}|$FORM{'visible_in_viewprofile'}|$FORM{'v_users'}|$FORM{'v_groups'}|$FORM{'visible_in_posts'}|$FORM{'p_users'}|$FORM{'p_groups'}|$FORM{'p_displayfieldname'}|$FORM{'visible_in_memberlist'}|$FORM{'m_users'}|$FORM{'m_groups'}|$FORM{'editable_by_user'}|$FORM{'visible_in_posts_popup'}|$FORM{'pp_users'}|$FORM{'pp_groups'}|$FORM{'pp_displayfieldname'}|$FORM{'radiounselect'}";
 
 	@ext_prof_fields = @fields;
 
