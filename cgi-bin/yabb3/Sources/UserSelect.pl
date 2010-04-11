@@ -586,6 +586,10 @@ function copy_option(to_select) {
 	if (to_select == 'userspec') {
 		opener.document.getElementById(to_select).value = document.selectuser.rec_list.options[document.selectuser.rec_list.selectedIndex].value;
 		opener.document.getElementById('userspectext').value = document.selectuser.rec_list.options[document.selectuser.rec_list.selectedIndex].text;
+		opener.document.getElementById('usrsel').style.display = 'none';
+		opener.document.getElementById('usrrem').style.display = 'inline';
+		opener.document.getElementById('searchme').disabled = true;
+		window.close();
 		return;
 	}
 	var to_array = new Array();

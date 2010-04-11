@@ -81,9 +81,9 @@ $searchlngver = 'YaBB 2.4 $Revision$';
 );
 
 %searchselector_txt = (
-'linklabel' => 'Click here to select user to search for.',
-'instructions' => 'Click here to remove the user.',
-'remove' => 'Are you sure you want to remove user name?',
+'select' => 'Select',
+'remove' => 'Remove',
+'removeconfirm' => 'Are you sure you want to remove user name?',
 );
 
 1;

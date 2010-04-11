@@ -62,8 +62,17 @@ function removeUser() {
 		document.getElementById('userspectext').value = "";
 		if(document.getElementById('searchme').checked) {
 			document.getElementById('searchme').checked = false;
+			document.getElementById('userkind').disabled=false;
+			document.getElementById('noguests').selected=true;
 		}
+		document.getElementById('usrsel').style.display = 'inline';
+		document.getElementById('usrrem').style.display = 'none';
+		document.getElementById('searchme').disabled = false;
 	}
+}
+
+function addUser() {
+	window.open('$scripturl?action=imlist;sort=username;toid=userspec','','status=no,height=360,width=464,menubar=no,toolbar=no,top=50,left=50,scrollbars=no');
 }
 
 function searchMe(chelem) {
@@ -116,23 +125,21 @@ function searchMe(chelem) {
 	</tr>
 	<tr>
 		<td class="windowbg" align="right" valign="top">
-			<b>$search_txt{'583'}:</b><br />
-			<a href="javascript:void(0);" class="small" onclick="window.open('$scripturl?action=imlist;sort=username;toid=userspec','','status=no,height=345,width=464,menubar=no,toolbar=no,top=50,left=50,scrollbars=no')">$searchselector_txt{'linklabel'}</a>
+			<b>$search_txt{'583'}:</b>
 		</td>
 		<td class="windowbg2">
-			<div style="width: 405px; padding-top: 2px; padding-bottom: 4px;">
-			<input type="text" size="30" name="userspectext" id="userspectext" readonly="readonly" />
+			<div style="padding: 4px 0px 4px 0px;">
+			<input type="text" size="30" style="width: 220px; padding-left: 3px;" name="userspectext" id="userspectext" value="" readonly="readonly" /><input type="button" class="button" id="usrsel" style="border-left: 0px; display: inline;" value="$searchselector_txt{'linklabel'}" onclick="javascript:addUser();" /><input type="button" class="button" id="usrrem" style="border-left: 0px; display: none;" value="$searchselector_txt{'instructions'}" onclick="javascript:removeUser();" />
 			~;
-		if(!$iamguest) {
-			$yymain .= qq~<input type="checkbox" name="searchme" id="searchme" onclick="searchMe(this);" /> <label for="searchme">$search_txt{'searchme'}</label><br />~;
-		} else {
-			$yymain .= qq~<br />~;
-		}
-		$yymain .= qq~
-			<a href="javascript:void(0);" class="small" onclick="javascript:removeUser();">$searchselector_txt{'instructions'}</a>
+			if(!$iamguest) {
+				$yymain .= qq~<input type="checkbox" name="searchme" id="searchme" style="margin: 0px; border: 0px; padding: 0px; vertical-align: middle;" onclick="searchMe(this);" /> <label for="searchme" class="lille">$search_txt{'searchme'}</label><br />~;
+			} else {
+				$yymain .= qq~<input type="checkbox" name="searchme" id="searchme" style="visibility: hidden;" /><br />~;
+			}
+			$yymain .= qq~
 			<input type="hidden" size="30" name="userspec" id="userspec" value="" />
 			</div>
-			<div style="padding-top: 2px;">
+			<div style="padding: 4px 0px 4px 0px;">
 			<select name="userkind" id="userkind">
 				<option value="any">$search_txt{'577'}</option>
 				<option value="starter">$search_txt{'186'}</option>
