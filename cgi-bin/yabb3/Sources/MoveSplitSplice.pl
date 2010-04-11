@@ -15,7 +15,7 @@
 ###############################################################################
 
 $movesplitspliceplver = 'YaBB 2.4 $Revision$';
-if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
+if ($action eq 'detailedversion') { return 1; }
 
 &LoadLanguage('MoveSplitSplice');
 
@@ -544,7 +544,7 @@ sub Split_Splice_2 {
 			if ($FORM{'position'} eq 'begin') {
 				($msub, $mname, $memail, undef, $musername, $micon, undef) = split(/\|/, $utdnewthread[0], 7);
 			}
-			$curmessindex[$i] = qq~$mnum|$msub|$mname|$memail|${$newthreadid}{'lastpostdate'}|${$newthreadid}{'replies'}|$musername|$micon|$mstate\n~;
+			$yyThreadLine = $curmessindex[$i] = qq~$mnum|$msub|$mname|$memail|${$newthreadid}{'lastpostdate'}|${$newthreadid}{'replies'}|$musername|$micon|$mstate\n~;
 			${$BoardTotals{$mnum}}[6] = $mstate;
 			if (($enable_notifications == 1 || $enable_notifications == 3) && (&checkfor_DBorFILE("$boardsdir/$curboard.mail") || &checkfor_DBorFILE("$datadir/$newthreadid.mail"))) {
 				require "$sourcedir/Post.pl";
@@ -558,7 +558,8 @@ sub Split_Splice_2 {
 		my ($msub,$mname,$memail,$musername,$micon);
 		($msub, $mname, $memail, undef, $musername, $micon, undef) = split(/\|/, $utdnewthread[0], 7);
 		if ($old_mstate !~ /0/i) { $old_mstate .= "0"; }
-		unshift (@curmessindex, qq~$newthreadid|$msub|$mname|$memail|${$newthreadid}{'lastpostdate'}|${$newthreadid}{'replies'}|$musername|$micon|$old_mstate\n~);
+		$yyThreadLine = qq~$newthreadid|$msub|$mname|$memail|${$newthreadid}{'lastpostdate'}|${$newthreadid}{'replies'}|$musername|$micon|$old_mstate\n~;
+		unshift (@curmessindex, $yyThreadLine);
 		${$BoardTotals{$newthreadid}}[6] = $old_mstate;
 		if (($enable_notifications == 1 || $enable_notifications == 3) && &checkfor_DBorFILE("$boardsdir/$newboard.mail")) {
 			require "$sourcedir/Post.pl";
@@ -592,7 +593,8 @@ sub Split_Splice_2 {
 				$old_mstate .= "a";
 			}
 			if ($old_mstate !~ /0/i) { $old_mstate .= "0"; }
-			unshift (@newmessindex, qq~$newthreadid|$msub|$mname|$memail|${$newthreadid}{'lastpostdate'}|${$newthreadid}{'replies'}|$musername|$micon|$old_mstate\n~);
+			$yyThreadLine = qq~$newthreadid|$msub|$mname|$memail|${$newthreadid}{'lastpostdate'}|${$newthreadid}{'replies'}|$musername|$micon|$old_mstate\n~;
+			unshift (@newmessindex, $yyThreadLine);
 			${$BoardTotals{$newthreadid}}[6] = $old_mstate;
 			if (($enable_notifications == 1 || $enable_notifications == 3) && &checkfor_DBorFILE("$boardsdir/$newboard.mail")) {
 				require "$sourcedir/Post.pl";
@@ -610,7 +612,7 @@ sub Split_Splice_2 {
 					if ($FORM{'position'} eq 'begin') {
 						($msub, $mname, $memail, undef, $musername, $micon, undef) = split(/\|/, $utdnewthread[0], 7);
 					}
-					$newmessindex[$i] = qq~$mnum|$msub|$mname|$memail|${$newthreadid}{'lastpostdate'}|${$newthreadid}{'replies'}|$musername|$micon|$mstate\n~;
+					$yyThreadLine = $newmessindex[$i] = qq~$mnum|$msub|$mname|$memail|${$newthreadid}{'lastpostdate'}|${$newthreadid}{'replies'}|$musername|$micon|$mstate\n~;
 					${$BoardTotals{$mnum}}[6] = $mstate;
 				}
 			}
@@ -789,6 +791,8 @@ sub Split_Splice_2 {
 	# Mark current thread as read
 	delete $yyuserlog{"$curthreadid--unread"};
 	&dumplog($curthreadid); # Save threads/boards as read
+
+	chomp $yyThreadLine;
 
 	if ($INFO{'moveit'} == 1) {
 		$currentboard = $curboard;
