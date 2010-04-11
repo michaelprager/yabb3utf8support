@@ -179,7 +179,8 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 		},
 		{
 			description => qq~<label for="MenuType">$admin_txt{'521'}</label>~,
-			input_html => qq~<select name="MenuType" id="MenuType" size="1">
+			input_html => qq~
+<select name="MenuType" id="MenuType" size="1">
   <option value="0" ${isselected($MenuType == 0)}>$admin_txt{'521a'}</option>
   <option value="1" ${isselected($MenuType == 1)}>$admin_txt{'521b'}</option>
   <option value="2" ${isselected($MenuType == 2)}>$admin_txt{'521c'}</option>
@@ -201,7 +202,8 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 		},
 		{
 			description => qq~<label for="forumnumberformat">$admin_txt{'forumnumbformat'}</label>~,
-			input_html => qq~<select name="forumnumberformat" id="forumnumberformat" size="1">
+			input_html => qq~
+<select name="forumnumberformat" id="forumnumberformat" size="1">
   <option value="1" ${isselected($forumnumberformat == 1)}>10987.65</option>
   <option value="2" ${isselected($forumnumberformat == 2)}>10987,65</option>
   <option value="3" ${isselected($forumnumberformat == 3)}>10,987.65</option>
@@ -213,7 +215,8 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 		},
 		{
 			description => qq~<label for="timeselected">$admin_txt{'587'}</label>~,
-			input_html => qq~<select name="timeselected" id="timeselected" size="1">
+			input_html => qq~
+<select name="timeselected" id="timeselected" size="1">
   <option value="1" ${isselected($timeselected == 1)}>$admin_txt{'480'}</option>
   <option value="5" ${isselected($timeselected == 5)}>$admin_txt{'484'}</option>
   <option value="4" ${isselected($timeselected == 4)}>$admin_txt{'483'}</option>
@@ -246,54 +249,6 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 			input_html => qq~<input type="text" size="4" name="timecorrection" id="timecorrection" value="$timecorrection" />~,
 			name => 'timecorrection',
 			validate => 'fullnumber',
-		},
-
-		{
-			description => qq~<label for="defaultusertxt">$admin_txt{'385a'}</label>~,
-			input_html => qq~<input type="text" name="defaultusertxt" id="defaultusertxt" value="$defaultusertxt" />~,
-			name => 'defaultusertxt',
-			validate => 'text,null',
-		},
-		{
-			description => qq~<label for="maxfavs">$admin_txt{'101'}</label>~,
-			input_html => qq~<input type="text" name="maxfavs" id="maxfavs" value="$maxfavs" />~,
-			name => 'maxfavs',
-			validate => 'number',
-		},
-		{
-			description => qq~<label for="TopAmmount">$admin_txt{'373'}</label>~,
-			input_html => qq~<input type="text" size="4" name="TopAmmount" id="TopAmmount" value="$TopAmmount" />~,
-			name => 'TopAmmount',
-			validate => 'number',
-		},
-		{
-			description => qq~<label for="defaultml">$admin_txt{'912'}</label>~,
-			input_html => qq~<select name="defaultml" id="defaultml">
-  <option value="username" ${isselected($defaultml eq 'username')}>$admin_txt{'914'}</option>
-  <option value="position" ${isselected($defaultml eq 'position')}>$admin_txt{'911'}</option>
-  <option value="posts"    ${isselected($defaultml eq 'posts')   }>$admin_txt{'910'}</option>
-  <option value="regdate"  ${isselected($defaultml eq 'regdate') }>$admin_txt{'909'}</option>
-</select>~,
-			name => 'defaultml',
-			validate => 'text',
-		},
-		{
-			description => qq~<label for="barmaxnumb">$admin_txt{'902'} $admin_txt{'107'}</label>~,
-			input_html => qq~<input type="text" name="barmaxnumb" id="barmaxnumb" size="5" value="$barmaxnumb" /> $admin_txt{'904'} <input type="radio" name="barmaxdepend" value="0"${ischecked(!$barmaxdepend)}/> $admin_txt{'905'} <input type="radio" name="barmaxdepend" value="1"${ischecked($barmaxdepend)}/> $admin_txt{'903'}~,
-			name => 'barmaxdepend',
-			validate => 'boolean',
-		},
-		{
-			description => qq~<label for="maxdisplay">$admin_txt{'374'}</label>~,
-			input_html => qq~<input type="text" name="maxdisplay" id="maxdisplay" size="5" value="$maxdisplay" />~,
-			name => 'maxdisplay',
-			validate => 'number',
-		},
-		{
-			description => qq~<label for="maxmessagedisplay">$admin_txt{'375'}</label>~,
-			input_html => qq~<input type="text" name="maxmessagedisplay" id="maxmessagedisplay" size="5" value="$maxmessagedisplay" />~,
-			name => 'maxmessagedisplay',
-			validate => 'number',
 		},
 		{
 			header => $settings_txt{'showhide'},
@@ -453,26 +408,38 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 		},
 		{
 			description => qq~<label for="fontsizemin">$admin_txt{'499'}</label>~,
-			input_html => qq~<input type="text" size="4" name="fontsizemin" id="fontsizemin" value="$fontsizemin" />~,
+			input_html => qq~<input type="text" size="5" name="fontsizemin" id="fontsizemin" value="$fontsizemin" />~,
 			name => 'fontsizemin',
 			validate => 'number',
 		},
 		{
 			description => qq~<label for="fontsizemax">$admin_txt{'500'}</label>~,
-			input_html => qq~<input type="text" size="4" name="fontsizemax" id="fontsizemax" value="$fontsizemax" />~,
+			input_html => qq~<input type="text" size="5" name="fontsizemax" id="fontsizemax" value="$fontsizemax" />~,
 			name => 'fontsizemax',
 			validate => 'number',
 		},
 		{
 			description => qq~<label for="HotTopic">$admin_txt{'842'}</label>~,
-			input_html => qq~<input type="text" size="4" name="HotTopic" id="HotTopic" value="$HotTopic" />~,
+			input_html => qq~<input type="text" size="5" name="HotTopic" id="HotTopic" value="$HotTopic" />~,
 			name => 'HotTopic',
 			validate => 'number',
 		},
 		{
 			description => qq~<label for="VeryHotTopic">$admin_txt{'843'}</label>~,
-			input_html => qq~<input type="text" size="4" name="VeryHotTopic" id="VeryHotTopic" value="$VeryHotTopic" />~,
+			input_html => qq~<input type="text" size="5" name="VeryHotTopic" id="VeryHotTopic" value="$VeryHotTopic" />~,
 			name => 'VeryHotTopic',
+			validate => 'number',
+		},
+		{
+			description => qq~<label for="maxdisplay">$admin_txt{'374'}</label>~,
+			input_html => qq~<input type="text" name="maxdisplay" id="maxdisplay" size="5" value="$maxdisplay" />~,
+			name => 'maxdisplay',
+			validate => 'number',
+		},
+		{
+			description => qq~<label for="maxmessagedisplay">$admin_txt{'375'}</label>~,
+			input_html => qq~<input type="text" name="maxmessagedisplay" id="maxmessagedisplay" size="5" value="$maxmessagedisplay" />~,
+			name => 'maxmessagedisplay',
 			validate => 'number',
 		},
 		{
@@ -613,7 +580,7 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 		},
 		{
 			description => qq~<label for="quoteuser_color">$qrb_txt{'6'}</label>~,
-			input_html => qq~<input type="text" size="7" maxlength="7" name="quoteuser_color" id="quoteuser_color" value="$quoteuser_color" onkeyup="previewColor(this.value);" /> <span id="quoteuser_color2" style="background-color:$quoteuser_color">&nbsp; &nbsp; &nbsp;</span> <img align="top" src="$defaultimagesdir/palette1.gif" style="cursor: pointer" onclick="window.open('$scripturl?action=palette;task=templ', '', 'height=308,width=302,menubar=no,toolbar=no,scrollbars=no')" alt="" border="0" />
+			input_html => qq~<input type="text" size="7" maxlength="7" name="quoteuser_color" id="quoteuser_color" value="$quoteuser_color" onkeyup="previewColor(this.value);" /> <span id="quoteuser_color2" style="background-color:$quoteuser_color">&nbsp; &nbsp; &nbsp;</span> <img src="$defaultimagesdir/palette1.gif" align="top" style="cursor: pointer" onclick="window.open('$scripturl?action=palette;task=templ', '', 'height=308,width=302,menubar=no,toolbar=no,scrollbars=no')" alt="" border="0" />
 			<script language="JavaScript1.2" type="text/javascript">
 			<!--
 			function previewColor(color) {
@@ -765,10 +732,22 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 			validate => 'boolean',
 		},
 		{
+			description => qq~<label for="emailnewpass">$admin_txt{'639'}</label>~,
+			input_html => qq~<input type="checkbox" name="emailnewpass" id="emailnewpass" value="1"${ischecked($emailnewpass)} />~,
+			name => 'emailnewpass',
+			validate => 'boolean',
+		},
+		{
 			description => qq~<label for="buddyListEnabled">$admin_txt{'buddylist'}</label>~,
 			input_html => qq~<input type="checkbox" name="buddyListEnabled" id="buddyListEnabled" value="1"${ischecked($buddyListEnabled)} />~,
 			name => 'buddyListEnabled',
 			validate => 'boolean',
+		},
+		{
+			description => qq~<label for="defaultusertxt">$admin_txt{'385a'}</label>~,
+			input_html => qq~<input type="text" name="defaultusertxt" id="defaultusertxt" value="$defaultusertxt" />~,
+			name => 'defaultusertxt',
+			validate => 'text,null',
 		},
 		{
 			description => qq~<label for="MaxSigLen">$admin_txt{'689'}</label>~,
@@ -777,10 +756,10 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 			validate => 'number,null',
 		},
 		{
-			description => qq~<label for="emailnewpass">$admin_txt{'639'}</label>~,
-			input_html => qq~<input type="checkbox" name="emailnewpass" id="emailnewpass" value="1"${ischecked($emailnewpass)} />~,
-			name => 'emailnewpass',
-			validate => 'boolean',
+			description => qq~<label for="maxfavs">$admin_txt{'101'}</label>~,
+			input_html => qq~<input type="text" name="maxfavs" id="maxfavs" value="$maxfavs" />~,
+			name => 'maxfavs',
+			validate => 'number',
 		},
 		{
 			description => qq~<label for="addmemgroup_enabled">$amgtxt{'84'}</label>~,
@@ -910,7 +889,7 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 		},
 		{
 			description => qq~<label for="pwstrengthmeter_minchar">$admin_txt{'712'}</label>~,
-			input_html => qq~<input type="text" name="pwstrengthmeter_minchar" id="pwstrengthmeter_minchar" size="20" value="$pwstrengthmeter_minchar" />~,
+			input_html => qq~<input type="text" name="pwstrengthmeter_minchar" id="pwstrengthmeter_minchar" size="5" value="$pwstrengthmeter_minchar" />~,
 			name => 'pwstrengthmeter_minchar',
 			validate => 'number',
 		},
@@ -948,6 +927,30 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 </select>~,
 			name => 'ML_Allowed',
 			validate => 'number',
+		},
+		{
+			description => qq~<label for="defaultml">$admin_txt{'912'}</label>~,
+			input_html => qq~
+<select name="defaultml" id="defaultml">
+  <option value="username" ${isselected($defaultml eq 'username')}>$admin_txt{'914'}</option>
+  <option value="position" ${isselected($defaultml eq 'position')}>$admin_txt{'911'}</option>
+  <option value="posts"    ${isselected($defaultml eq 'posts')   }>$admin_txt{'910'}</option>
+  <option value="regdate"  ${isselected($defaultml eq 'regdate') }>$admin_txt{'909'}</option>
+</select>~,
+			name => 'defaultml',
+			validate => 'text',
+		},
+		{
+			description => qq~<label for="TopAmmount">$admin_txt{'373'}</label>~,
+			input_html => qq~<input type="text" size="4" name="TopAmmount" id="TopAmmount" value="$TopAmmount" />~,
+			name => 'TopAmmount',
+			validate => 'number',
+		},
+		{
+			description => qq~<label for="barmaxnumb">$admin_txt{'902'} $admin_txt{'107'}</label>~,
+			input_html => qq~<input type="text" name="barmaxnumb" id="barmaxnumb" size="5" value="$barmaxnumb" /> $admin_txt{'904'} <input type="radio" name="barmaxdepend" value="0"${ischecked(!$barmaxdepend)}/> $admin_txt{'905'} <input type="radio" name="barmaxdepend" value="1"${ischecked($barmaxdepend)}/> $admin_txt{'903'}~,
+			name => 'barmaxdepend',
+			validate => 'boolean',
 		},
 	]
 },
