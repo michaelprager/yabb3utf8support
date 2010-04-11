@@ -1297,7 +1297,7 @@ $lastmod
 					document.write("<br /><span class='small'>~ . ($postid ne 'Poll' ? $post_txt{'331'} : $post_txt{'331a'}) . qq~</span>");
 				} else if (/MSIE [7-9]/.test(navigator.userAgent) || /\\/[3-9]\\.\\d+\\.\\d+ Safari/.test(navigator.userAgent)) {
 					document.write("<br /><span class='small'>~ . ($postid ne 'Poll' ? $post_txt{'329'} : $post_txt{'329a'}) . qq~</span>");
-				} else if (/Firefox\\/[2-9]\\.\\d+\\.\\d+/.test(navigator.userAgent)) {
+				} else if (/Firefox\\/[2-9]/.test(navigator.userAgent) || /Chrome/.test(navigator.userAgent)) {
 					document.write("<br /><span class='small'>~ . ($postid ne 'Poll' ? $post_txt{'330'} : $post_txt{'330a'}) . qq~</span>");
 				}
 			}\n~;

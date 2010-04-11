@@ -977,7 +977,7 @@ var GB_ROOT_DIR = "$yyhtml_root/greybox/";
 					document.write("<br /><span class='small'>$accesskey{'Browsers_on_Mac'}</span>");
 				} else if (/MSIE [7-9]/.test(navigator.userAgent) || /\\/[3-9]\\.\\d+\\.\\d+ Safari/.test(navigator.userAgent)) {
 					document.write("<br /><span class='small'>$accesskey{'MSIE_Safari'}</span>");
-				} else if (/Firefox\\/[2-9]\\.\\d+\\.\\d+/.test(navigator.userAgent)) {
+				} else if (/Firefox\\/[2-9]/.test(navigator.userAgent) || /Chrome/.test(navigator.userAgent)) {
 					document.write("<br /><span class='small'>$accesskey{'FireFox'}</span>");
 				}
 			}
