@@ -1065,7 +1065,7 @@ var cssbold;
 var cssitalic;
 var stylesurl = '$forumstylesurl';
 
-function updateStyles() {
+function initStyles() {
 	var thestylestart = document.allstyles.stylestart.value;
 	var thestyles = document.allstyles.stylelink.value;
 	var thestylebody = document.allstyles.stylebody.value;
@@ -1080,6 +1080,12 @@ function updateStyles() {
 	StyleManager.document.open("text/html");
 	StyleManager.document.write(thestyle);
 	StyleManager.document.close();
+}
+
+function updateStyles() {
+	var currentTop = document.getElementById('StyleManager').contentWindow.document.documentElement.scrollTop;
+	initStyles();
+	document.getElementById('StyleManager').contentWindow.document.documentElement.scrollTop = currentTop;
 }
 
 var buttonurl = '$yyhtml_root/Buttons/';
@@ -1501,7 +1507,7 @@ function setElement() {
 	manSelect();
 }
 
-updateStyles();
+initStyles();
 setElement();
 
 // Palette
