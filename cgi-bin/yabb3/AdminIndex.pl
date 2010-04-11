@@ -230,7 +230,6 @@ sub AdminTemplate {
 	"referer_control|$admintxt{'a3_sub1'}|$admintxt{'a3_label1'}|",
 	"setup_guardian|$admintxt{'a3_sub3'}|$admintxt{'a3_label3'}|",
 	"newsettings;page=antispam|$admintxt{'a3_sub4'}|$admintxt{'a3_label4'}|",
-	"backupsettings|$admintxt{'a3_sub5'}|$admintxt{'a3_label5'}|",
 	);
 
 	@forum_controls = (
@@ -269,6 +268,7 @@ sub AdminTemplate {
 	"clean_log|$admintxt{'a7_sub1'}|$admintxt{'a7_label1'}|",
 	"deleteoldthreads|$admintxt{'a7_sub5'}|$admintxt{'a7_label5'}|",
 	"manageattachments|$admintxt{'a7_sub6'}|$admintxt{'a7_label6'}|",
+	"backupsettings|$admintxt{'a3_sub5'}|$admintxt{'a3_label5'}|",
 	);
 
 	@forum_stats = (
