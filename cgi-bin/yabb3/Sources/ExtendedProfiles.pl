@@ -1321,7 +1321,7 @@ $ext_template_contentstart
 			$output = "";
 			foreach (@options) { $output .= qq~$_\n~; }
 			$yymain .= 
-				&ext_admin_gen_inputfield($lang_ext{'s_options'},$lang_ext{'s_options_description'},
+				&ext_admin_gen_inputfield(qq~<label for="options">$lang_ext{'s_options'}</label>~,qq~<label for="options">$lang_ext{'s_options_description'}</label>~,
 					qq~<textarea name="options" id="options" cols="30" rows="3">$output</textarea>~);
 
 		} elsif ($field{'type'} eq "radiobuttons") {
@@ -1329,9 +1329,9 @@ $ext_template_contentstart
 			$output = "";
 			foreach (@options) { $output .= qq~$_\n~; }
 			$yymain .= 
-				&ext_admin_gen_inputfield($lang_ext{'s_options'},$lang_ext{'s_options_description'},
+				&ext_admin_gen_inputfield(qq~<label for="options">$lang_ext{'s_options'}</label>~,qq~<label for="options">$lang_ext{'s_options_description'}</label>~,
 					qq~<textarea name="options" id="options" cols="30" rows="3">$output</textarea>~).
-				&ext_admin_gen_inputfield($lang_ext{'radiounselect'},$lang_ext{'radiounselect_description'},
+				&ext_admin_gen_inputfield(qq~<label for="radiounselect">$lang_ext{'radiounselect'}</label>~,qq~<label for="radiounselect">$lang_ext{'radiounselect_description'}</label>~,
 					qq~<input name="radiounselect" id="radiounselect" type="checkbox" value="1"$radiounselect />~);
 
 		} elsif ($field{'type'} eq "spacer") {
