@@ -230,13 +230,13 @@ sub DoUBBC {
 
 	$message =~ s~\[code\]~ \[code\]~ig;
 	$message =~ s~\[/code\]~ \[/code\]~ig;
-	$message =~ s~\[code\]\n*(.+?)\n*\[/code\]~&codemsg($1)~eisg; # [code] must come at first! At least before image transformation!
 
 	$message =~ s~\[quote\]~ \[quote\]~ig;
 	$message =~ s~\[/quote\]~ \[/quote\]~ig;
 	$message =~ s~\[glow\]~ \[glow\]~ig;
 	$message =~ s~\[/glow\]~ \[/glow\]~ig;
 	$message =~ s~<br>|<br />~\n~ig;
+	$message =~ s~\[code\]\n*(.+?)\n*\[/code\]~&codemsg($1)~eisg; # [code] must come at first! At least before image transformation!
 
 	$message =~ s~\[([^\]\[]{0,30})\n([^\]\[]{0,30})\]~\[$1$2\]~g;
 	$message =~ s~\[/([^\]\[]{0,30})\n([^\]\[]{0,30})\]~\[/$1$2\]~g;
