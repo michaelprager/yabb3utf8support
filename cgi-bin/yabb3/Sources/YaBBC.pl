@@ -114,8 +114,8 @@ sub parseimgflash {
 	my $char_160  = chr(160);
 	my $hardspace = qq~&nbsp;~;
 	if (!$showimageinquote) {
-		$tmp_message =~ s~\[img\](?:\s|\t|\n|$hardspace|$char_160)*(https?\:\/\/)*(.+?)(?:\s|\t|\n|$hardspace|$char_160)*\[/img\]~$2$3~isg;
-		$tmp_message =~ s~\[img width=(\d+) height=(\d+)\](?:\s|\t|\n|$hardspace|$char_160)*(http\:\/\/)*(.+?)(?:\s|\t|\n|$hardspace|$char_160)*\[\/img\]~$4$5~ig;
+		$tmp_message =~ s~\[img(.+?)\]~[img\]~isg;
+		$tmp_message =~ s~\[img\](?:\s|\t|\n|$hardspace|$char_160)*(http\:\/\/)*(.+?)(?:\s|\t|\n|$hardspace|$char_160)*\[/img\]~\[url\]$1$2\[\/url\]~isg;
 	}
 	$tmp_message;
 }
