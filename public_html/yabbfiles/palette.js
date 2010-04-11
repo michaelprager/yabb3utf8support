@@ -83,17 +83,18 @@ function saveColor() {
 }
 
 var skydNu = false;
-var x, knapObj, retning;
+var x, knapObj, knappos, retning;
 
 function flytKnap(e) {
 	if (skydNu) {
-		glX = parseInt(knapObj.style.left+0);
-		if (ns6) knapObj.style.left = temp2 + e.clientX - x; else knapObj.style.left = temp2 + event.clientX - x;
-		nyX = parseInt(knapObj.style.left+0);
+		glX = parseInt(knappos);
+		if(ns6) knappos = temp2 + e.clientX - x; else knappos = temp2 + event.clientX - x;
+		nyX = parseInt(knappos);
 		if (nyX > glX) retning = "vn"; else retning = "hj";
-		if (nyX < 4 && retning == "hj") { knapObj.style.left = 4; retning = "vn"; }
-		if (nyX > 259 && retning == "vn") { knapObj.style.left = 259; retning = "hj"; }
-		delEnh = parseInt(knapObj.style.left+0)-4;
+		if (nyX < 4 && retning == "hj") { knappos = 4; retning = "vn"; }
+		if (nyX > 259 && retning == "vn") { knappos = 259; retning = "hj"; }
+		knapObj.style.left = knappos + 'px';
+		delEnh = parseInt(knappos)-4;
 		setColor(delEnh);
 		document.onmouseup = saveColor;
 		return false;
@@ -104,13 +105,14 @@ function skydeKnap(e){
 	if (ns6) flytobj = e.target; else flytobj = event.srcElement;
 	if (ns6) topelement = "HTML"; else topelement = "BODY";
 	while (flytobj.tagName != topelement && flytobj.className != "skyd"){
-		if (ns6) flytobj = flytobj.parentNode; else flytobj = flytobj.parentElement;
+		if(ns6) flytobj = flytobj.parentNode; else flytobj = flytobj.parentElement;
 	}
 	if (flytobj.className == "skyd"){
 		skydNu = true;
 		knapObj = flytobj;
-		temp2 = parseInt(knapObj.style.left+0);
-		if (ns6) x = e.clientX; else x = event.clientX;
+		knappos = knapObj.style.left;
+		temp2 = parseInt(knappos);
+		if(ns6) x = e.clientX; else x = event.clientX;
 		document.onmousemove = flytKnap;
 		return false;
 	}
