@@ -248,6 +248,10 @@ sub showRows {
 		else { $date1 = $userlastpost; &calcdifference; $userlastpost = $result; $tmpb = $userlastpost; }
 		if ($userlastim eq "") { $userlastim = "-"; }
 		else { $date1 = $userlastim; &calcdifference; $userlastim = $result; $tmpc = $userlastim; }
+		$userlastonline = &NumberFormat($userlastonline);
+		$userlastpost = &NumberFormat($userlastpost);
+		$userlastim = &NumberFormat($userlastim);
+		$userpostcount = &NumberFormat(${$uid.$user}{'postcount'});
 
 		if ($user ne "admin") {
 			$CheckingAll .= qq~"$days_reg|${$uid.$user}{'postcount'}|$tmpa|$tmpb|$tmpc|$user", ~;
@@ -310,12 +314,12 @@ sub showRows {
 
 		$yymain .= qq~
 		<td class="windowbg" width="19%">$memberinfo</td>
-		<td class="windowbg2" width="5%" align="center">${$uid.$user}{'postcount'}</td>
+		<td class="windowbg2" width="5%" align="right">$userpostcount</td>
 		<td class="windowbg" width="14%">$Bar</td>
 		<td class="windowbg" width="19%" >$dr_regdate &nbsp;</td>
-		<td class="windowbg2" width="7%" align="center">$userlastonline</td>
-		<td class="windowbg2" width="6%" align="center">$userlastpost</td>
-		<td class="windowbg2" width="6%" align="center">$userlastim</td>
+		<td class="windowbg2" width="7%" align="right">$userlastonline</td>
+		<td class="windowbg2" width="6%" align="right">$userlastpost</td>
+		<td class="windowbg2" width="6%" align="right">$userlastim</td>
 		<td class="windowbg" width="5%" align="center">$addel</td>
 	</tr>~;
 	}

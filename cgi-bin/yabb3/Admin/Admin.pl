@@ -257,8 +257,9 @@ sub FullStats {
 		my (@log);
 		@log = &read_DBorFILE(0,'',$vardir,'clicklog','txt');
 		$yyclicks    = @log;
+		$yyclicks = &NumberFormat($yyclicks);
 		$yyclicktext = $admin_txt{'692'};
-		$yyclicklink = qq~$yyclicks&nbsp;(<a href="$adminurl?action=showclicks">$admin_txt{'693'}</a>)~;
+		$yyclicklink = qq~&nbsp;(<a href="$adminurl?action=showclicks">$admin_txt{'693'}</a>)~;
 	} else {
 		$yyclicktext = $admin_txt{'692a'};
 		$yyclicklink = "";
@@ -266,6 +267,11 @@ sub FullStats {
 	my (@elog);
 	@elog = &read_DBorFILE(0,'',$vardir,'errorlog','txt');
 	$errorslog = @elog;
+	$memcount = &NumberFormat($memcount);
+	$totalt = &NumberFormat($totalt);
+	$totalm = &NumberFormat($totalm);
+	$avgm = &NumberFormat($avgm);
+	$errorslog = &NumberFormat($errorslog);
 
 	$yymain .= qq~
  <div class="bordercolor" style="padding: 0px; width: 99%; margin-left: 0px; margin-right: auto;">
@@ -283,28 +289,29 @@ sub FullStats {
      <tr valign="middle">
       <td align="left" class="windowbg2"><br />
        <div style="float: left; clear: left; width: 35%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$admin_txt{'488'}</div>
-       <div style="float: left; width: 65%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$members_total</div>
+       <div style="float: left; width: 10%; text-align: right; padding-top: 2px; padding-bottom: 2px;">$memcount</div>
        <br />
        <div style="float: left; clear: left; width: 35%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$admin_txt{'490'}</div>
-       <div style="float: left; width: 65%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$totalt</div>
+       <div style="float: left; width: 10%; text-align: right; padding-top: 2px; padding-bottom: 2px;">$totalt</div>
        <br />
        <div style="float: left; clear: left; width: 35%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$admin_txt{'489'}</div>
-       <div style="float: left; width: 65%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$totalm</div>
+       <div style="float: left; width: 10%; text-align: right; padding-top: 2px; padding-bottom: 2px;">$totalm</div>
        <br />
        <div style="float: left; clear: left; width: 35%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$admintxt{'39'}</div>
-       <div style="float: left; width: 65%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$avgm</div>
+       <div style="float: left; width: 10%; text-align: right; padding-top: 2px; padding-bottom: 2px;">$avgm</div>
        <br />
        <div style="float: left; clear: left; width: 35%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$admin_txt{'658'}</div>
-       <div style="float: left; width: 65%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$numcats</div>
+       <div style="float: left; width: 10%; text-align: right; padding-top: 2px; padding-bottom: 2px;">$numcats</div>
        <br />
        <div style="float: left; clear: left; width: 35%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$admin_txt{'665'}</div>
-       <div style="float: left; width: 65%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$numboards</div>
+       <div style="float: left; width: 10%; text-align: right; padding-top: 2px; padding-bottom: 2px;">$numboards</div>
        <br />
        <div style="float: left; clear: left; width: 35%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$errorlog{'3'}</div>
-       <div style="float: left; width: 65%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$errorslog</div>
+       <div style="float: left; width: 10%; text-align: right; padding-top: 2px; padding-bottom: 2px;">$errorslog</div>
        <br />
        <div style="float: left; clear: left; width: 35%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$admin_txt{'691'}&nbsp;<span class="small">($yyclicktext)</span></div>
-       <div style="float: left; width: 65%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$yyclicklink</div>
+       <div style="float: left; width: 10%; text-align: right; padding-top: 2px; padding-bottom: 2px;">$yyclicks</div>
+       <div style="float: left; width: 55%; text-align: left; padding-top: 2px; padding-bottom: 2px;">$yyclicklink</div>
        <br />&nbsp;<br />
       </td>
      </tr>
