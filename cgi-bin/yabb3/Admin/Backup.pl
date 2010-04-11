@@ -40,6 +40,8 @@ my %dirs = (
 	    'upld' => "yabbfiles/Attachments $backup_txt{'and'} yabbfiles/avatars/UserAvatars",
 	    );
 
+&is_admin_or_gmod;
+
 sub backupsettings {
 	my ($module, $command, $tarcompress1, $tarcompress2, $allchecked, $item, %pathchecklist, %methodchecklist, $presetjavascriptcode, $file, @backups, $newcommand, $style, $disabledtext, $input);
 
@@ -217,12 +219,13 @@ sub backupsettings {
 	$tarcompress1 = qq~
      <tr valign="middle">
        <td align="left" class="windowbg">
-         <input type="radio" name="tarmodulecompress" value="none" $methodchecklist{'none'}/> $backup_txt{17}
-       </td>
+         <input type="radio" name="tarmodulecompress" id="tarmodulecompress" value="none" $methodchecklist{'none'}/> <label for="tarmodulecompress">$backup_txt{17}</label>       </td>
      </tr>~;
 
+	my $label_id;
 	foreach $module qw(Compress::Zlib Compress::Bzip2) {
-		$input = qq~name="tarmodulecompress" value="$module" $methodchecklist{$module}~;
+		$label_id++;
+		$input = qq~name="tarmodulecompress" id="label_$label_id" value="$module" $methodchecklist{$module}~;
 		eval "use $module();";
 		if ($@) {
 			$input = qq~disabled="disabled"~;
@@ -234,7 +237,7 @@ sub backupsettings {
 		$tarcompress1 .= qq~
      <tr valign="middle">
        <td align="left" class="windowbg" $style>
-         <input type="radio" $input/> $module $backup_txt{18} $disabledtext
+         <input type="radio" $input/> <label for="label_$label_id">$module $backup_txt{18} $disabledtext</label>
        </td>
      </tr>~;
 	}
@@ -250,12 +253,13 @@ sub backupsettings {
 	$tarcompress2 = qq~
      <tr valign="middle">
        <td align="left" class="windowbg">
-         <input type="radio" name="bintarcompress" value="none" $methodchecklist{'none'}/> $backup_txt{17}
+         <input type="radio" name="bintarcompress" id="bintarcompress" value="none" $methodchecklist{'none'}/> <label for="bintarcompress">$backup_txt{17}</label>
        </td>
      </tr>~;
 
 	foreach $command qw(/bin/gzip /bin/bzip2) {
-		$input = qq~name="bintarcompress" value="$command" $methodchecklist{$command}~;
+		$label_id++;
+		$input = qq~name="bintarcompress" id="label_$label_id" value="$command" $methodchecklist{$command}~;
 		$newcommand = &CheckPath($command);
 		if (!$newcommand) {
 			$input = qq~disabled="disabled"~;
@@ -268,7 +272,7 @@ sub backupsettings {
 		$tarcompress2 .= qq~
      <tr valign="middle">
        <td align="left" class="windowbg" $style>
-         <input type="radio" $input/> $newcommand $backup_txt{18} $disabledtext
+         <input type="radio" $input/> <label for="label_$label_id">$newcommand $backup_txt{18} $disabledtext</label>
        </td>
      </tr>~;
 	}
@@ -282,7 +286,7 @@ sub backupsettings {
 
 	# Display the commands we can use for compression
 	# Non-translated here, as I doubt there are words to describe "tar" in another language
-	$input = qq~name="backupmethod" value="/usr/bin/tar" onclick="domodulecheck('/usr/bin/tar')" $methodchecklist{'/usr/bin/tar'}~;
+	$input = qq~name="backupmethod" id="backupmethod1" value="/usr/bin/tar" onclick="domodulecheck('/usr/bin/tar')" $methodchecklist{'/usr/bin/tar'}~;
 	$newcommand = &CheckPath('/usr/bin/tar');
 	if ($newcommand) {
 		if (&ak_system("tar -cf $vardir/backuptest.$curtime.tar ./$GLOBAL::EXEC.$yyext")) {
@@ -301,11 +305,11 @@ sub backupsettings {
 	$yymain .= qq~
      <tr valign="middle">
        <td align="left" class="windowbg2" $style>
-         <input type="radio" $input/> Tar ($newcommand) $disabledtext
+         <input type="radio" $input/> <label for="backupmethod1">Tar ($newcommand) $disabledtext</label>
        </td>
      </tr>$tarcompress2~;
 
-	$input = qq~name="backupmethod" value="/usr/bin/zip" onclick="domodulecheck('/usr/bin/zip')" $methodchecklist{'/usr/bin/zip'}~;
+	$input = qq~name="backupmethod" id="backupmethod2" value="/usr/bin/zip" onclick="domodulecheck('/usr/bin/zip')" $methodchecklist{'/usr/bin/zip'}~;
 	$newcommand = &CheckPath('/usr/bin/zip');
 	if ($newcommand) {
 		if (&ak_system("zip -gq $vardir/backuptest.$curtime.zip ./$GLOBAL::EXEC.$yyext")) {
@@ -335,6 +339,7 @@ sub backupsettings {
 
 	# Display the modules that we can use
 	foreach $module qw(Archive::Tar Archive::Zip) {
+		$i++;
 		$input = qq~name="backupmethod" value="$module" onclick="domodulecheck('$module')" $methodchecklist{$module}~;
 		eval "use $module();";
 		if ($@) {
@@ -347,7 +352,7 @@ sub backupsettings {
 		$yymain .= qq~
      <tr valign="middle">
        <td align="left" class="windowbg2" $style>
-         <input type="radio" $input/> $module $disabledtext
+         <input type="radio" $input/> <label for="backupmethod3_$i">$module $disabledtext</label>
        </td>
      </tr>~;
 		if ($module eq 'Archive::Tar') { $yymain .= $tarcompress1; }
@@ -377,7 +382,7 @@ sub backupsettings {
      </tr>
      <tr valign="middle">
        <td align="left" class="windowbg2">
-         $backup_txt{'19c'} <input type="text" name="rememberbackup" value="~ . ($rememberbackup / 86400) . qq~" size="3"/> $backup_txt{'19d'}
+         <label for="rememberbackup">$backup_txt{'19c'}</label> <input type="text" name="rememberbackup" id="rememberbackup" value="~ . ($rememberbackup / 86400) . qq~" size="3"/> <label for="rememberbackup">$backup_txt{'19d'}</label>
        </td>
      </tr>
      <tr valign="middle">
