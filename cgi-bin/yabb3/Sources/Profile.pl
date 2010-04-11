@@ -2335,7 +2335,7 @@ sub ViewProfile {
 			<b>$profile_txt{'573'}: </b>
 			</div>
 			<div style="float: left; width: 70%; padding-top: 5px; padding-bottom: 5px;">
-			<a href="http://www.facebook.com/~ . (${$uid.$user}{'facebook'} !~ /\D/ ? "profile.php?id=" : "") . qq~${$uid.$user}{'facebook'}" target="_blank"><img src="$imagesdir/facebook.gif" alt="" border="0" style="vertical-align: middle;" /> ${$uid.$user}{'facebook'}</a>
+			<a href="http://www.facebook.com/~ . (${$uid.$user}{'facebook'} !~ /\D/ ? "profile.php?id=" : "") . qq~${$uid.$user}{'facebook'}" target="_blank"> ${$uid.$user}{'facebook'}</a>
 			</div>~;
 	}
 	if (!${$uid.$user}{'hidemail'} || $iamadmin || !$allow_hide_email || $view) {

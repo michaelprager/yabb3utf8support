@@ -287,7 +287,7 @@ sub LoadUserDisplay {
 	}
 
 	${$uid.$user}{'aim'} = ${$uid.$user}{'aim'} ? qq~<a href="aim:goim?screenname=${$uid.$user}{'aim'}&#38;message=Hi.+Are+you+there?">$img{'aim'}</a>~ : '';
-	${$uid.$user}{'facebook'} = ${$uid.$user}{'facebook'} ? qq~<a href="http://www.facebook.com/~ . (${$uid.$user}{'facebook'} !~ /\D/ ? "profile.php?id=" : "") . qq~${$uid.$user}{'facebook'}" target="_blank">$img{'facebook'}</a>~ : '';
+	${$uid.$user}{'facebook'} = ${$uid.$user}{'facebook'} ? qq~<a href="http://www.facebook.com/~ . (${$uid.$user}{'facebook'} !~ /\D/ ? "profile.php?id=" : "") . qq~${$uid.$user}{'facebook'}" target="_blank">$facebookimg</a>~ : '';
 	${$uid.$user}{'gtalk'} = ${$uid.$user}{'gtalk'} ? qq~<a href="javascript:void(window.open('$scripturl?action=setgtalk;gtalkname=$useraccount{$user}','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'))">$img{'gtalk'}</a>~ : '';
 	${$uid.$user}{'icq'} = ${$uid.$user}{'icq'} ? qq~<a href="http://web.icq.com/${$uid.$user}{'icq'}" title="${$uid.$user}{'icq'}" target="_blank">$img{'icq'}</a>~ : '';
 	${$uid.$user}{'msn'} = ${$uid.$user}{'msn'} ? qq~<a href="javascript:void(window.open('$scripturl?action=setmsn;msnname=$useraccount{$user}','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'))">$img{'msn'}</a>~ : '';
