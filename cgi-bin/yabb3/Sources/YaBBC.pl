@@ -54,7 +54,7 @@ sub MakeSmileys {
 		$tmpcode = $SmilieCode[$count];
 		$tmpcode =~ s/&#36;/\$/g;
 		$tmpcode =~ s/&#64;/\@/g;
-		$message =~ s~\Q$tmpcode\E~<img src="$tmpurl" border="0" alt="$SmilieDescription[$count]" title="$SmilieDescription[$count]" />$SmilieLinebreak[$count]~g;
+		$message =~ s~\Q$tmpcode\E~<img src="$tmpurl" border="0" alt="$SmilieDescription[$count]" title="$SmilieDescription[$count]" />~g;
 		$count++;
 	}
 

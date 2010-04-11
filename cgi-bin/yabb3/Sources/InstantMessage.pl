@@ -795,6 +795,7 @@ var GB_ROOT_DIR = "$yyhtml_root/greybox/";
 				}
 
 				HAND = "style='cursor: pointer; cursor: hand;'";
+				document.write("<div style='float: left; width: 440px;'>");
 				document.write("<img src='$imagesdir/smiley.gif' onclick='smiley();' "+HAND+" align='bottom' alt='$post_txt{'287'}' title='$post_txt{'287'}' border='0'> ");
 				document.write("<img src='$imagesdir/wink.gif' onclick='wink();' "+HAND+" align='bottom' alt='$post_txt{'292'}' title='$post_txt{'292'}' border='0'> ");
 				document.write("<img src='$imagesdir/cheesy.gif' onclick='cheesy();' "+HAND+" align='bottom' alt='$post_txt{'289'}' title='$post_txt{'289'}' border='0'> ");
@@ -811,6 +812,7 @@ var GB_ROOT_DIR = "$yyhtml_root/greybox/";
 				document.write("<img src='$imagesdir/undecided.gif' onclick='undecided();' "+HAND+" align='bottom' alt='$post_txt{'528'}' title='$post_txt{'528'}' border='0'> ");
 				document.write("<img src='$imagesdir/kiss.gif' onclick='kiss();' "+HAND+" align='bottom' alt='$post_txt{'529'}' title='$post_txt{'529'}' border='0'> ");
 				document.write("<img src='$imagesdir/cry.gif' onclick='cry();' "+HAND+" align='bottom' alt='$post_txt{'530'}' title='$post_txt{'530'}' border='0'> ");$moresmilieslist
+				document.write("</div>");
 			//-->
 			</script>\n~;
 
