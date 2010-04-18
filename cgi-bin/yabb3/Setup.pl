@@ -3529,6 +3529,7 @@ sub SetInstall {
 			<option value="1">01/31/01 at 13:15:17</option>
 			<option value="5">01/31/01 at 1:15pm</option>
 			<option value="4" selected="selected">Jan 12th, 2001 at 1:15pm</option>
+			<option value="8"> 12th Jan, 2001 at 1:15pm</option>
 			<option value="2">31.01.01 at 13:15:17</option>
 			<option value="3">31.01.2001 at 13:15:17</option>
 			<option value="6">31. Jan at 13:15</option>
