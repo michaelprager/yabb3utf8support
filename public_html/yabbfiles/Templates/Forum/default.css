@@ -259,6 +259,16 @@ select optgroup {
 	text-align: center;
 	color: #333366;
 }
+/* News fader fore- and background colors */
+.newsfader {
+	color: #ff0000;
+	background-color: #FEFEFE;
+	font-size: 10px;
+	font-weight: normal;
+	font-style: normal;
+	font-family: Verdana, Sans-Serif;
+	text-decoration: none;
+}
 #fscroller {
 	line-height: 1.3;
 }

@@ -371,11 +371,74 @@ sub template {
 					var stepdelay = "$stepdelay";
 					var fadelinks = $fadelinks;
 					var delay = "$fadedelay";
-					var bcolor = "$color{'faderbg'}";
-					var tcolor = "$color{'fadertext'}";
+					function convProp(thecolor) {
+						if(thecolor.charAt(0) == "#") {
+							if(thecolor.length == 4) thecolor=thecolor.replace(/(\\#)([a-f A-F 0-10]{1,1})([a-f A-F 0-10]{1,1})([a-f A-F 0-10]{1,1})\/i, "\$1\$2\$2\$3\$3\$4\$4");
+							var thiscolor = new Array(HexToR(thecolor), HexToG(thecolor), HexToB(thecolor));
+							return thiscolor;
+						}
+						else if(thecolor.charAt(3) == "(") {
+							thecolor=thecolor.replace(/rgb\\((\\d+?\\%*?)\\,(\\s*?)(\\d+?\\%*?)\\,(\\s*?)(\\d+?\\%*?)\\)/i, "\$1|\$3|\$5");
+							var thiscolor = thecolor.split("|");
+							return thiscolor;
+						}
+						else {
+							thecolor=thecolor.replace(/\\"/g, "");
+							thecolor=thecolor.replace(/maroon/ig, "128|0|0");
+							thecolor=thecolor.replace(/red/i, "255|0|0");
+							thecolor=thecolor.replace(/orange/i, "255|165|0");
+							thecolor=thecolor.replace(/olive/i, "128|128|0");
+							thecolor=thecolor.replace(/yellow/i, "255|255|0");
+							thecolor=thecolor.replace(/purple/i, "128|0|128");
+							thecolor=thecolor.replace(/fuchsia/i, "255|0|255");
+							thecolor=thecolor.replace(/white/i, "255|255|255");
+							thecolor=thecolor.replace(/lime/i, "00|255|00");
+							thecolor=thecolor.replace(/green/i, "0|128|0");
+							thecolor=thecolor.replace(/navy/i, "0|0|128");
+							thecolor=thecolor.replace(/blue/i, "0|0|255");
+							thecolor=thecolor.replace(/aqua/i, "0|255|255");
+							thecolor=thecolor.replace(/teal/i, "0|128|128");
+							thecolor=thecolor.replace(/black/i, "0|0|0");
+							thecolor=thecolor.replace(/silver/i, "192|192|192");
+							thecolor=thecolor.replace(/gray/i, "128|128|128");
+							var thiscolor = thecolor.split("|");
+							return thiscolor;
+						}
+					}
 
-					var startcolor = new Array(HexToR(bcolor), HexToG(bcolor), HexToB(bcolor));
-					var endcolor = new Array(HexToR(tcolor), HexToG(tcolor), HexToB(tcolor));\n\n~;
+					if (ie4 || DOM2) document.write('$newstitle<div class="windowbg2" id="fadestylebak" style="display: none;"><div class="newsfader" id="fadestyle" style="display: none;"> </div></div>');
+
+					if (document.getElementById('fadestyle').currentStyle) {
+						tcolor = document.getElementById('fadestyle').currentStyle['color'];
+						bcolor = document.getElementById('fadestyle').currentStyle['backgroundColor'];
+						fntsize = document.getElementById('fadestyle').currentStyle['fontSize'];
+						fntstyle = document.getElementById('fadestyle').currentStyle['fontStyle'];
+						fntweight = document.getElementById('fadestyle').currentStyle['fontWeight'];
+						fntfamily = document.getElementById('fadestyle').currentStyle['fontFamily'];
+						txtdecoration = document.getElementById('fadestyle').currentStyle['textDecoration'];
+					}
+					else if (window.getComputedStyle) {
+						tcolor = window.getComputedStyle(document.getElementById('fadestyle'), null).getPropertyValue('color');
+						bcolor = window.getComputedStyle(document.getElementById('fadestyle'), null).getPropertyValue('background-color');
+						fntsize = window.getComputedStyle(document.getElementById('fadestyle'), null).getPropertyValue('font-size');
+						fntstyle = window.getComputedStyle(document.getElementById('fadestyle'), null).getPropertyValue('font-style');
+						fntweight = window.getComputedStyle(document.getElementById('fadestyle'), null).getPropertyValue('font-weight');
+						fntfamily = window.getComputedStyle(document.getElementById('fadestyle'), null).getPropertyValue('font-family');
+						txtdecoration = window.getComputedStyle(document.getElementById('fadestyle'), null).getPropertyValue('text-decoration');
+					}
+					if (bcolor == "transparent" || bcolor == "rgba\\(0\\, 0\\, 0\\, 0\\)") {
+						if (document.getElementById('fadestylebak').currentStyle) {
+							tcolor = document.getElementById('fadestylebak').currentStyle['color'];
+							bcolor = document.getElementById('fadestylebak').currentStyle['backgroundColor'];
+						}
+						else if (window.getComputedStyle) {
+							tcolor = window.getComputedStyle(document.getElementById('fadestylebak'), null).getPropertyValue('color');
+							bcolor = window.getComputedStyle(document.getElementById('fadestylebak'), null).getPropertyValue('background-color');
+						}
+					}
+					txtdecoration = txtdecoration.replace(/\'/g, "");
+					var endcolor = convProp(tcolor);
+					var startcolor = convProp(bcolor);~;
 			my $greybox = $img_greybox;
 			$img_greybox = 0;
 			for (my $j = 0; $j < @newsmessages; $j++) {
@@ -393,7 +456,7 @@ sub template {
 			}
 			$img_greybox = $greybox;
 			$yynews .= qq~
-					if (ie4 || DOM2) document.write('$newstitle<div id="fscroller"></div>');
+					if (ie4 || DOM2) document.write('<div style="font-size: ' + fntsize + '\\; font-weight: ' + fntweight + '\\; font-style: ' + fntstyle + '\\; font-family: ' + fntfamily + '\\; text-decoration: ' + txtdecoration + '\\;" id="fscroller"></div>');
 
 					if (window.addEventListener)
 						window.addEventListener("load", changecontent, false);
