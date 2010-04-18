@@ -781,6 +781,8 @@ sub ModifyProfileOptions {
 	elsif (${$uid.$user}{'timeselect'} == 3) { $tsl3 = ' selected="selected" '; }
 	elsif (${$uid.$user}{'timeselect'} == 2) { $tsl2 = ' selected="selected" '; }
 	elsif (${$uid.$user}{'timeselect'} == 1) { $tsl1 = ' selected="selected" '; }
+	elsif (${$uid.$user}{'timeselect'} == 8) { $tsl8 = ' selected="selected" '; }
+	elsif ($timeselected == 8) { $tsl8 = ' selected="selected" '; }
 	elsif ($timeselected == 7) { $tsl7 = ' selected="selected" '; }
 	elsif ($timeselected == 6) { $tsl6 = ' selected="selected" '; }
 	elsif ($timeselected == 5) { $tsl5 = ' selected="selected" '; }
@@ -812,6 +814,7 @@ sub ModifyProfileOptions {
 			<option value="1"$tsl1>$profile_txt{'480'}</option>
 			<option value="5"$tsl5>$profile_txt{'484'}</option>
 			<option value="4"$tsl4>$profile_txt{'483'}</option>
+			<option value="8"$tsl8>$profile_txt{'483a'}</option>
 			<option value="2"$tsl2>$profile_txt{'481'}</option>
 			<option value="3"$tsl3>$profile_txt{'482'}</option>
 			<option value="6"$tsl6>$profile_txt{'485'}</option>

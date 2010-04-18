@@ -220,6 +220,7 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
   <option value="1" ${isselected($timeselected == 1)}>$admin_txt{'480'}</option>
   <option value="5" ${isselected($timeselected == 5)}>$admin_txt{'484'}</option>
   <option value="4" ${isselected($timeselected == 4)}>$admin_txt{'483'}</option>
+  <option value="8" ${isselected($timeselected == 8)}>$admin_txt{'483a'}</option>
   <option value="2" ${isselected($timeselected == 2)}>$admin_txt{'481'}</option>
   <option value="3" ${isselected($timeselected == 3)}>$admin_txt{'482'}</option>
   <option value="6" ${isselected($timeselected == 6)}>$admin_txt{'485'}</option>

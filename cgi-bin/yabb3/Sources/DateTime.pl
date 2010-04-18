@@ -137,7 +137,7 @@ sub timeformat {
 	$newmonth = sprintf("%02d", $newmonth);
 	$newshortyear = ($newyear % 100);
 	$newshortyear = sprintf("%02d", $newshortyear);
-	if ($mytimeselected != 4) { $newday = sprintf("%02d", $newday); }
+	if ($mytimeselected != 4 && $mytimeselected != 8) { $newday = sprintf("%02d", $newday); }
 	$newhour   = sprintf("%02d", $newhour);
 	$newminute = sprintf("%02d", $newminute);
 	$newsecond = sprintf("%02d", $newsecond);
@@ -237,7 +237,7 @@ sub timeformat {
 		$newformat = $daytxt ? qq~$daytxt $maintxt{'107'} $newtime~ : qq~$newday.$newmonth.$newshortyear $maintxt{'107'} $newtime~;
 	} elsif ($mytimeselected == 3) {
 		$newformat = $daytxt ? qq~$daytxt $maintxt{'107'} $newtime~ : qq~$newday.$newmonth.$newyear $maintxt{'107'} $newtime~;
-	} elsif ($mytimeselected == 4) {
+	} elsif ($mytimeselected == 4 || $mytimeselected == 8) {
 		$ampm = $newhour > 11 ? 'pm' : 'am';
 		$newhour2 = $newhour % 12 || 12;
 		if ($use_rfc) { $newmonth2 = $months_rfc[$newmonth - 1]; }
@@ -253,7 +253,11 @@ sub timeformat {
 		} else {
 			$newday2 = "<sup>$timetxt{'4'}</sup>";
 		}
-		$newformat = $daytxt ? qq~$daytxt $maintxt{'107'} $newhour2:$newminute$ampm~ : qq~$newmonth2 $newday$newday2, $newyear $maintxt{'107'} $newhour2:$newminute$ampm~;
+		if ($mytimeselected == 4) {
+			$newformat = $daytxt ? qq~$daytxt $maintxt{'107'} $newhour2:$newminute$ampm~ : qq~$newmonth2 $newday$newday2, $newyear $maintxt{'107'} $newhour2:$newminute$ampm~;
+		} else {
+			$newformat = $daytxt ? qq~$daytxt $maintxt{'107'} $newhour2:$newminute$ampm~ : qq~$newday$newday2 $newmonth2, $newyear $maintxt{'107'} $newhour2:$newminute$ampm~;
+		}
 	} elsif ($mytimeselected == 5) {
 		$ampm = $newhour > 11 ? 'pm' : 'am';
 		$newhour2 = $newhour % 12 || 12;
