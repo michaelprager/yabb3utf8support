@@ -148,7 +148,16 @@ sub buildIMsend {
 	&ToHTML($subject);
 
 
+	if ($action eq "modify" || $action eq "modify2") {
+		$displayname = qq~$mename~;
+	} else {
+		$displayname = ${$uid.$username}{'realname'};
+	}
+	require "$sourcedir/ContextHelp.pl";
+	&ContextScript("post");
+
 	$MCGlobalFormStart .= qq~
+	$ctmain
 	<script language="JavaScript1.2" src="$yyhtml_root/yabbc.js" type="text/javascript"></script>
 	<script language="JavaScript1.2" src="$yyhtml_root/ubbc.js" type="text/javascript"></script>
 	<script language="JavaScript1.2" type="text/javascript">
@@ -508,6 +517,7 @@ sub buildIMsend {
 			<script language="JavaScript1.2" type="text/javascript">
 			<!--
 			HAND = "style='cursor: pointer;'";
+			HAND += " onmouseover='contextTip(event, this.alt)' onmouseout='contextTip(event, this.alt)' oncontextmenu='if(!showcontexthelp(this.src, this.alt)) return false;'";
 			document.write('<div style="width: 437px; float: left;">');
 			document.write("<img src='$imagesdir/url.gif' onclick='hyperlink();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'257'}' title='$post_txt{'257'}' border='0' />");
 			document.write("<img src='$imagesdir/ftp.gif' onclick='ftp();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'434'}' title='$post_txt{'434'}' border='0' />");
@@ -649,7 +659,8 @@ sub buildIMsend {
 			</div>
 			<script language="JavaScript1.2" type="text/javascript">
 			<!--
-			HAND = "style='cursor: pointer; cursor: hand;'";
+			HAND = "style='cursor: pointer;'";
+			HAND += " onmouseover='contextTip(event, this.alt)' onmouseout='contextTip(event, this.alt)' oncontextmenu='if(!showcontexthelp(this.src, this.alt)) return false;'";
 			document.write('<div style="width: 92px; float: left;">');
 			document.write("<img src='$imagesdir/pre.gif' onclick='pre();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'444'}' title='$post_txt{'444'}' border='0' />");
 			document.write("<img src='$imagesdir/left.gif' onclick='left();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'445'}' title='$post_txt{'445'}' border='0' />");
@@ -794,7 +805,7 @@ var GB_ROOT_DIR = "$yyhtml_root/greybox/";
 					AddText(AddTxt);
 				}
 
-				HAND = "style='cursor: pointer; cursor: hand;'";
+				HAND = "style='cursor: pointer;'";
 				document.write("<div style='float: left; width: 440px;'>");
 				document.write("<img src='$imagesdir/smiley.gif' onclick='smiley();' "+HAND+" align='bottom' alt='$post_txt{'287'}' title='$post_txt{'287'}' border='0'> ");
 				document.write("<img src='$imagesdir/wink.gif' onclick='wink();' "+HAND+" align='bottom' alt='$post_txt{'292'}' title='$post_txt{'292'}' border='0'> ");
