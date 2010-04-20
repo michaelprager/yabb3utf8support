@@ -1284,7 +1284,7 @@ sub IMsendMessage {
 			# Check Ignore-List, unless sender is FA
 			&LoadUser($UserTo);
 			if (!$isBMess) {
-				if (${$uid.$UserTo}{'im_ignorelist'} && $username ne 'admin') {
+				if (${$uid.$UserTo}{'im_ignorelist'} && !$iamadmin && !$iamgmod) {
 					# Build Ignore-List
 					@ignore = split(/\|/, ${$uid.$UserTo}{'im_ignorelist'});
 
