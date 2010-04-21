@@ -187,7 +187,7 @@ $catheader = qq~
 <tr><td colspan="5" class="catbg" height="18" ><yabb catimage> <yabb catlink></td></tr>
 <yabb newmsg start><yabb newmsg icon><yabb newmsg><yabb newmsg end>
 </table>
-<table <yabb boardtable> cellpadding="4" cellspacing="1" border="0" width="100%"> 
+<table cellpadding="4" cellspacing="1" border="0" width="100%"> 
 ~;
 
 # Looks of each board in category          #
