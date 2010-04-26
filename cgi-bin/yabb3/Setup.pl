@@ -3647,6 +3647,7 @@ sub SetInstall2 {
 		$enable_notifications = 0;
 		$NewNotificationAlert = 0;
 		$autolinkurls = 1;
+		$forumnumberformat = $FORM{'forumnumberformat'} || 1;
 		$timeselected = $FORM{'timeselect'} || 0;
 		$timecorrection = 0;
 		$timeoffset = "$FORM{'usertimesign'}$FORM{'usertimehour'}.$FORM{'usertimemin'}";
@@ -3867,6 +3868,7 @@ sub SetInstall2 {
 \$NewNotificationAlert = $NewNotificationAlert;     # enable notification alerts (popup) for new notifications
 \$autolinkurls = $autolinkurls;                     # Set to 1 to turn URLs into links, or 0 for no auto-linking.
 
+\$forumnumberformat = $forumnumberformat;			# Select your preferred output Format for Numbers
 \$timeselected = $timeselected;                     # Select your preferred output Format of Time and Date
 \$timecorrection = $timecorrection;                 # Set time correction for server time in seconds
 \$timeoffset = "$timeoffset";                       # Time Offset to GMT/UTC (0 for GMT/UTC)
