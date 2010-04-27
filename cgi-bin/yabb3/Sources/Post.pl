@@ -2225,7 +2225,7 @@ sub Post2 {
 			}
 
 			$fixext  =~ s/\.(pl|pm|cgi|php)/._$1/i;
-			$fixname =~ s/\./_/g;
+			$fixname =~ s/\.(?!tar$)/_/g;
 			$fixfile = qq~$fixname$fixext~;
 
 			if (!$overwrite) { $fixfile = &check_existence($uploaddir, $fixfile); }
