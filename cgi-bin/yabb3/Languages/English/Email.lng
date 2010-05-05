@@ -68,7 +68,7 @@ $emailcharset = 'ISO-8859-1';
 );
 
 $yabbtags{'preregemail'} = qq~displayname preregspan cryptusername activationcode~;
-$emaildesc{'preregemail'} = qq~The Registration Email that is sent out when using Pre-Registration Codes~;
+$emaildesc{'preregemail'} = qq~The Registration Email that is sent out when using Activation link~;
 $preregemail = qq~Welcome, {yabb displayname}!
 Here is your account validation code {yabb displayname}.
 
@@ -85,7 +85,7 @@ Regards,
 The {yabb mbname} team~;
 
 $yabbtags{'approveregemail'} = qq~username displayname~;
-$emaildesc{'approveregemail'} = qq~The Pending Approval Email when not sending a password or Pre-Registration Code~;
+$emaildesc{'approveregemail'} = qq~The Pending Approval Email when not sending a password or Activation link~;
 $approveregemail = qq~Hello, {yabb displayname}!
 
 Your application with login ID: "{yabb username}" is pending approval of the {yabb mbname} administration.
@@ -97,7 +97,7 @@ Regards,
 The {yabb mbname} team~;
 
 $yabbtags{'instantapprovedemail'} = qq~username displayname reviewer~;
-$emaildesc{'instantapprovedemail'} = qq~The Instant Approval Email when not sending a password or Pre-Registration Code~;
+$emaildesc{'instantapprovedemail'} = qq~The Instant Approval Email when not sending a password or Activation link~;
 $instantapprovedemail = qq~Hello, {yabb displayname}!
 
 Congratulations and welcome.
@@ -128,7 +128,7 @@ Regards,
 The {yabb mbname} team~;
 
 $yabbtags{'instantrejectedemail'} = qq~username displayname reviewer~;
-$emaildesc{'instantrejectedemail'} = qq~The Instant Decline Email when not sending a password or Pre-Registration Code~;
+$emaildesc{'instantrejectedemail'} = qq~The Instant Decline Email when not sending a password or Activation link~;
 $instantrejectedemail = qq~Hello, {yabb displayname}!
 
 We regret to inform you that your membership application has been instantly rejected by {yabb reviewer} from the {yabb mbname} administration.
@@ -140,7 +140,7 @@ Regards,
 The {yabb mbname} team~;
 
 $yabbtags{'reviewapprovedemail'} = qq~username displayname reviewer~;
-$emaildesc{'reviewapprovedemail'} = qq~The Reviewed Approval Email when not sending a password or Pre-Registration Code~;
+$emaildesc{'reviewapprovedemail'} = qq~The Reviewed Approval Email when not sending a password or Activation link~;
 $reviewapprovedemail = qq~Hello, {yabb displayname}!
 
 Congratulations and welcome.
@@ -177,7 +177,7 @@ Regards,
 The {yabb mbname} team~;
 
 $yabbtags{'reviewrejectedemail'} = qq~username displayname reviewer reason~;
-$emaildesc{'reviewrejectedemail'} = qq~The Reviewed Decline Email when not sending a password or Pre-Registration Code~;
+$emaildesc{'reviewrejectedemail'} = qq~The Reviewed Decline Email when not sending a password or Activation link~;
 $reviewrejectedemail = qq~Hello, {yabb displayname}!
 
 We regret to inform you that your membership application has been reviewed and rejected by {yabb reviewer} from the {yabb mbname} administration.
@@ -204,7 +204,7 @@ Regards,
 The {yabb mbname} team~;
 
 $yabbtags{'welcomeregemail'} = qq~username password displayname~;
-$emaildesc{'welcomeregemail'} = qq~The Registration Email when not sending a password or Pre-Registration Code~;
+$emaildesc{'welcomeregemail'} = qq~The Registration Email when not sending a password or Activation link~;
 $welcomeregemail = qq~Welcome, {yabb displayname}!
 
 Your user ID is {yabb username}, and your password is {yabb password}.
@@ -251,7 +251,7 @@ User Name: {yabb username}
 IP-Adress: {yabb userip}
 User Email: {yabb useremail}
 
-To verifying the registration and the profile of the new member please login to your forum and click on the link below.
+To verifying the registration of the new member please login to your forum and click on the link below.
 {yabb adminurl}?action=view_reglog
 
 If the link does not work (or if you use AOL or a browser-based Email program), copy the link and insert it  in the address bar of your Web browser and confirm with enter.
