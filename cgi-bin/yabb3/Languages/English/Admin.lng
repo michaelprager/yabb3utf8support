@@ -76,13 +76,13 @@ $yycharset = 'ISO-8859-1';
 '64a' => '(these do not need to be filled out completely)',
 '64b' => 'Board Picture',
 '64b2' => 'Category Picture',
-'64c' => 'Zero Post-Count Board?:',
+'64c' => 'Zero Post-Count Board?',
 '64d' => 'If checked, posts in this board will not contribute to a user\'s post count.',
 '64e' => 'Show to all?',
 '64f' => 'If checked, the board is visible to anyone able to view the Board Index, even if they are not allowed to access the board itself.',
-'64g' => 'Global Announcements',
+'64g' => 'Global Announcements?',
 '64h' => 'If checked, topics in this board are shown as "Important Topics" at the top of every other board\'s Message Index. Only Administrators and Global Moderators (if allowed) may post in this board; all permissions for other groups are ignored. The board itself will be visible in the Board Index only for Admins and Global Mods (if allowed).',
-'64i' => 'Recycle Bin',
+'64i' => 'Recycle Bin?',
 '64j' => 'If checked, this board is a recycle bin for topics deleted by Moderators and, if enabled in Forum Settings -> Staff, by Global Moderators and Administrators.',
 '64k' => 'Allow attachments?',
 '64l' => 'If checked, users may attach files to posts they make in this board. (See Advanced Settings -> File Attachments to change the forum-wide attachment preferences.)',
@@ -1199,7 +1199,7 @@ $maintxt {'dst'} = '<sup>*</sup>'; ## needed to show Today in registration log
 'Compress::Bzip2' => 'Used for the Backup feature.<br />This module is only needed if you do not have other Backup methods available (see the Backup feature for details). Otherwise you do not need this module.',
 'Archive::Tar' => 'Used for the Backup feature.<br />This module is only needed if you do not have other Backup methods available (see the Backup feature for details). Otherwise you do not need this module.',
 'Archive::Zip' => 'Used for the Backup feature.<br />This module is only needed if you do not have other Backup methods available (see the Backup feature for details). Otherwise you do not need this module.',
-'MIME::Lite' => 'Used to send Backups attached to an email.<br />This module is only needed if you want to get the Backup file by email and not by direct download from the Admin Center.',
+'MIME::Lite' => 'Used to send Backups attached to an email.<br />This module is only needed if you want to get the Backup file by email and not by direct download from the Admin Center. Otherwise you do not need this module.',
 'LWP::UserAgent' => 'Used by "GoogieSpell", our Spell Checker.<br />If this module is not installed, you can not enable the Spell Checker. Otherwise you do not need this module.',
 'HTTP::Request::Common' => 'Used by "GoogieSpell", our Spell Checker.<br />If this module is not installed, you can not enable the Spell Checker. Otherwise you do not need this module.',
 'Crypt::SSLeay' => 'Used by "GoogieSpell", our Spell Checker.<br />If this module is not installed, you can not enable the Spell Checker. Otherwise you do not need this module.',
@@ -1294,7 +1294,7 @@ $yabbThanks = 'Special thanks to';
 
 $yabbBeta = 'and all of our beta testers.';
 
-$yabb2Credits = 'the support team, our fearless founder: Zef Hemel and everyone who contributed to YaBB in the course of these last 7 years!';
+$yabb2Credits = 'the support team, our fearless founder: Zef Hemel and everyone who contributed to YaBB in the course of these last 10 years!';
 
 $noBytesHarmed = 'No bits or bytes were harmed during the creation of YaBB!';
 

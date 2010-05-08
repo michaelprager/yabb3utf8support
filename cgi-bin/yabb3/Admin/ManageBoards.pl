@@ -542,10 +542,10 @@ function pasteNames(num,total) {
     <td class="windowbg" width="25%" align="left"><label for="att$i"><b>$admin_txt{'64k'}</b></label></td>
     <td class="windowbg2" width="75%" colspan="3" align="left"><input type="checkbox" name="att$i" id="att$i" value="1"$attch /> <label for="att$i">$admin_txt{'64l'}</label></td>
   </tr><tr>
-    <td class="windowbg" width="25%" align="left"><label for="ann$i"><b>$admin_txt{'64g'}:</b></label></td>
+    <td class="windowbg" width="25%" align="left"><label for="ann$i"><b>$admin_txt{'64g'}</b></label></td>
     <td class="windowbg2" width="75%" colspan="3" align="left"><input type="checkbox" id="ann$i" name="ann$i" value="1" $annch onclick="javascript: if (this.checked) checkann(true, '$i'); else checkann(false, '$i');" /> <label for="ann$i">$admin_txt{'64h'}</label></td>
   </tr><tr>
-    <td class="windowbg" width="25%" align="left"><label for="rbin$i"><b>$admin_txt{'64i'}:</b></label></td>
+    <td class="windowbg" width="25%" align="left"><label for="rbin$i"><b>$admin_txt{'64i'}</b></label></td>
     <td class="windowbg2" width="75%" colspan="3" align="left"><input type="checkbox" id="rbin$i" name="rbin$i" value="1" $rbinch onclick="javascript: if (this.checked) checkbin(true, '$i'); else checkbin(false, '$i');" /> <label for="rbin$i">$admin_txt{'64j'}</label></td>
   </tr><tr>
     <td class="catbg"  colspan="4"><b>$admin_txt{'100'}:</b> $admin_txt{'100a'}</td>
