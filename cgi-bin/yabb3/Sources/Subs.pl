@@ -447,7 +447,7 @@ sub template {
 				if ($enable_ubbc) {
 					if (!$yyYaBBCloaded) { require "$sourcedir/YaBBC.pl"; }
 					&DoUBBC;
-					$message =~ s/ style="display:none"/ style="display:visible"/g;
+					$message =~ s/ style="display:none"/ style="display:block"/g;
 				}
 				&wrap2;
 				$message =~ s/"/\\"/g;
@@ -504,7 +504,7 @@ sub template {
 				$img_locs{$_[0]} = qq~$defaultimagesdir/$_[0]~;
 			}
 		}
-		$output =~ s~(src|value|url)(=|\()("|'| )$imagesdir/([^'" ]+).~ "$1$2$3" . &ImgLoc($4) . $3 ~eisg;
+		$output =~ s~(src|value|url)(=|\()(\\*"|'| )$imagesdir/(.+?)(\3)~ "$1$2$3" . &ImgLoc($4) . $3 ~eisg; 
 	}
 
 	# add formsession to each <form ..>-tag
