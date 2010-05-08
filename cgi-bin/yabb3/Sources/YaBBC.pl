@@ -22,6 +22,7 @@ if ($GLOBAL::ACTION eq 'detailedversion') { return 1; }
 $yyYaBBCloaded = 1;
 
 sub MakeSmileys {
+	my $message = join "", @_;
 	my $i = 0;
 	my @HTMLtags;
 	while ($message =~ s/(<.+?>)/[HTML$i]/s) { push(@HTMLtags, $1); $i++; }
@@ -47,7 +48,7 @@ sub MakeSmileys {
 	$message =~ s/(\W|^):thumb:/$1<img src="$imagesdir\/thumbsup.gif" border="0" alt="$post_txt{'282'}" title="$post_txt{'282'}" \/>/g;
 	$message =~ s/(\W|^)&gt;:-D/$1<img src="$imagesdir\/evil.gif" border="0" alt="$post_txt{'802'}" title="$post_txt{'802'}" \/>/g;
 
-	$count = 0;
+	my $count = 0;
 	while ($SmilieURL[$count]) {
 		if ($SmilieURL[$count] =~ /\//i) { $tmpurl = $SmilieURL[$count]; }
 		else { $tmpurl = qq~$imagesdir/$SmilieURL[$count]~; }
@@ -60,6 +61,8 @@ sub MakeSmileys {
 
 	$i = 0;
 	while ($message =~ s/\[HTML$i\]/$HTMLtags[$i]/s) { $i++; }
+	
+	return $message;
 }
 
 sub quotemsg {
@@ -222,11 +225,27 @@ sub imagemsg {
 }
 
 sub DoUBBC {
-	return if $ns eq "NS" || $message =~ s/#nosmileys//isg;
+    my $msg = _do_ubbc($message);
+	$message = $msg;
+}
+
+sub _do_ubbc {
+    my $message = join "", @_;
+	return $message if $ns eq "NS" || $message =~ s/#nosmileys//isg;
 
 	my $image_type = $_[0];
 
-	$message =~ s~\[noparse\]\n*(.*?)\n*\[/noparse\]~ &noparse($1) ~eisg;
+	if($message =~ m{(.*?)\[noparse\](.*)}) {
+		my ($beginning, $temp, $middle, $end) = (undef, undef, undef, undef);
+		($beginning, $temp) = ($1, $2);
+		if($temp =~ m{(.*?)\[/noparse\](.*)}) {
+			my ($middle, $end) = ($1, $2);
+			return _do_ubbc($beginning).noparse($middle)._do_ubbc($end);			
+		}
+		else {
+			return _do_ubbc($beginning).noparse($temp);
+		}
+	}
 
 	$message =~ s~\[code\]~ \[code\]~ig;
 	$message =~ s~\[/code\]~ \[/code\]~ig;
@@ -388,7 +407,7 @@ sub DoUBBC {
 		$message =~ s~\[oops\]~$oops~g;
 	}
 
-	&MakeSmileys;
+	$message = MakeSmileys($message);
 
 	$message =~ s~\s*\[\*\]~</li><li>~isg;
 	$message =~ s~\[olist\]~<ol>~isg;
@@ -427,6 +446,8 @@ sub DoUBBC {
 	$message =~ s~\[/\&table\]~</table>~g;
 	$message =~ s~\n~<br />~ig;
 	$message =~ s~\[code_br\]~\n~ig;
+	
+	return $message;
 }
 
 sub DoUBBCTo {
