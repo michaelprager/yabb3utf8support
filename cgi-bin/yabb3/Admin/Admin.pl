@@ -684,7 +684,7 @@ sub DeleteOldMessages {
     </tr>
     <tr valign="middle">
      <td align="left" class="windowbg2"><br />
-      <label for="keep_them">$admin_txt{'4'}:</label> <input type="checkbox" name="keep_them" id="keep_them" value="1" /><br />
+      <label for="keep_them">$admin_txt{'4'}</label> <input type="checkbox" name="keep_them" id="keep_them" value="1" /><br />
       <label for="maxdays">$admin_txt{'124'} <input type=text name="maxdays" id="maxdays" size="4" value="$maxdays" /> $admin_txt{'579'} $admin_txt{'2'}:</label><br /><br />
       <div align="left" style="margin-left: 25px; margin-right: auto;">~;
 
