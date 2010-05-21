@@ -2224,7 +2224,7 @@ sub LoadBuddyList {
 			$usernamelink = $link{$buddyname};
 
 			if (${$uid.$buddyname}{'hidemail'} && !$iamadmin && $allow_hide_email == 1) {
-				$buddyemail = qq~<img src="$imagesdir/lockmail.gif" alt="Hidden Email" title="Hidden Email" />~;
+				$buddyemail = qq~<img src="$imagesdir/lockmail.gif" alt="$mycenter_txt{'hidenemail'}" title="$mycenter_txt{'hidenemail'}" />~;
 			} else {
 				$buddyemail = qq~<a href="mailto:${$uid.$buddyname}{'email'}"><img src="$imagesdir/email.gif" border="0" alt="$profile_txt{'889'} ${$uid.$buddyname}{'email'}" title="$profile_txt{'889'} ${$uid.$buddyname}{'email'}" /></a>~;
 			}

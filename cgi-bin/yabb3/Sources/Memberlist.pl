@@ -249,7 +249,7 @@ sub showRows {
 		~;
 		if (${$uid.$user}{'hidemail'} && !$iamadmin && $allow_hide_email == 1) {
 			$yymain .= qq~
-			<td align="center" class="windowbg2"><img src="$imagesdir/lockmail.gif" alt="Hidden Email" /></td>
+			<td align="center" class="windowbg2"><img src="$imagesdir/lockmail.gif" alt="$ml_txt{'308'}" title="$ml_txt{'308'}" /></td>
 		~;
 		} else {
 			if (!$iamguest){
@@ -258,7 +258,7 @@ sub showRows {
 			~;
 			} else {
 				$yymain .= qq~
-				<td align="center" class="windowbg2"><img src="$imagesdir/lockmail.gif" alt="Hidden Email" /></td>
+				<td align="center" class="windowbg2"><img src="$imagesdir/lockmail.gif" alt="$ml_txt{'308'}" title="$ml_txt{'308'}" /></td>
 			~;
 			}
 		}

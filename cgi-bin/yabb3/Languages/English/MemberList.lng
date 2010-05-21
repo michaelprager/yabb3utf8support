@@ -30,6 +30,7 @@ $memberlistlngver = 'YaBB 2.4 $Revision$';
 '233' => 'Date Registered',
 '234' => 'Reg. Date',
 '307' => 'e-mail',
+'308' => 'Hidden Email',
 '309' => 'of',
 '312' => 'Viewing Members By Letter',
 '313' => 'Viewing The',
