@@ -2309,7 +2309,7 @@ sub ViewProfile {
 			<b>$profile_txt{'823'}: </b>
 			</div>
 			<div style="float: left; width: 70%; padding-top: 5px; padding-bottom: 5px;">
-			<a href="#" onclick="window.open('$scripturl?action=setmsn;msnname=$user','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'); return false;" rel="nofollow"><img src="$imagesdir/msn3.gif" alt="" border="0" style="vertical-align: middle;" /> $msn_user</a>
+			<a href="#" onclick="window.open('$scripturl?action=setmsn;msnname=$user','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'); return false;" rel="nofollow"><img src="$imagesdir/msn.gif" alt="" border="0" style="vertical-align: middle;" /> $msn_user</a>
 			</div>~;
 	}
 	if (${$uid.$user}{'gtalk'}) {

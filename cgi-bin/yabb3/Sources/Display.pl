@@ -1007,12 +1007,12 @@ sub SetMsn {
 <table border="0" width="100%" cellspacing="1" cellpadding="4" class="bordercolor">
 	<tr>
 		<td class="titlebg" align="left" height="22">
-		<img src="$defaultimagesdir/msn3.gif" width="16" height="14" alt="" title="" border="0" /> $msntxt{'5'}
+		<img src="$defaultimagesdir/msn.gif" width="16" height="14" alt="" title="" border="0" /> $msntxt{'5'}
 		</td>
 	</tr>
 	<tr>
 		<td class="windowbg" align="left" height="58">
-		<img src="$defaultimagesdir/msn3.gif" width="16" height="16" style="vertical-align: middle;" alt="${$uid.$msnname}{'realname'}" title="${$uid.$msnname}{'realname'}" border="0" /> ${$uid.$msnname}{'msn'}<br /><br />
+		<img src="$defaultimagesdir/msn.gif" width="16" height="16" style="vertical-align: middle;" alt="${$uid.$msnname}{'realname'}" title="${$uid.$msnname}{'realname'}" border="0" /> ${$uid.$msnname}{'msn'}<br /><br />
 		</td>
 	</tr>
 </table>
