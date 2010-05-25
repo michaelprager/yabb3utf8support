@@ -425,7 +425,7 @@ sub LoadMiniUser {
 					if ($aattachperms == 1) { $attachperms = 1; }
 					${$uid.$user}{'perms'} = "$viewperms|$topicperms|$replyperms|$pollperms|$attachperms";
 				}
-				if ($anoshow && $iamadmin) {
+				if ($anoshow && ($iamadmin || ($iamgmod && $gmod_access2{"profileAdmin"}))) {
 					$addmembergroup{$user} .= qq~($atitle)<br />~;
 				} elsif (!$anoshow) {
 					$addmembergroup{$user} .= qq~$atitle<br />~;
