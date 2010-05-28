@@ -3594,6 +3594,7 @@ sub SetInstall2 {
 		$emailnewpass = 0;
 		$emailwelcome = 0;
 		$name_cannot_be_userid = 1;
+		$gender_on_reg = 0;
 		$lang = $FORM{'defaultlanguage'} || 'English';
 		$default_template = 'Forum default';
 		$mailprog = '/usr/sbin/sendmail';
@@ -3783,6 +3784,9 @@ sub SetInstall2 {
                                                     # when you have mail password turned off
 \$name_cannot_be_userid = $name_cannot_be_userid;   # Set to 1 to require users to have different usernames and display names
 
+\$gender_on_reg = $gender_on_reg;                   # 0: don't ask for gender on registration
+                                                    # 1: ask for gender, no input required
+                                                    # 2: ask for gender, input required
 \$lang = "$lang";                                   # Default Forum Language
 \$default_template = "$default_template";           # Default Forum Template
 

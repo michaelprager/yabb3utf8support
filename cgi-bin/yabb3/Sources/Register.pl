@@ -177,6 +177,28 @@ var imgdir = "$imagesdir";~;
 	</tr>~;
 	}
 
+	if ($gender_on_reg) {
+		if ($gender_on_reg == 1) {
+			$gender_req = qq~<label for="gender"><b>$register_txt{'gender'}: </b></label>~;
+		}
+		else {
+			$gender_req = qq~* <label for="gender"><b>$register_txt{'gender'}: </b></label>~;
+		}
+		$yymain .= qq~
+		<tr>
+			<td class="windowbg" align="right" valign="top">
+				$gender_req
+			</td>
+			<td class="windowbg2" align="left" valign="top">
+				<select name="gender" id="gender" size="1">
+					<option value=""></option>
+					<option value="Male">$register_txt{'gender_male'}</option>
+					<option value="Female">$register_txt{'gender_female'}</option>
+				</select>
+			</td>
+		</tr>
+		~;
+	}
 	unless ($emailpassword) {
 		$yymain .= qq~
 	<tr>
@@ -523,6 +545,11 @@ var imgdir = "$imagesdir";~;
 			return false;
 		}
 
+		if ($gender_on_reg && document.creator.gender.value < 1) {
+			alert("$register_txt{'error_gender'}");
+			document.creator.gender.focus();
+			return false
+		}
 		return true;
 	}
 
@@ -687,6 +714,10 @@ sub Register2 {
 			${$uid.$reguser}{'bday'} = "$member{'birth_month'}/$member{'birth_day'}/$member{'birth_year'}";
 		}
 	}
+	if ($gender_on_reg) {
+		${$uid.$reguser}{'gender'} = $member{'gender'};
+	}
+
 	${$uid.$reguser}{'password'} = &encode_password($member{'passwrd1'});
 	${$uid.$reguser}{'realname'} = $member{'regrealname'};
 	${$uid.$reguser}{'email'} = lc($member{'email'});

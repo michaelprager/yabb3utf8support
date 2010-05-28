@@ -75,6 +75,12 @@ $registerlngver = 'YaBB 2.4 $Revision$';
 'birthday' => 'Birthday',
 'birthday_a' => '(<label for="birth_month">MM</label>/<label for="birth_day">DD</label>/<label for="birth_year">YYYY</label>)',
 'birthday_b' => '(<label for="birth_day">DD</label>/<label for="birth_month">MM</label>/<label for="birth_year">YYYY</label>)',
+'gender' => 'Gender',
+'gender_male' => 'Male',
+'gender_female' => 'Female',
+'gender_reg' => 'Ask for Members gender on Registration?',
+'gender_reg_opt' => 'Optional',
+'gender_reg_req' => 'Required',
 'capslock' => 'Caps lock is activated.',
 'wrong_char' => 'This character in the Password is invalid',
 
@@ -93,6 +99,7 @@ $registerlngver = 'YaBB 2.4 $Revision$';
 'error_verification' => 'The verification code is missing.',
 'error_reason' => 'You must fill in the reason(s) for registering at our forum.',
 'error_agree' => 'You must agree to the \\"User Agreement\\" before you can be registered.',
+'error_gender' => 'You must select your gender.',
 );
 
 %pwstrengthmeter_txt = (

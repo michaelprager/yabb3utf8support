@@ -877,6 +877,17 @@ my $googiehtml = qq~<input type="checkbox" name="enable_spell_check" id="enable_
 			validate => 'number,null',
 		},
 		{
+			description => $register_txt{'gender_reg'},
+			input_html => qq~
+			<select name="gender_on_reg" size="1">
+			  <option value="0">$register_txt{'771'}</option>
+			  <option value="1"${isselected($gender_on_reg == 1)}>$register_txt{'gender_reg_opt'}</option>
+			  <option value="2"${isselected($gender_on_reg == 2)}>$register_txt{'gender_reg_req'}</option>
+			</select>~,
+			name => 'gender_on_reg',
+			validate => 'number,null',
+		},
+		{
 			description => qq~<label for="pwstrengthmeter_scores">$admin_txt{'710'}</label>~,
 			input_html => qq~<input type="text" name="pwstrengthmeter_scores" id="pwstrengthmeter_scores" size="20" value="$pwstrengthmeter_scores" />~,
 			name => 'pwstrengthmeter_scores',

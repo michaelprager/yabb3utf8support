@@ -569,6 +569,9 @@ $templateset);						# Forum templates settings
 							# 1: ask for the birthday, no input required
 							# 2: ask for the birthday, input required
 
+\$gender_on_reg = $gender_on_reg;			# 0: don't ask for gender on registration
+							# 1: ask for gender, no input required
+							# 2: ask for gender, input required
 \$lang = "\Q$lang\E";					# Default Forum Language
 \$default_template = "\Q$default_template\E";		# Default Forum Template
 
