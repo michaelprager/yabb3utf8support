@@ -822,7 +822,7 @@ function checkForm(theForm) {
 			document.write("<img src='$imagesdir/td.gif' onclick='tcol();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'437'}' title='$post_txt{'437'}' border='0' />");
 			document.write("<img src='$imagesdir/hr.gif' onclick='hr();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'531'}' title='$post_txt{'531'}' border='0' />");
 			document.write("<img src='$imagesdir/tele.gif' onclick='teletype();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'440'}' title='$post_txt{'440'}' border='0' />");
-			document.write("<img src='$imagesdir/code.gif' onclick='showcode();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'259'}' title='$post_txt{'259'}' border='0' />");
+			document.write("<img src='$imagesdir/code.gif' onclick='selcodelang();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'259'}' title='$post_txt{'259'}' border='0' />");
 			document.write("<img src='$imagesdir/quote2.gif' onclick='quote();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'260'}' title='$post_txt{'260'}' border='0' />");
 			document.write("<img src='$imagesdir/edit.gif' onclick='edit();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'603'}' title='$post_txt{'603'}' border='0' />");
 			document.write("<img src='$imagesdir/sup.gif' onclick='superscript();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'447'}' title='$post_txt{'447'}' border='0' />");
@@ -872,6 +872,27 @@ function checkForm(theForm) {
 			document.write('</select>');
 			document.write('</div>');
 
+
+			function selcodelang() {
+				if (document.getElementById("codelang").style.display == "none")
+				document.getElementById("codelang").style.display = "inline-block";
+				else
+				document.getElementById("codelang").style.display = "none";
+				document.getElementById("codelang").style.zIndex = "100";
+
+				var openbox = document.getElementsByTagName("div");
+				for (var i = 0; i < openbox.length; i++) {
+					if (openbox[i].className == "ubboptions" && openbox[i].id != "codelang") {
+						openbox[i].style.display = "none";
+					}
+				}
+			}
+
+			function syntaxlang(lang, optnum) {
+				AddSelText("[code"+lang+"]","[/code]");
+				document.getElementById("codesyntax").options[optnum].selected = false;
+				document.getElementById("codelang").style.display = "none";
+			}
 
 			// Palette
 			var thistask = 'post';
@@ -1002,6 +1023,20 @@ function checkForm(theForm) {
 			</div>
 			<div id="dragbgh" style="position: absolute; top: 142px; left: 0px; width: $dwidth; height: 3px; border: 0; z-index: 3;">
 			<img id="dragImg2" src="$defaultimagesdir/resize_hb.gif" class="drag" style="position: absolute; top: $draghpos; left: 0px; z-index: 4; width: $dwidth; height: 3px; cursor: n-resize;" alt= "" />
+			</div>
+			<div class="ubboptions" id="codelang" style="position: absolute; top: -22px; left: 230px; width: 92px; padding: 0px; background-color: #CCCCCC; display: none;">
+				<select size="10" name="codesyntax" id="codesyntax" onchange="syntaxlang(this.options[this.selectedIndex].value, this.selectedIndex);" style="margin:0px; font-size: 9px; width: 92px;">
+				<option value="" title="$post_txt{'shdefault'}">$post_txt{'shdefault'}</option>
+				<option value=" c++" title="C++">C++</option>
+				<option value=" css" title="CSS">CSS</option>
+				<option value=" html" title="HTML">HTML</option>
+				<option value=" java" title="Java">Java</option>
+				<option value=" javascript" title="Javascript">Javascript</option>
+				<option value=" pascal" title="Pascal">Pascal</option>
+				<option value=" perl" title="Perl">Perl</option>
+				<option value=" php" title="PHP">PHP</option>
+				<option value=" sql" title="SQL">SQL</option>
+				</select>
 			</div>
 			</div>
 			<div style="float: left; width: 315px; text-align: left;"> 
@@ -1557,6 +1592,7 @@ function autoPreview() {
 		var ubbstr = vismessage;
 	}
 	document.getElementById("saveframe").innerHTML=ubbstr;
+	sh_highlightDocument();
 	LivePrevImgResize();
 	scrlto += parseInt(document.getElementById("saveframe").scrollTop) + parseInt(document.getElementById("saveframe").offsetHeight);
 	document.getElementById("saveframe").scrollTop = scrlto;

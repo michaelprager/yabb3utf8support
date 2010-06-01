@@ -153,6 +153,18 @@ sub sizefont {
 
 	sub codemsg {
 		my $code = $_[0];
+		my $class = $_[1];
+		my $prclass = "";
+		if(lc $class eq "c++") { $insclass = "sh_cpp"; $prclass = " (C++)"; }
+		elsif(lc $class eq "css") { $insclass = "sh_css"; $prclass = " (CSS)"; }
+		elsif(lc $class eq "html") { $insclass = "sh_html"; $prclass = " (HTML)"; }
+		elsif(lc $class eq "java") { $insclass = "sh_java"; $prclass = " (Java)"; }
+		elsif(lc $class eq "javascript") { $insclass = "sh_javascript"; $prclass = " (Javascript)"; }
+		elsif(lc $class eq "pascal") { $insclass = "sh_pascal"; $prclass = " (Pascal)"; }
+		elsif(lc $class eq "perl") { $insclass = "sh_perl"; $prclass = " (Perl)"; }
+		elsif(lc $class eq "php") { $insclass = "sh_php"; $prclass = " (PHP)"; }
+		elsif(lc $class eq "sql") { $insclass = "sh_sql"; $prclass = " (SQL)"; }
+		else { $insclass = "code"; }
 		&ToChars($code);
 		if ($code !~ /&\S*;/) { $code =~ s/;/&#059;/g; }
 		$code =~ s~([\(\)\-\:\\\/\?\!\]\[\.\^\.D])~$killhash{$1}~g;
@@ -174,7 +186,8 @@ sub sizefont {
 		$code =~ s~ \&nbsp; \&nbsp; \&nbsp;~\t~ig;
 		$code =~ s~\&nbsp;~ ~ig;
 		$code =~ s~\s*?\n\s*?~\[code_br\]~ig; # we need to keep normal linebreaks inside <pre> tag
-		$code = qq~<pre class="code" style="margin: 0px; width: 90%; $height overflow: scroll;">$code\[code_br][code_br]</pre>~;
+		$code = qq~<pre class="$insclass" style="margin: 0px; width: 90%; $height overflow: scroll;">$code\[code_br][code_br]</pre>~;
+		$_ =~ s~XLANGX~$prclass~g;
 		$_ =~ s~CODE~$code~g;
 		$_;
 	}
@@ -255,8 +268,7 @@ sub _do_ubbc {
 	$message =~ s~\[glow\]~ \[glow\]~ig;
 	$message =~ s~\[/glow\]~ \[/glow\]~ig;
 	$message =~ s~<br>|<br />~\n~ig;
-	$message =~ s~\[code\]\n*(.+?)\n*\[/code\]~&codemsg($1)~eisg; # [code] must come at first! At least before image transformation!
-
+	$message =~ s~\[code\s*(.*?)\]\n*(.+?)\n*\[/code\]~&codemsg($2,$1)~eisg; # [code] must come at first! At least before image transformation!
 	$message =~ s~\[([^\]\[]{0,30})\n([^\]\[]{0,30})\]~\[$1$2\]~g;
 	$message =~ s~\[/([^\]\[]{0,30})\n([^\]\[]{0,30})\]~\[/$1$2\]~g;
 	#$message =~ s~(\w+://[^<>\s\n\"\]\[]+)\n([^<>\s\n\"\]\[]+)~$1\n$2~g;

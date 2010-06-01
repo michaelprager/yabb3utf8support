@@ -173,7 +173,21 @@ sub template {
 
 	$yystyle  = qq~<link rel="stylesheet" href="$forumstylesurl/$usestyle.css" type="text/css" />\n~;
 	$yystyle  =~ s~$usestyle\/~~g;
+	$yystyle  .= qq~<link rel="stylesheet" href="$yyhtml_root/shjs/styles/sh_style.css" type="text/css" />\n~;
 	$yystyle .= $yyinlinestyle; # This is for the Help Center and anywhere else that wants to add inline CSS.
+$yysyntax_js = qq~
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_main.js"></script>
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_cpp.js"></script>
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_css.js"></script>
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_html.js"></script>
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_java.js"></script>
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_javascript.js"></script>
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_pascal.js"></script>
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_perl.js"></script>
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_php.js"></script>
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_sql.js"></script>
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/YaBB.js"></script>
+~;
 
 	# add 'back to top' Button on the end of each page
 	$yynavback .= qq~<img src="$imagesdir/tabsep211.png" border="0" alt="" style="vertical-align: middle;" />~ if !$yynavback;
@@ -1176,9 +1190,10 @@ sub elimnests {
 }
 
 sub unwrap {
-	$unwrapped = $_[0];
+	$codelang = $_[0];
+	$unwrapped = $_[1];
 	$unwrapped =~ s~<yabbwrap>~~g;
-	$unwrapped = qq~\[code\]$unwrapped\[\/code\]~;
+	$unwrapped = qq~\[code$codelang\]$unwrapped\[\/code\]~;
 	return $unwrapped;
 }
 
@@ -1206,7 +1221,7 @@ sub wrap {
 		}
 		$message .= "$cur ";
 	}
-	$message =~ s~\[code\](.*?)\[\/code\]~&unwrap($1)~eisg;
+	$message =~ s~\[code((?:\s*).*?)\](.*?)\[\/code\]~&unwrap($1,$2)~eisg;
 	$message =~ s~ <yabbbr> ~\n~g;
 	$message =~ s~<yabbwrap>~\n~g;
 

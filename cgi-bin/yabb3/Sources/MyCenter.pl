@@ -2060,9 +2060,9 @@ sub drawPMView {
 					$quoteimg = qq~<img src="$imagesdir\/quote.gif" alt="$inmes_imtxt{'69'}" title="$inmes_imtxt{'69'}" \/>&nbsp;~;
 					$immessage =~ s/\[quote(.*?)\](.+?)\[\/quote\]//ig;
 				}
-				if ($immessage =~ /\[code\]/isg) {
+				if ($immessage =~ /\[code\s*(.*?)\]/isg) {
 					$codeimg = qq~<img src="$imagesdir\/code1.gif" alt="$inmes_imtxt{'84'}" title="$inmes_imtxt{'84'}" \/>&nbsp;~;
-					$immessage =~ s/\[code\](.+?)\[\/code\]//ig;
+					$immessage =~ s/\[code\s*(.*?)\](.+?)\[\/code\]//ig;
 				}
 				$immessage =~ s~<br.*?>~&nbsp;~gi;
 				$immessage =~ s~&nbsp;&nbsp;~ ~g;

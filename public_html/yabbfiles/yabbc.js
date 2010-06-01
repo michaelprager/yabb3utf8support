@@ -60,7 +60,7 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 
 	ubbcstr=ubbcstr.replace(/\[ch(\d{3,}?)\]/ig, "&#$1;");
 
-	ubbcstr=ubbcstr.replace(/\[code\]/ig, " [code]");
+	ubbcstr=ubbcstr.replace(/\[code(.*?)\]/ig, " [code$1]");
 	ubbcstr=ubbcstr.replace(/\[\/code\]/ig, " [/code]");
 	ubbcstr=ubbcstr.replace(/\[quote\]/ig, " [quote]");
 	ubbcstr=ubbcstr.replace(/\[\/quote\]/ig, " [/quote]");
@@ -73,10 +73,27 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 		return codestrg;
 	}
 
-	ubbcstr=ubbcstr.replace(/(\[code\]\n*(.+?)\n*\[\/code\])/ig, codeConvStr());
+	ubbcstr=ubbcstr.replace(/(\[code\s*([a-z|\+]{0,})\]\n*(.+?)\n*\[\/code\])/ig, codeConvStr());
 
-	while( a=ubbcstr.match(/\[code\]\n*(.*?)\n*\[\/code\]/i) ) {
-		var cmessage=a[1];
+	while( a=ubbcstr.match(/\[code\s*([a-z|\+]{0,})\]\n*(.+?)\n*\[\/code\]/i) ) {
+		var clang=a[1];
+		var clanguage = '';
+		var cclass = 'code';
+
+		if(clang.match(/c\+\+/i)) { clanguage = " (C++)"; cclass = "sh_cpp"; }
+		else if(clang.match(/css/i)) { clanguage = " (CSS)"; cclass = "sh_css"; }
+		else if(clang.match(/html/i)) { clanguage = " (HTML)"; cclass = "sh_html"; }
+		else if(clang.match(/javascript/i)) { clanguage = " (Javascript)"; cclass = "sh_javascript"; }
+		else if(clang.match(/java/i)) { clanguage = " (Java)"; cclass = "sh_java"; }
+		else if(clang.match(/pascal/i)) { clanguage = " (Pascal)"; cclass = "sh_pascal"; }
+		else if(clang.match(/perl/i)) { clanguage = " (Perl)"; cclass = "sh_perl"; }
+		else if(clang.match(/php/i)) { clanguage = " (php)"; cclass = "sh_php"; }
+		else if(clang.match(/sql/i)) { clanguage = " (SQL)"; cclass = "sh_sql"; }
+
+		ubbcstr=ubbcstr.replace(/XLANGX/, clanguage);
+
+		var cmessage=a[2];
+		cmessage=cmessage.replace(/\[code\s*([a-z|\+]{0,})\]/g, "[code]");
 		linecount = cmessage.split(/\n/);
 		if (linecount.length > 20) {
 			theight = " height: 300px; ";
@@ -102,9 +119,9 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 		cmessage=cmessage.replace(/\&nbsp; \&nbsp; \&nbsp;/ig, "\t");
 		cmessage=cmessage.replace(/\&nbsp;/ig, " ");
 		cmessage=cmessage.replace(/\n/g, "[code_br]");
-		cmessage = "<pre class='code' style='margin: 0px; width: 90%;"+theight+"overflow: auto;'>"+cmessage+"[code_br][code_br]</pre>";
+		cmessage = "<pre class='" + cclass + "' style='margin: 0px; width: 90%;"+theight+"overflow: auto;'>"+cmessage+"[code_br][code_br]</pre>";
 
-		ubbcstr=ubbcstr.replace(/\[code\]\n*(.*?)\n*\[\/code\]/i, cmessage);
+		ubbcstr=ubbcstr.replace(/\[code\s*([a-z|\+]{0,})\]\n*(.+?)\n*\[\/code\]/i, cmessage);
 	}
 
 	ubbcstr=ubbcstr.replace(/\[smilie=(\S+\.)(gif|jpg|png|bmp)\]/g, "<img src='"+smilieurl+"/$1$2' border='0' alt='$1' />");
