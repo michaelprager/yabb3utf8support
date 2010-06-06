@@ -427,9 +427,12 @@ sub _do_ubbc {
 	$message =~ s~</li><ol>~<ol>~isg;
 	$message =~ s~<ol></li>~<ol>~isg;
 	$message =~ s~\[list\]~<ul>~isg;
+	$message =~ s~\[list (.+?)\]~<ul style="list-style-image\: url($defaultimagesdir\/$1\.gif)">~isg;
 	$message =~ s~\s*\[/list\]~</li></ul>~isg;
 	$message =~ s~</li><ul>~<ul>~isg;
 	$message =~ s~<ul></li>~<ul>~isg;
+	$message =~ s~</li><ul (.+?)>~<ul $1>~isg;
+	$message =~ s~<ul (.+?)></li>~<ul $1>~isg;
 
 	$message =~ s~\[pre\](.+?)\[/pre\]~'<pre>' . dopre($1) . '</pre>'~iseg;
 

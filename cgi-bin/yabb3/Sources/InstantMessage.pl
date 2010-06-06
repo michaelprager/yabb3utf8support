@@ -535,7 +535,7 @@ sub buildIMsend {
 			document.write("<img src='$imagesdir/sup.gif' onclick='superscript();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'447'}' title='$post_txt{'447'}' border='0' />");
 			document.write("<img src='$imagesdir/sub.gif' onclick='subscript();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'448'}' title='$post_txt{'448'}' border='0' />");
 
-			document.write("<img src='$imagesdir/list.gif' onclick='list();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'261'}' title='$post_txt{'261'}' border='0' />");
+			document.write("<img src='$imagesdir/list.gif' onclick='bulletset();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'261'}' title='$post_txt{'261'}' border='0' />");
 			document.write("<img src='$imagesdir/me.gif' onclick='me();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'604'}' title='$post_txt{'604'}' border='0' />");
 			document.write("<img src='$imagesdir/move.gif' onclick='move();' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'439'}' title='$post_txt{'439'}' border='0' />");
 			document.write("<img src='$imagesdir/timestamp.gif' onclick='timestamp($date);' "+HAND+" align='top' width='23' height='22' alt='$post_txt{'245'}' title='$post_txt{'245'}' border='0' /><br />");
@@ -600,6 +600,29 @@ sub buildIMsend {
 				AddSelText("[code"+lang+"]","[/code]");
 				document.getElementById("codesyntax").options[optnum].selected = false;
 				document.getElementById("codelang").style.display = "none";
+			}
+
+			function bulletset() {
+				if (document.getElementById("bullets").style.display == "none")
+				document.getElementById("bullets").style.display = "block";
+				else
+				document.getElementById("bullets").style.display = "none";
+				document.getElementById("bullets").style.zIndex = "100";
+
+				var openbox = document.getElementsByTagName("div");
+				for (var i = 0; i < openbox.length; i++) {
+					if (openbox[i].className == "ubboptions" && openbox[i].id != "bullets") {
+						openbox[i].style.display = "none";
+					}
+				}
+			}
+		
+			function showbullets(bullet) {
+				AddSelText("[list "+bullet+"][*]", "\\n[/list]");
+			}
+
+			function olist() {
+				AddSelText("[olist][*]", "\\n[/olist]");
 			}
 
 			// Palette
@@ -736,9 +759,18 @@ sub buildIMsend {
 		<div id="dragbgh" style="position: absolute; top: 142px; left: 0px; width: $dwidth; height: 3px; border: 0; z-index: 3;">
 		<img id="dragImg2" src="$defaultimagesdir/resize_hb.gif" class="drag" style="position: absolute; top: $draghpos; left: 0px; z-index: 4; width: $dwidth; height: 3px; cursor: n-resize;"  alt="resize_hb" />
 		</div>
+		<div class="ubboptions" id="bullets" style="position: absolute; top: -22px; left: 345px; width: 63px; border: 1px solid #666666; padding: 2px; text-align: center; background-color: #CCCCCC; display: none;">
+			<input type="button" value="$npf_txt{'default'}" style="width: 56px; margin: 3px 0px 0px 0px; font-size: 9px; padding: 0px; text-align: center;" onclick="list(), bulletset()" /><br />
+			<input type="button" value="$npf_txt{'ordered'}" style="width: 56px; margin: 3px 0px 3px 0px; font-size: 9px; padding: 0px; text-align: center;" onclick="olist(), bulletset()" /><br />
+			<img src="$defaultimagesdir/bull-redball.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-redball'), bulletset()" /><img src="$defaultimagesdir/bull-greenball.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-greenball'), bulletset()" /><img src="$defaultimagesdir/bull-blueball.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-blueball'), bulletset()" /><img src="$defaultimagesdir/bull-blackball.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-blackball'), bulletset()" /><br />
+			<img src="$defaultimagesdir/bull-redsq.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-redsq'), bulletset()" /><img src="$defaultimagesdir/bull-greensq.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-greensq'), bulletset()" /><img src="$defaultimagesdir/bull-bluesq.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-bluesq'), bulletset()" /><img src="$defaultimagesdir/bull-blacksq.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-blacksq'), bulletset()" /><br />
+			<img src="$defaultimagesdir/bull-redpin.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-redpin'), bulletset()" /><img src="$defaultimagesdir/bull-greenpin.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-greenpin'), bulletset()" /><img src="$defaultimagesdir/bull-bluepin.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-bluepin'), bulletset()" /><img src="$defaultimagesdir/bull-blackpin.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-blackpin'), bulletset()" /><br />
+			<img src="$defaultimagesdir/bull-redcheck.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-redcheck'), bulletset()" /><img src="$defaultimagesdir/bull-greencheck.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-greencheck'), bulletset()" /><img src="$defaultimagesdir/bull-bluecheck.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-bluecheck'), bulletset()" /><img src="$defaultimagesdir/bull-blackcheck.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-blackcheck'), bulletset()" /><br />
+			<img src="$defaultimagesdir/bull-redarrow.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-redarrow'), bulletset()" /><img src="$defaultimagesdir/bull-greenarrow.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-greenarrow'), bulletset()" /><img src="$defaultimagesdir/bull-bluearrow.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-bluearrow'), bulletset()" /><img src="$defaultimagesdir/bull-blackarrow.gif" style="width: 8px; height: 8px; background-color: #CCCCCC; margin: 3px; cursor: pointer;" onclick="showbullets('bull-blackarrow'), bulletset()" /><br />
+		</div>
 		<div class="ubboptions" id="codelang" style="position: absolute; top: -22px; left: 230px; width: 92px; padding: 0px; background-color: #CCCCCC; display: none;">
 			<select size="10" name="codesyntax" id="codesyntax" onchange="syntaxlang(this.options[this.selectedIndex].value, this.selectedIndex);" style="margin:0px; font-size: 9px; width: 92px;">
-			<option value="" title="$post_txt{'shdefault'}">$post_txt{'shdefault'}</option>
+			<option value="" title="$npf_txt{'default'}">$npf_txt{'default'}</option>
 			<option value=" c++" title="C++">C++</option>
 			<option value=" css" title="CSS">CSS</option>
 			<option value=" html" title="HTML">HTML</option>

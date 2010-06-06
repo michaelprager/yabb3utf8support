@@ -395,6 +395,8 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 	ubbcstr=ubbcstr.replace(/\[list (.+?)\]/ig, "<ul style='list-style-image: url("+imagesdir+"/$1.gif)'>");
 	ubbcstr=ubbcstr.replace(/\[\*\]/ig, "<li>");
 	ubbcstr=ubbcstr.replace(/\[\/list\]/ig, "</ul>");
+	ubbcstr=ubbcstr.replace(/\<\/li\>\<ul (.+?)\>/ig, "<ul $1>");
+	ubbcstr=ubbcstr.replace(/\<ul (.+?)\>\<\/li\>/ig, "<ul $1>");
 
 	function jsdopre(prestrg) {
 		prestrg=prestrg.replace(/\n/g, "[code_br]");
