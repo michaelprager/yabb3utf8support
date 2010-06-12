@@ -38,6 +38,7 @@ $registerlngver = 'YaBB 2.4 $Revision$';
 '112' => 'This email ',
 '113' => ' is already registered.',
 '114' => ' is available!',
+'115' => 'is reserved.',
 '209' => 'I love YaBB 2!',
 '213' => 'Passwords aren\'t the same!',
 '241' => 'field. Valid Characters are Letters(A-Z,a-z), Numbers (0-9), Spaces and ( _ ! @ # $ % ^ & * ( ) + | ` ~ - = \ : ; \' " , . / ? [ ] { } )',

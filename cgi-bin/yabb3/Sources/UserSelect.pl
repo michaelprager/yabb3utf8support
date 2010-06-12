@@ -789,23 +789,79 @@ sub doquicksearch {
 }
 
 sub checkUserAvail {
-	my $taken = "false$INFO{'type'}";
 
-	if ($INFO{'type'} eq "email") {
-		$INFO{'email'} =~ s~\A\s+|\s+\z~~g;
-		if (lc $INFO{'email'} eq lc &MemberIndex("check_exist", $INFO{'email'})) { $taken = "trueemail" };
-	} elsif ($INFO{'type'} eq "display") {
-		$INFO{'display'} =~ s~\A\s+|\s+\z~~g;
-		if (lc $INFO{'display'} eq lc &MemberIndex("check_exist", $INFO{'display'})) { $taken = "truedisplay" };
-	} elsif ($INFO{'type'} eq "user") {
-		$INFO{'user'} =~ s~\A\s+|\s+\z~~g;
-		$INFO{'user'} =~ s/\s/_/g;
-		if (lc $INFO{'user'} eq lc &MemberIndex("check_exist", $INFO{'user'})) { $taken = "trueuser" };
-	}
+     &LoadLanguage('Register');
 
-	print "Content-type: text/plain\n\n$taken";
+     my $taken = "false";
+     
+     fopen(RESERVE, "$vardir/reserve.txt") || &fatal_error("cannot_open","$vardir/reserve.txt", 1);
+     @reserve = <RESERVE>;
+     fclose(RESERVE);
+     fopen(RESERVECFG, "$vardir/reservecfg.txt") || &fatal_error("cannot_open","$vardir/reservecfg.txt", 1);
+     @reservecfg = <RESERVECFG>;
+     fclose(RESERVECFG);
+     for ($a = 0; $a < @reservecfg; $a++) {
+ 	    chomp $reservecfg[$a];
+     }
+     $matchword = $reservecfg[0] eq 'checked';
+     $matchcase = $reservecfg[1] eq 'checked';
+     $matchuser = $reservecfg[2] eq 'checked';
+     $matchname = $reservecfg[3] eq 'checked';
+     $namecheck = $matchcase eq 'checked' ? $INFO{'user'} : lc $INFO{'user'};
+     $realnamecheck = $matchcase eq 'checked' ? $INFO{'display'} : lc $INFO{'display'};
 
-	CORE::exit; # This is here only to avoid server error log entries!
+     if ($INFO{'type'} eq "email") {
+ 	    $INFO{'email'} =~ s~\A\s+|\s+\z~~g;
+ 	    $type = $register_txt{'112'};
+ 	    if (lc $INFO{'email'} eq lc &MemberIndex("check_exist", $INFO{'email'})) { $taken = "true"; }
+     } elsif ($INFO{'type'} eq "display") {
+ 	    $INFO{'display'} =~ s~\A\s+|\s+\z~~g;
+ 	    $type = $register_txt{'111'};
+ 	    if (lc $INFO{'display'} eq lc &MemberIndex("check_exist", $INFO{'display'})) {
+ 		    $taken = "true";
+ 	    }
+ 	    if ($matchname) {
+ 		    foreach $reserved (@reserve) {
+ 			    chomp $reserved;
+ 			    $reservecheck = $matchcase ? $reserved : lc $reserved;
+ 			    if ($matchword) {
+ 				    if ($realnamecheck eq $reservecheck) { $taken = "reg"; break; }
+ 			    } else {
+ 				    if ($realnamecheck =~ $reservecheck) { $taken = "reg"; break; }
+ 			    }
+ 		    }
+ 	    }
+     } elsif ($INFO{'type'} eq "user") {
+ 	    $INFO{'user'} =~ s~\A\s+|\s+\z~~g;
+ 	    $INFO{'user'} =~ s/\s/_/g;
+ 	    $type = $register_txt{'110'};
+ 	    if (lc $INFO{'user'} eq lc &MemberIndex("check_exist", $INFO{'user'})) {
+ 		    $taken = "true";
+ 	    }
+ 	    if ($matchuser) {
+ 		    foreach $reserved (@reserve) {
+ 			    chomp $reserved;
+ 			    $reservecheck = $matchcase ? $reserved : lc $reserved;
+ 			    if ($matchword) {
+ 				    if ($namecheck eq $reservecheck) { $taken = "reg"; break; }
+ 			    } else {
+ 				    if ($namecheck =~ $reservecheck) { $taken = "reg"; break; }
+ 			    }
+ 		    }
+ 	    }
+     }
+     
+     if ($taken eq "false") {
+ 	    $avail = qq~<img src="$imagesdir/check.png">&nbsp;&nbsp;<span style="color:#00dd00">$type$register_txt{'114'}</span>~;
+     } elsif ($taken eq "true") {
+ 	    $avail = qq~<img src="$imagesdir/cross.png">&nbsp;&nbsp;<span style="color:#dd0000">$type$register_txt{'113'}</span>~;
+     } else {
+ 	    $avail = qq~<img src="$imagesdir/cross.png">&nbsp;&nbsp;<span style="color:#dd0000">$type$register_txt{'115'}</span>~;
+     }
+
+     print "Content-type: text/plain\n\n$INFO{'type'}|$avail";
+
+     CORE::exit; # This is here only to avoid server error log entries!
 }
 
 1;

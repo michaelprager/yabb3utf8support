@@ -324,23 +324,10 @@ function checkAvail(scripturl,val,type) {
 }
 
 function returnAvail() {
-	if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete") { 
-		var avail = xmlHttp.responseText;
-		var check = '<img src="'+imgdir+'/check.png">&nbsp;&nbsp;';
-		var cross = '<img src="'+imgdir+'/cross.png">&nbsp;&nbsp;';
-		if (avail == "falseuser") {
-			document.getElementById("useravailability").innerHTML = check + '<span style="color:#00dd00">' + tuser + nottaken + '</span>'; }
-		else if (avail == "falseemail") {
-			document.getElementById("emailavailability").innerHTML = check + '<span style="color:#00dd00">' + temail + nottaken + '</span>'; }
-		else if (avail == "falsedisplay") {
-			document.getElementById("displayavailability").innerHTML = check + '<span style="color:#00dd00">' + tdisplay + nottaken + '</span>'; }
-		else if (avail == "trueuser") {
-			document.getElementById("useravailability").innerHTML = cross + '<span style="color:#dd0000">' + tuser + taken + '</span>'; }
-		else if (avail == "trueemail") {
-			document.getElementById("emailavailability").innerHTML = cross + '<span style="color:#dd0000">' + temail + taken + '</span>'; }
-		else if (avail == "truedisplay") {
-			document.getElementById("displayavailability").innerHTML = cross + '<span style="color:#dd0000">' + tdisplay + taken + '</span>'; }
-	}
+     if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete") {
+ 	    var avail = xmlHttp.responseText;
+ 	    var type = avail.split("|");
+ 	    document.getElementById(type[0] + "availability").innerHTML = type[1]; }
 }
 
 function HideAlert() {

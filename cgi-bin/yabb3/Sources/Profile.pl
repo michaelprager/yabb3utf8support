@@ -273,7 +273,7 @@ sub ModifyProfile {
 	}
 	$showProfile .= qq~
 		</td>
-		<td align="left"><input type="text" maxlength="30" name="name" id="name" size="30" value="${$uid.$user}{'realname'}"~ . (($cannot_change_displayname && !$iamadmin) ? ' readonly="readonly"' : '') . qq~ /></td>
+		<td align="left"><input type="text" maxlength="30" onchange="checkAvail('$scripturl',this.value,'display')" name="name" id="name" size="30" value="${$uid.$user}{'realname'}"~ . (($cannot_change_displayname && !$iamadmin) ? ' readonly="readonly"' : '') . qq~ /></td>
 	</tr>
 	<tr class="windowbg">
 		<td width="220" align="left"><label for="gender"><b>$profile_txt{231}: </b></label></td>
@@ -466,7 +466,7 @@ sub ModifyProfileContacts {
 	</tr>
 	<tr class="windowbg">
 		<td width="320" align="left"><label for="email"><b>$profile_txt{'69'}: </b><br /><span class="small">$profile_txt{'679'} </span></label></td>
-		<td align="left"><input type="text" maxlength="100" name="email" id="email" size="40" value="${$uid.$user}{'email'}" /></td>
+		<td align="left"><input type="text" maxlength="100" onchange="checkAvail('$scripturl',this.value,'email')" name="email" id="email" size="40" value="${$uid.$user}{'email'}" /><div id="emailavailability"></div></td>
 	</tr>~;
 	if ($allow_hide_email) {
 		my $checked = '';

@@ -1137,6 +1137,7 @@ sub AddMember {
 		&validation_code;
 	}
 	$yymain .= qq~
+<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/ajax.js"></script>
 <form action="$adminurl?action=addmember2" method="post" name="creator"> 
    <table align="center" border="0" cellspacing="1" cellpadding="3" class="bordercolor">
     <tr>
@@ -1146,15 +1147,15 @@ sub AddMember {
     </tr>
     <tr>
      <td width="30%" class="windowbg"><label for="regusername"><b>$register_txt{'98'}:</b></label></td>
-     <td width="70%" class="windowbg"><input type="text" name="regusername" id="regusername" size="30" maxlength="18" /><input type="hidden" name="_session_id_" id="_session_id_" value="$sessionid" /><input type="hidden" name="regdate" id="regdate" value="$regdate" /></td>
+     <td width="70%" class="windowbg"><input type="text" name="regusername" id="regusername" onchange="checkAvail('$scripturl',this.value,'user')" size="30" maxlength="18" /><input type="hidden" name="_session_id_" id="_session_id_" value="$sessionid" /><input type="hidden" name="regdate" id="regdate" value="$regdate" /><div id="useravailability"></div></td>
     </tr>
     <tr>
      <td width="30%" class="windowbg"><label for="regrealname"><b>$register_txt{'98a'}:</b></label></td>
-     <td width="70%" class="windowbg"><input type="text" name="regrealname" id="regrealname" size="30" maxlength="30" /></td>
+     <td width="70%" class="windowbg"><input type="text" name="regrealname" id="regrealname" onchange="checkAvail('$scripturl',this.value,'display')" size="30" maxlength="30" /><div id="displayavailability"></div></td>
     </tr>
     <tr>
      <td width="30%" class="windowbg"><label for="email"><b>$register_txt{'69'}:</b></label></td>
-     <td width="70%" class="windowbg"><input type="text" maxlength="100" name="email" id="email" size="50" /></td>
+     <td width="70%" class="windowbg"><input type="text" maxlength="100" name="email" id="email" onchange="checkAvail('$scripturl',this.value,'email')" size="50" /><div id="emailavailability"></div></td>
     </tr>~;
 	if ($allow_hide_email == 1) {
 		$yymain .= qq~
