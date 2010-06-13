@@ -40,8 +40,8 @@ $emailcharset = 'ISO-8859-1';
 'start', "The number of the Message in the Topic (for URL purposes)",
 
 # Registration/Password
-'activationcode', "The Activation Code sent in a Register Email.",
-'remindercode', "The code sent in a Reminder Email.",
+'activationcode', "The Activation Link sent in a Register Email.",
+'remindercode', "The Password Link sent in a Reminder Email.",
 'preregspan', "The time allowed before the Pre-Registration expires. Current value: $preregspan",
 'reason', "Admin reason behind a descision made on a registering User while in register with Admin Approval mode",
 
