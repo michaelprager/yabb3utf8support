@@ -86,6 +86,52 @@ sub embed {
 			$video = $embed_flash;
 			$controlheight = 36;
 
+		# added Clipfish video url support
+		} elsif ($media_url =~ m/clipfish\.de/i) {
+			(undef,$temp) = split(/video\//,$media_url);
+			($videoid,undef) = split(/\//,$temp);
+			$media_url = qq~http://www.clipfish.de/cfng/flash/clipfish_player_3.swf?as=0&vid=$videoid&r=1&angebot=extern&c=990000~;
+			$video = $embed_flash;
+			$controlheight = 36;
+
+    # GameTrailers.com START
+		# added Gametrailers.com url support (user video with .html at the end)
+		} elsif ($media_url =~ m/gametrailers\.com/i && $media_url =~ m/user/i && $media_url =~ m/\.html/i) {
+			(undef,$temp) = split(/gametrailers.com\//,$media_url);
+			(undef,undef,$temp) = split(/\//,$temp);
+			($mid,undef) = split(/\./,$temp);
+			$media_url = qq~http://www.gametrailers.com/remote_wrap.php?umid=$mid~;
+			$video = $embed_flash;
+			$controlheight = 36;
+
+		# added GameTrailers.com video url support  (user video without .html at the end)
+		} elsif ($media_url =~ m/gametrailers\.com/i && $media_url =~ m/user/i) {
+			(undef,$temp) = split(/gametrailers.com\//,$media_url);
+			($mid,undef) = split(/\./,$temp);
+			(undef,undef,$mid) = split(/\//,$temp);
+			$media_url = qq~http://www.gametrailers.com/remote_wrap.php?umid=$mid~;
+			$video = $embed_flash;
+			$controlheight = 36;
+
+		# added Gametrailers.com url support (normal video with .html at the end)
+		} elsif ($media_url =~ m/gametrailers\.com/i && $media_url =~ m/\.html/i) {
+			(undef,$temp) = split(/gametrailers.com\//,$media_url);
+			(undef,$temp) = split(/\//,$temp);
+			($mid,undef) = split(/\./,$temp);
+			$media_url = qq~http://www.gametrailers.com/remote_wrap.php?mid=$mid~;
+			$video = $embed_flash;
+			$controlheight = 36;
+
+		# added GameTrailers.com video url support  (normal video without .html at the end)
+		} elsif ($media_url =~ m/gametrailers\.com/i) {
+			(undef,$temp) = split(/gametrailers.com\//,$media_url);
+			($mid,undef) = split(/\./,$temp);
+			(undef,undef,$mid) = split(/\//,$temp);
+			$media_url = qq~http://www.gametrailers.com/remote_wrap.php?mid=$mid~;
+			$video = $embed_flash;
+			$controlheight = 36;
+    # GameTrailers.com END
+
 		# added Google video url support
 		} elsif ($media_url =~ m/video\.google/i) {
 			(undef,$docid) = split(/=/,$media_url);
