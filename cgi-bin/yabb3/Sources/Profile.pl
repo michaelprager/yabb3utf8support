@@ -2888,7 +2888,7 @@ sub usersrecentposts {
 		<td colspan="2">
 			<table border="0" width="100%" class="catbg">
 				<tr>
-					<td align="left">$maintxt{'109'} $tname | $maintxt{'197'} $mname</td>
+					<td align="left">$maintxt{'109'} $tname | $maintxt{'197'} ${$uid.$curuser}{'realname'}</td>
 					<td align="right">&nbsp;~;
 
 		if ($tstate != 1) {
