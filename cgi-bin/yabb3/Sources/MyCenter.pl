@@ -402,7 +402,7 @@ sub Del_Some_IM {
 		my %CountStore;
 		if ($INFO{'caller'} == 2)    { ${$username}{'PMmoutnum'} = 0; }
 		elsif ($INFO{'caller'} == 4) { ${$username}{'PMdraftnum'} = 0; }
-		elsif ($INFO{'caller'} != 3) { ${$username}{'PMmnum'} = 0; ${$username}{'PMimnewcount'} = 0; }
+		elsif ($INFO{'caller'} != 3 && $INFO{'caller'} != 5) { ${$username}{'PMmnum'} = 0; ${$username}{'PMimnewcount'} = 0; }
 
 		if ($INFO{'deleteid'}) { $FORM{"message" . $INFO{'deleteid'}} = 1; } # singel delete
 
@@ -414,7 +414,7 @@ sub Del_Some_IM {
 				if ($INFO{'caller'} == 2)    { ${$username}{'PMmoutnum'}++; }
 				elsif ($INFO{'caller'} == 3) { $CountStore{$m[13]}++; }
 				elsif ($INFO{'caller'} == 4) { ${$username}{'PMdraftnum'}++; }
-				else { ${$username}{'PMmnum'}++; ${$username}{'PMimnewcount'}++ if $m[12] =~ /u/; }
+				elsif ($INFO{'caller'} != 5) { ${$username}{'PMmnum'}++; ${$username}{'PMimnewcount'}++ if $m[12] =~ /u/; }
 			} else {
 				if ($INFO{'caller'} == 3) {
 					$INFO{'viewfolder'} = $m[13];
