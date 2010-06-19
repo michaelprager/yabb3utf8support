@@ -1126,6 +1126,18 @@ function insert_user (oElement,username,userid) {
 	if ($view eq 'mycenter') {
 		&LoadUserDisplay($username);
 
+		my $onOffStatus = ${$uid.$username}{'offlinestatus'} eq "away" ? $mycenter_txt{'onoffstatusaway'} : $mycenter_txt{'onoffstatuson'};
+
+		my $stealthstatus = '';
+		if (($iamadmin || $iamgmod) && $enable_MCstatusStealth) {
+			$stealthstatus = $mycenter_txt{'stealth_off'};
+			if (${$uid.$username}{'stealth'}) { $stealthstatus = $mycenter_txt{'stealth_on'}; }
+			$stealthstatus = qq~		<tr>
+					<td class="windowbg2">$mycenter_txt{'stealth'}</td>
+					<td class="windowbg2">'$stealthstatus'</td>
+				</tr>~;
+		}
+
 		my $memberinfo = "$memberinfo{$username}$addmembergroup{$username}";
 		my $userOnline = &userOnLineStatus($username) . "<br />";
 		my $template_postinfo = qq~$mycenter_txt{'posts'}: ~ . &NumberFormat(${$uid.$username}{'postcount'}) . qq~<br />~;
@@ -1180,21 +1192,8 @@ function insert_user (oElement,username,userid) {
 						$mycenter_txt{'onoffstatus'}<br />
 					</td>
 					<td class="windowbg2">
-		~;
 
-		my $onOffStatus = ${$uid.$username}{'offlinestatus'} eq 'away' ? $mycenter_txt{'onoffstatusaway'} : $mycenter_txt{'onoffstatuson'};
-
-		my $stealthstatus = '';
-		if (($iamadmin || $iamgmod) && $enable_MCstatusStealth) {
-			$stealthstatus = $mycenter_txt{'stealth_off'};
-			if (${$uid.$username}{'stealth'}) { $stealthstatus = $mycenter_txt{'stealth_on'}; }
-			$stealthstatus = qq~		<tr>
-					<td class="windowbg2">$mycenter_txt{'stealth'}</td>
-					<td class="windowbg2">'$stealthstatus'</td>
-				</tr>~;
-		}
-
-		$MCContent .= qq~'$onOffStatus'</td>
+		'$onOffStatus'</td>
 				</tr>
 		$stealthstatus
 		</table>
