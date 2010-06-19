@@ -314,8 +314,8 @@ sub MessageIndex {
 		$yymain .= qq~<script language="JavaScript1.2" src="$yyhtml_root/ubbc.js" type="text/javascript"></script>~;
 	}
 
-	my $homelink = qq~<a href="$scripturl" class="nav">$mbname</a>~;
-	my $catlink = qq~<a href="$scripturl?catselect=$catid" class="nav">$cat</a>~;
+	my $homelink = qq~<a href="$scripturl">$mbname</a>~;
+	my $catlink = qq~<a href="$scripturl?catselect=$catid">$cat</a>~;
 	my $boardlink = qq~<a href="$scripturl?tsort=$tsort;board=$currentboard" class="a"><b>$boardname</b></a>~;
 	my $modslink = qq~$showmods~;
 
@@ -842,7 +842,7 @@ sub MessageIndex {
 		$yyinlinestyle .= qq~<link rel="alternate" type="application/rss+xml" title="$messageindex_txt{'843'}" href="$scripturl?action=RSSboard;board=$INFO{'board'}" />\n~;
 	}
 	$tabsep = qq~<img src="$imagesdir/tabsep211.png" border="0" alt="" style="vertical-align: middle;" />~;
-	$yynavback = qq~$tabsep <a href="$scripturl" class="nav">&lsaquo; $img_txt{'103'}</a> $tabsep~;
+	$yynavback = qq~$tabsep <a href="$scripturl">&lsaquo; $img_txt{'103'}</a> $tabsep~;
 	$yynavigation = qq~&rsaquo; $catlink &rsaquo; $boardname~;
 	$yytitle = $boardname;
 	if ($postlink and $enable_quickpost) {

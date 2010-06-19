@@ -400,14 +400,14 @@ sub Display {
 	$topviewers = 0;
 	if (${$uid.$currentboard}{'ann'} == 1) {
 		if ($vircurrentboard) {
-			$template_cat = qq~<a href="$scripturl?catselect=$vircurcat" class="nav">$vircat</a>~;
-			$template_board = qq~<a href="$scripturl?board=$vircurrentboard" class="nav">$virboardname</a>~;
-			$navback = qq~<a href="$scripturl?board=$vircurrentboard" class="nav">&lsaquo; $maintxt{'board'}</a>~;
+			$template_cat = qq~<a href="$scripturl?catselect=$vircurcat">$vircat</a>~;
+			$template_board = qq~<a href="$scripturl?board=$vircurrentboard">$virboardname</a>~;
+			$navback = qq~<a href="$scripturl?board=$vircurrentboard">&lsaquo; $maintxt{'board'}</a>~;
 			$template_mods = qq~$showmods$showmodgroups~;
 		} elsif ($iamadmin || $iamgmod) {
-			$template_cat = qq~<a href="$scripturl?catselect=$curcat" class="nav">$cat</a>~;
-			$template_board = qq~<a href="$scripturl?board=$currentboard" class="nav">$boardname</a>~;
-			$navback = qq~<a href="$scripturl?board=$currentboard" class="nav">&lsaquo; $maintxt{'board'}</a>~;
+			$template_cat = qq~<a href="$scripturl?catselect=$curcat">$cat</a>~;
+			$template_board = qq~<a href="$scripturl?board=$currentboard">$boardname</a>~;
+			$navback = qq~<a href="$scripturl?board=$currentboard">&lsaquo; $maintxt{'board'}</a>~;
 			$template_mods = qq~$showmods$showmodgroups~;
 		} else {
 			$template_cat = $maintxt{'418'};
@@ -415,9 +415,9 @@ sub Display {
 			$template_mods = '';
 		}
 	} else {
-		$template_cat = qq~<a href="$scripturl?catselect=$curcat" class="nav">$cat</a>~;
-		$template_board = qq~<a href="$scripturl?board=$currentboard" class="nav">$boardname</a>~;
-		$navback = qq~<a href="$scripturl?board=$currentboard" class="nav">&lsaquo; $maintxt{'board'}</a>~;
+		$template_cat = qq~<a href="$scripturl?catselect=$curcat">$cat</a>~;
+		$template_board = qq~<a href="$scripturl?board=$currentboard">$boardname</a>~;
+		$navback = qq~<a href="$scripturl?board=$currentboard">&lsaquo; $maintxt{'board'}</a>~;
 		$template_mods  = qq~$showmods$showmodgroups~;
 	}
 	if (($showtopicviewers == 1 && $staff) || ($showtopicviewers == 2 && !$iamguest) || $showtopicviewers == 3) {
@@ -812,7 +812,7 @@ sub Display {
 
 	# Template it
 	$tabsep = qq~<img src="$imagesdir/tabsep211.png" border="0" alt="" style="vertical-align: middle;" />~;
-	$yynavback = qq~$tabsep <a href="$scripturl" class="nav">&#171; $img_txt{'103'}</a> $tabsep $navback $tabsep~;
+	$yynavback = qq~$tabsep <a href="$scripturl">&#171; $img_txt{'103'}</a> $tabsep $navback $tabsep~;
 	$yynavigation = qq~&rsaquo; $template_cat &rsaquo; $template_board &rsaquo; $msubthread~;
 	# Create link to modify displayed post order if allowed
 	my $curthreadurl = (!$iamguest and $ttsureverse) ? qq~<a title="$display_txt{'reverse'}" href="$scripturl?num=$viewnum;start=~ . (!$ttsreverse ? $mreplies : 0) . qq~;action=~ . ($userthreadpage == 1 ? 'threadpagetext' : 'threadpagedrop') . qq~;reversetopic=$ttsreverse"><img src="$imagesdir/arrow_~ . ($ttsreverse ? 'up' : 'down') . qq~.gif" border="0" alt="" style="vertical-align: middle;" /> $msubthread</a>~ : $msubthread;
