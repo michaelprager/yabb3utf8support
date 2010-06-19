@@ -286,13 +286,19 @@ select optgroup {
 	color: #6078B0;
 }
 /* YaBB navigation links */
-.nav, a.nav, a.nav:visited {
+.nav {
 	font-weight: bold;
 	font-size: 10px;
 	color : #000033;
 	text-decoration: none;
 }
-a.nav:hover {
+.nav a {
+	font-weight: bold;
+	font-size: 10px;
+	color : #000033;
+	text-decoration: none;
+}
+.nav a:hover {
 	color: #990000;
 	text-decoration: underline;
 }
