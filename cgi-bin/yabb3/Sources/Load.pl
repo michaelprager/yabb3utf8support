@@ -161,7 +161,7 @@ sub LoadUser {
 			for (my $i = 0; $i < @settings; $i++) {
 				if ($settings[$i] =~ /'(.*?)',"(.*?)"/) {
 					${$uid.$user}{$1} = $2;
-					$settings[$i] =~ s/\d+/$date/ if $1 eq 'lastonline';
+					$settings[$i] =~ s/\d+/$date/ if $1 eq 'lastonline' && action != "login2";
 				}
 			}
 			&write_DBorFILE(${$uid.$user}{'mysql'},LOADUSER,$memberdir,$user,$userextension,@settings);
@@ -477,21 +477,25 @@ sub QuickLinks {
 	if ($iamguest) { return ($_[1] ? ${$uid.$user}{'realname'} : $format{$user}); }
 
 	if ($iamadmin || $iamgmod || $lastonlineinlink) {
-		$lastonline = $date - ${$uid.$user}{'lastonline'};
-		my $days  = int($lastonline / 86400);
-		my $hours = sprintf("%02d", int(($lastonline - ($days * 86400)) / 3600));
-		my $mins  = sprintf("%02d", int(($lastonline - ($days * 86400) - ($hours * 3600)) / 60));
-		my $secs  = sprintf("%02d", ($lastonline - ($days * 86400) - ($hours * 3600) - ($mins * 60)));
-		if (!$mins) {
-			$lastonline = "00:00:$secs";
-		} elsif (!$hours) {
-			$lastonline = "00:$mins:$secs";
-		} elsif (!$days) {
+		if(${$uid.$user}{'lastonline'}) {
+			$lastonline = $date - ${$uid.$user}{'lastonline'};
+			my $days  = int($lastonline / 86400);
+			my $hours = sprintf("%02d", int(($lastonline - ($days * 86400)) / 3600));
+			my $mins  = sprintf("%02d", int(($lastonline - ($days * 86400) - ($hours * 3600)) / 60));
+			my $secs  = sprintf("%02d", ($lastonline - ($days * 86400) - ($hours * 3600) - ($mins * 60)));
+			if (!$mins) {
+				$lastonline = "00:00:$secs";
+			} elsif (!$hours) {
+				$lastonline = "00:$mins:$secs";
+			} elsif (!$days) {
 			$lastonline = "$hours:$mins:$secs";
+			} else {
+				$lastonline = "$days $maintxt{'11'} $hours:$mins:$secs";
+			}
+				$lastonline = qq~ title="$maintxt{'10'} $lastonline $maintxt{'12'}."~;
 		} else {
-			$lastonline = "$days $maintxt{'11'} $hours:$mins:$secs";
+			$lastonline = qq~ title="$maintxt{'13'}."~;
 		}
-		$lastonline = qq~ title="$maintxt{'10'} $lastonline $maintxt{'12'}."~;
 	}
 	if ($usertools) {
 		$qlcount++;

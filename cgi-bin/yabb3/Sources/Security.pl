@@ -156,6 +156,7 @@ sub banning {
 		&write_DBorFILE(0,LOG,$vardir,'ban_log','txt',(&read_DBorFILE(0,LOG,$vardir,'ban_log','txt'),"$date|$_[0]\n"));
 		&UpdateCookie("delete", $ban_user);
 		$username = "Guest";
+		$iamguest = 1;
 		&fatal_error("banned","$security_txt{'678'}$security_txt{'430'}!");
 	}
 }

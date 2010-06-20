@@ -42,6 +42,7 @@ $abbr_lang = 'en-us';
 '10' => 'Last online',
 '11' => 'days and',
 '12' => 'hours ago',
+'13' => 'Has not logged in since registering',
 '22' => 'Last post',
 '23' => 'Unable to open',
 '27' => 'View Profile',
