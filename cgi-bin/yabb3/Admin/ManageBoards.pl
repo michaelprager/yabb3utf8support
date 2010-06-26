@@ -385,7 +385,6 @@ function pasteNames(num,total) {
 			&ToChars($curcatname);
 			$catsel{$i} .= qq~<option value="$catid"$selected>$curcatname</option>~;
 		}
-		$catsel .= qq~</select>~;
 		if ($istart == 0) { $istart = $i; }
 
 		($boardname, $boardperms, $boardview) = split(/\|/, $board{"$id"});
