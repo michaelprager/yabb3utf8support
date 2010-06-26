@@ -161,7 +161,7 @@ sub LoadUser {
 			for (my $i = 0; $i < @settings; $i++) {
 				if ($settings[$i] =~ /'(.*?)',"(.*?)"/) {
 					${$uid.$user}{$1} = $2;
-					$settings[$i] =~ s/\d+/$date/ if $1 eq 'lastonline' && action != "login2";
+					$settings[$i] =~ s/\d+/$date/ if $1 eq 'lastonline' && $INFO{'action'} ne "login2";
 				}
 			}
 			&write_DBorFILE(${$uid.$user}{'mysql'},LOADUSER,$memberdir,$user,$userextension,@settings);
