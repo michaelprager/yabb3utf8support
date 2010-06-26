@@ -471,16 +471,16 @@ function pasteNames(num,total) {
     <td class="windowbg2" width="75%" colspan="3" align="left"><textarea name="description$i" id="description$i" rows="5" cols="30" style="width:98%; height:60px">$description</textarea></td>
   </tr><tr>
     <td class="windowbg" width="25%" align="left"><label for="cat$i"><b>$admin_txt{'44'}:</b></label></td>
-    <td class="windowbg2" width="75%" colspan="3" align="left"><select name="cat$i" id="cat$i">$catsel{$i}</td>
+    <td class="windowbg2" width="75%" colspan="3" align="left"><select name="cat$i" id="cat$i">$catsel{$i}</select></td>
   </tr><tr>
     <td class="catbg"  colspan="4"><b>$admin_txt{'64'}</b> $admin_txt{'64a'} </td>
   </tr><tr>
     <td class="windowbg" width="25%" align="left">
-	<b>$admin_txt{'63'}:</b><br />
-	<!-- <span class="small"><a href="javascript:void(0);" onclick="window.open('$scripturl?action=imlist;sort=username;toid=moderators$i','','status=no,height=345,width=464,menubar=no,toolbar=no,top=50,left=50,scrollbars=no')">$selector_txt{linklabel}</a><br/> -->
+	<b>$admin_txt{'63'}:</b><br /><span class="small">
+	<!-- <a href="javascript:void(0);" onclick="window.open('$scripturl?action=imlist;sort=username;toid=moderators$i','','status=no,height=345,width=464,menubar=no,toolbar=no,top=50,left=50,scrollbars=no')">$selector_txt{linklabel}</a><br/> -->
 	<a href="javascript:void(0);" onclick="window.open('$scripturl?action=qsearch;toid=moderators$i','','status=no,height=325px,width=300,menubar=no,toolbar=no,top=50,left=50,scrollbars=no')">$selector_txt{linklabel}</a><br />
-	<a href="javascript:copyNames($i)">$admin_txt{'63a'}</a></span><br/>
-	<a href="javascript:pasteNames($i,1)">$admin_txt{'63b'}</a></span><br/>
+	<a href="javascript:copyNames($i)">$admin_txt{'63a'}</a><br/>
+	<a href="javascript:pasteNames($i,1)">$admin_txt{'63b'}</a><br/>
 	<a href="javascript:pasteNames(1,$FORM{'amount'})">$admin_txt{'63c'}</a></span>
     </td>
     <td class="windowbg2" width="75%" colspan="3" align="left">
