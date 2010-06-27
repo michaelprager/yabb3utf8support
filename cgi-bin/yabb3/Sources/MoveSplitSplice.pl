@@ -302,6 +302,12 @@ sub Split_Splice_2 {
 	if ((split(/\, /, $movingposts, 2))[0] eq "all") { @postnum = (0 .. $#curthread); }
 	else { @postnum = sort {$a <=> $b} split(/\, /, $movingposts); } # sort numerically ascending because may be reversed!
 
+	# Check to see if current thread was the latest post for the board and if the last post was selected to change
+	&BoardTotals("load", $curboard);
+	if(${$curthreadid}{'lastpostdate'} == ${$uid.$curboard}{'lastposttime'} && $leavemess == 2 && $postnum[$#postnum] == $#curthread) {
+		$newest_post = 1;
+	}
+
 	# Move selected posts to a brand new thread
 	if ($newthreadid eq "new") {
 		# Find a valid random ID for new thread.
@@ -633,7 +639,7 @@ sub Split_Splice_2 {
 
 	# update current board totals
 	# BoardTotals- tags => (board threadcount messagecount lastposttime lastposter lastpostid lastreply lastsubject lasticon lasttopicstate)
-	&BoardTotals("load", $curboard);
+	#&BoardTotals("load", $curboard); - Load this at top now to detect if newest board post is being moved - Unilat
 	if (${$BoardTotals{$curthreadid}}[6] =~ /m/) { # Moved-Info thread
 		if ($curboard ne $newboard) {
 			${$uid.$curboard}{'threadcount'}--;
@@ -650,7 +656,7 @@ sub Split_Splice_2 {
 		} elsif ($leavemess == 2 && $curboard ne $newboard && @utdcurthread) {
 			${$uid.$curboard}{'messagecount'} -= @postnum;
 		}
-		if (((${$uid.$curboard}{'threadcount'} == 1 && @utdcurthread) || ${$BoardTotals{$curthreadid}}[0] >= ${$uid.$curboard}{'lastposttime'}) && ($curboard ne $newboard || ${$BoardTotals{$curthreadid}}[0] >= ${$BoardTotals{$newthreadid}}[0])) {
+		if ($newest_post || (((${$uid.$curboard}{'threadcount'} == 1 && @utdcurthread) || ${$BoardTotals{$curthreadid}}[0] >= ${$uid.$curboard}{'lastposttime'}) && ($curboard ne $newboard || ${$BoardTotals{$curthreadid}}[0] >= ${$BoardTotals{$newthreadid}}[0]))) {
 			${$uid.$curboard}{'lastposttime'}   = ${$BoardTotals{$curthreadid}}[0];
 			${$uid.$curboard}{'lastposter'}     = ${$BoardTotals{$curthreadid}}[1] eq 'Guest' ? "Guest-${$BoardTotals{$curthreadid}}[4]" : ${$BoardTotals{$curthreadid}}[1];
 			${$uid.$curboard}{'lastpostid'}     = $curthreadid;
