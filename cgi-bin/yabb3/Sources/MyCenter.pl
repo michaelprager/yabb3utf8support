@@ -1523,7 +1523,7 @@ sub drawPMView {
 		## drop in the 'no messages' text
 		$MCContent .= qq~
 	  <tr>
-	    <td class="windowbg" colspan="6" height="21">$inmes_txt{'151'}</td>
+	    <td class="windowbg" colspan="3" height="21">$inmes_txt{'151'}</td>
 	  </tr>
 	</table>
 	<br clear="all" /><br />
