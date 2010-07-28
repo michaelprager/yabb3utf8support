@@ -496,7 +496,7 @@ sub BoardIndex {
 			$imsweredeleted = ${$username}{'PMmoutnum'} - $numobox;
 			$yymain .= qq~\n<script language="JavaScript1.2" type="text/javascript">
 <!--
-	if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMmoutnum'} $boardindex_imtxt{'12'} $boardindex_txt{'320'}, $boardindex_imtxt{'16'} $numobox $boardindex_imtxt{'18'}. $boardindex_imtxt{'19'}' $imsweredeleted $boardindex_imtxt{'20'} $boardindex_txt{'320'} $boardindex_imtxt{'21'}')) viewIMOUT();
+	if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMmoutnum'} $boardindex_imtxt{'12'} $boardindex_txt{'320'}, $boardindex_imtxt{'16'} $numobox $boardindex_imtxt{'18'}. $boardindex_imtxt{'19'} $imsweredeleted $boardindex_imtxt{'20'} $boardindex_txt{'320'} $boardindex_imtxt{'21'}')) viewIMOUT();
 // -->
 </script>~;
 			${$username}{'PMmoutnum'} = $numobox;
@@ -506,7 +506,7 @@ sub BoardIndex {
 			$imsweredeleted = ${$username}{'PMstorenum'} - $numstore;
 			$yymain .= qq~\n<script language="JavaScript1.2" type="text/javascript">
 <!--
-	if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMstorenum'} $boardindex_imtxt{'12'} $boardindex_imtxt{'46'}, $boardindex_imtxt{'16'} $numstore $boardindex_imtxt{'18'}. $boardindex_imtxt{'19'}' $imsweredeleted $boardindex_imtxt{'20'} $boardindex_imtxt{'46'} $boardindex_imtxt{'21'}')) viewIMSTORE();
+	if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMstorenum'} $boardindex_imtxt{'12'} $boardindex_imtxt{'46'}, $boardindex_imtxt{'16'} $numstore $boardindex_imtxt{'18'}. $boardindex_imtxt{'19'} $imsweredeleted $boardindex_imtxt{'20'} $boardindex_imtxt{'46'} $boardindex_imtxt{'21'}')) viewIMSTORE();
 // -->
 </script>~;
 			${$username}{'PMstorenum'} = $numstore;
