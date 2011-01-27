@@ -1,0 +1,100 @@
+###############################################################################
+# Menu1.def (Image text/images definitions)                                   #
+###############################################################################
+# YaBB: Yet another Bulletin Board                                            #
+# Open-Source Community Software for Webmasters                               #
+# Version:        YaBB 3.0 Beta                                               #
+# Packaged:       October 05, 2010                                            #
+# Distributed by: http://www.yabbforum.com                                    #
+# =========================================================================== #
+# Copyright (c) 2000-2010 YaBB (www.yabbforum.com) - All Rights Reserved.     #
+# Software by: The YaBB Development Team                                      #
+#              with assistance from the YaBB community.                       #
+###############################################################################
+# $Revision: 100 $
+
+$imgext = "gif";
+
+$menusep = ' | ';
+%img = (
+'admin' => "<span class=\"imgmenu\">$img_txt{'2'}</span>",
+'alertmod' => "<span class=\"imgwindowbg\">$img_txt{'alertmodtext'}</span>",
+'moderator_func' => "<span class=\"imgbg\">$amgtxt{'34'}</span>",
+'collapse' => "<span class=\"imgcatbg\">$img_txt{'623'}</span>",
+'expand' => "<span class=\"imgcatbg\">$img_txt{'624'}</span>",
+'email' => "<span class=\"imgcatbg\">$img_txt{'69'}</span>",
+'email_sm' => "<span class=\"imgwindowbg\">$img_txt{'69'}</span>",
+'favorites' => "<span class=\"imgmenu\">$img_txt{'70'}</span>",
+'forward' => "<span class=\"imgwindowbg\">$img_txt{'forward'}</span>",
+'addfav' => "<span class=\"imgcatbg\">$img_txt{'71'}</span>",
+'remfav' => "<span class=\"imgcatbg\">$img_txt{'72'}</span>",
+'help' => "<span class=\"imgmenu\">$img_txt{'119'}</span>",
+'home' => "<span class=\"imgmenu\">$img_txt{'103'}</span>",
+'im_inbox' => "<span class=\"imgwindowbg\">$img_txt{'316'}</span>",
+'im_new' => "<span class=\"imgwindowbg\">$img_txt{'321'}</span>",
+'im_send' => "<span class=\"imgwindowbg\">$img_txt{'sendpm'}</span>",
+'im_outbox' => "<span class=\"imgwindowbg\">$img_txt{'320'}</span>",
+'im_remove' => "<span class=\"imgwindowbg\">$img_txt{'31'}</span>",
+'lastpost' => "<img src=\"$imagesdir/lastpost.$imgext\" alt=\"$img_txt{'105'}\" title=\"$img_txt{'105'}\" border=\"0\" />",
+'lock' => "<span class=\"imgwindowbg\">$img_txt{'104'}</span>",
+'login' => "<span class=\"imgmenu\">$img_txt{'34'}</span>",
+'logout' => "<span class=\"imgmenu\">$img_txt{'108'}</span>",
+'markallread' => "<span class=\"imgcatbg\">$img_txt{'452'}</span>",
+'markboardread' => "<span class=\"imgcatbg\">$img_txt{'300'}</span>",
+'memberlist' => "<span class=\"imgmenu\">$img_txt{'331'}</span>",
+'eventcal' => "<span class=\"imgmenu\">$img_txt{'eventcal'}</span>",
+'birthdaylist' => "<span class=\"imgmenu\">$img_txt{'birthdaylist'}</span>",
+'message' => "<span class=\"imgwindowbg\">$img_txt{'144'}</span>",
+'message_sm' => "<span class=\"imgwindowbg\">$img_txt{'144'}</span>",
+'newthread' => "<span class=\"imgcatbg\">$img_txt{'33'}</span>",
+'notification' => "<span class=\"imgmenu\">$img_txt{'418'}</span>",
+'notify' => "<span class=\"imgcatbg\">$img_txt{'131'}</span>",
+'add_notify' => "<span class=\"imgcatbg\">$img_txt{'131a'}</span>",
+'del_notify' => "<span class=\"imgcatbg\">$img_txt{'131d'}</span>",
+'pollicon' => "<img src=\"$imagesdir/poll_open.gif\" alt=\"$img_polltxt{'44'}\" title=\"$img_polltxt{'44'}\" border=\"0\" />",
+'polliconnew' => "<img src=\"$imagesdir/poll_new.gif\" alt=\"$img_polltxt{'45'}\" title=\"$img_polltxt{'45'}\" border=\"0\" />",
+'polliconclosed' => "<img src=\"$imagesdir/poll_lock.gif\" alt=\"$img_polltxt{'46'}\" title=\"$img_polltxt{'46'}\" border=\"0\" />",
+'print' => "<span class=\"imgcatbg\">$img_txt{'465'}</span>",
+'profile' => "<span class=\"imgmenu\">$img_txt{'467'}</span>",
+'register' => "<span class=\"imgmenu\">$img_txt{'97'}</span>",
+'removetopic' => "<span class=\"imgwindowbg\">$img_txt{'63'}</span>",
+'reply' => "<span class=\"imgcatbg\">$img_txt{'146'}</span>",
+'search' => "<span class=\"imgmenu\">$img_txt{'182'}</span>",
+'sessreval' => "<span class=\"imgmenu\">$img_txt{'34a'}</span>",
+'sendtopic' => "<span class=\"imgcatbg\">$img_txt{'707'}</span>",
+'viewprofile' => "<span class=\"imgwindowbg\">$img_txt{'27'}</span>",
+'viewprofile_sm' => "<span class=\"imgwindowbg\">$img_txt{'27'}</span>",
+'website' => "<span class=\"imgwindowbg\">$img_txt{'515'}</span>",
+'website_sm' => "<span class=\"imgwindowbg\">$img_txt{'515'}</span>",
+'markunread' => "<span class=\"imgcatbg\">$img_txt{'627'}</span>",
+'mycenter' => " <span class=\"imgmenu\">$img_txt{'mycenter'}</span>",
+'reply_ims' => "<span class=\"imgwindowbg\">$img_txt{'146'}</span>",
+'print_im' => "<span class=\"imgwindowbg\">$img_txt{'465'}</span>",
+'createpoll' => "<span class=\"imgcatbg\">$img_polltxt{'1'}</span>",
+'addpoll' => "<span class=\"imgcatbg\">$img_polltxt{'2'}</span>",
+'modifypoll' => "$img_polltxt{'39'}",
+'deletepoll' => "$img_polltxt{'27'}",
+'openpoll' => "$img_polltxt{'20'}",
+'closepoll' => "$img_polltxt{'21'}",
+'viewvotes' => "$img_polltxt{'33'}",
+'viewthread' => "$img_polltxt{'33a'}",
+'deletevote' => "$img_polltxt{'43'}",
+'modify' => "<span class=\"imgwindowbg\">$img_txt{'66'}</span>",
+'modify_profile' => "<span class=\"imgmenu\">$img_txt{'66'}</span>",
+'quote' => "<span class=\"imgwindowbg\">$img_txt{'145'}</span>",
+'mquote' => "<span class=\"imgwindowbg\">$img_txt{'145q'}</span>",
+'recentquote' => "<span class=\"imgcatbg\">$img_txt{'145'}</span>",
+'admin_split' => "<span class=\"imgwindowbg\">$img_txt{'620'}</span>",
+'admin_move_split_splice' => "<span class=\"imgwindowbg\">$img_txt{'621'}</span>",
+'delete' => "<span class=\"imgwindowbg\">$img_txt{'121'}</span>",
+'admin_rem' => "<span class=\"imgwindowbg\">$img_txt{'54'}</span>",
+'admin_del' => "<span class=\"imgwindowbg\">$img_txt{'55'}</span>",
+'admin_sticky' => "<span class=\"imgwindowbg\">$img_txt{'781'}</span>",
+'hide' => "<span class=\"imgwindowbg\">$img_txt{'622'}</span>",
+'admin_lock' => "<span class=\"imgwindowbg\">$img_txt{'104'}</span>",
+'addbuddy' => "<span class=\"imgwindowbg\">$img_txt{'addbuddy'}</span>",
+'pmadmin' => "<span class=\"imgcatbg\">$img_txt{'pmadmin'}</span>",
+'sendbmess' => "<span class=\"imgwindowbg\">$img_txt{'sendbmess'}</span>",
+);
+
+1;

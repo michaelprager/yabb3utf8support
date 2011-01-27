@@ -1,0 +1,103 @@
+###############################################################################
+# Menu2.def (Image text/images definitions)                                   #
+###############################################################################
+# YaBB: Yet another Bulletin Board                                            #
+# Open-Source Community Software for Webmasters                               #
+# Version:        YaBB 3.0 Beta                                               #
+# Packaged:       October 05, 2010                                            #
+# Distributed by: http://www.yabbforum.com                                    #
+# =========================================================================== #
+# Copyright (c) 2000-2010 YaBB (www.yabbforum.com) - All Rights Reserved.     #
+# Software by: The YaBB Development Team                                      #
+#              with assistance from the YaBB community.                       #
+###############################################################################
+# $Revision: 100 $
+
+if (-d "$htmldir/Buttons/$language") { $button_language = qq~$language~; }
+elsif (-d "$htmldir/Buttons/$lang") { $button_language = qq~$lang~; }
+else { $button_language = qq~English~; }
+
+$imgext = "png";
+
+$menusep = ' ';
+%img = (
+'admin' => "<img src=\"$yyhtml_root/Buttons/$button_language/admin.$imgext\" alt=\"$img_txt{'2'}\" title=\"$img_txt{'2'}\" border=\"0\" />",
+'admin_lock' => "<img src=\"$yyhtml_root/Buttons/$button_language/locked.$imgext\" alt=\"$img_txt{'104'}\" title=\"$img_txt{'104'}\" border=\"0\" />",
+'alertmod' => "<img src=\"$yyhtml_root/Buttons/$button_language/alert.$imgext\" alt=\"$img_txt{'alertmod'}\" title=\"$img_txt{'alertmod'}\" border=\"0\" />",
+'collapse' => "<img src=\"$yyhtml_root/Buttons/$button_language/collapse.$imgext\" alt=\"$img_txt{'623'}\" title=\"$img_txt{'623'}\" border=\"0\" />",
+'expand' => "<img src=\"$yyhtml_root/Buttons/$button_language/expand.$imgext\" alt=\"$img_txt{'624'}\" title=\"$img_txt{'624'}\" border=\"0\" />",
+'admin_rem' => "<img src=\"$yyhtml_root/Buttons/$button_language/admin_rem.$imgext\" alt=\"$img_txt{'54'}\" title=\"$img_txt{'54'}\" border=\"0\" />",
+'admin_del' => "<img src=\"$yyhtml_root/Buttons/$button_language/delselected.$imgext\" alt=\"$img_txt{'55'}\" title=\"$img_txt{'55'}\" border=\"0\" />",
+'admin_sticky' => "<img src=\"$yyhtml_root/Buttons/$button_language/sticky.$imgext\" alt=\"$img_txt{'781'}\" title=\"$img_txt{'781'}\" border=\"0\" />",
+'admin_split' => "<img src=\"$yyhtml_root/Buttons/$button_language/admin_split.$imgext\" alt=\"$img_txt{'620a'}\" title=\"$img_txt{'620a'}\" border=\"0\" />",
+'admin_move_split_splice' => "<img src=\"$yyhtml_root/Buttons/$button_language/admin_move_split_splice.$imgext\" alt=\"$img_txt{'621a'}\" title=\"$img_txt{'621a'}\" border=\"0\" />",
+'delete' => "<img src=\"$yyhtml_root/Buttons/$button_language/delete.$imgext\" alt=\"$img_txt{'121'}\" title=\"$img_txt{'121'}\" border=\"0\" />",
+'email' => "<img src=\"$yyhtml_root/Buttons/$button_language/email.$imgext\" alt=\"$img_txt{'69'}\" title=\"$img_txt{'69'}\" border=\"0\" />",
+'email_sm' => "<img src=\"$yyhtml_root/Buttons/$button_language/email.$imgext\" alt=\"$img_txt{'69'}\" title=\"$img_txt{'69'}\" border=\"0\" />",
+'favorites' => "<img src=\"$yyhtml_root/Buttons/$button_language/favorites.$imgext\" alt=\"$img_txt{'70'}\" title=\"$img_txt{'70'}\" border=\"0\" />",
+'forward' => "<img src=\"$yyhtml_root/Buttons/$button_language/forward.$imgext\" alt=\"$img_txt{'forward'}\" title=\"$img_txt{'forward'}\" border=\"0\" />",
+'help' => "<img src=\"$yyhtml_root/Buttons/$button_language/help.$imgext\" alt=\"$img_txt{'119'}\" title=\"$img_txt{'119'}\" border=\"0\" />",
+'hide' => "<img src=\"$yyhtml_root/Buttons/$button_language/hide.$imgext\" alt=\"$img_txt{'622'}\" title=\"$img_txt{'622'}\" border=\"0\" />",
+'home' => "<img src=\"$yyhtml_root/Buttons/$button_language/home.$imgext\" alt=\"$img_txt{'103'}\" title=\"$img_txt{'103'}\" border=\"0\" />",
+'im_inbox' => "<img src=\"$yyhtml_root/Buttons/$button_language/im_inbox.$imgext\" alt=\"$img_txt{'316'}\" title=\"$img_txt{'316'}\" border=\"0\" />",
+'im_new' => "<img src=\"$yyhtml_root/Buttons/$button_language/im_new.$imgext\" alt=\"$img_txt{'321'}\" title=\"$img_txt{'321'}\" border=\"0\" />",
+'im_send' => "<img src=\"$yyhtml_root/Buttons/$button_language/new_pm.$imgext\" alt=\"$img_txt{'sendpm'}\" title=\"$img_txt{'sendpm'}\" border=\"0\" />",
+'im_outbox' => "<img src=\"$yyhtml_root/Buttons/$button_language/im_outbox.$imgext\" alt=\"$img_txt{'320'}\" title=\"$img_txt{'320'}\" border=\"0\" />",
+'im_remove' => "<img src=\"$yyhtml_root/Buttons/$button_language/remove.$imgext\" alt=\"$img_txt{'31'}\" title=\"$img_txt{'31'}\" border=\"0\" />",
+'lock' => "<img src=\"$yyhtml_root/Buttons/$button_language/locked.$imgext\" alt=\"$img_txt{'104'}\" title=\"$img_txt{'104'}\" border=\"0\" />",
+'login' => "<img src=\"$yyhtml_root/Buttons/$button_language/login.$imgext\" alt=\"$img_txt{'34'}\" title=\"$img_txt{'34'}\" border=\"0\" />",
+'logout' => "<img src=\"$yyhtml_root/Buttons/$button_language/logout.$imgext\" alt=\"$img_txt{'108'}\" title=\"$img_txt{'108'}\" border=\"0\" />",
+'markallread' => "<img src=\"$yyhtml_root/Buttons/$button_language/markallread.$imgext\" alt=\"$img_txt{'452'}\" title=\"$img_txt{'452'}\" border=\"0\" />",
+'markboardread' => "<img src=\"$yyhtml_root/Buttons/$button_language/markread.$imgext\" alt=\"$img_txt{'300'}\" title=\"$img_txt{'300'}\" border=\"0\" />",
+'memberlist' => "<img src=\"$yyhtml_root/Buttons/$button_language/guest.$imgext\" alt=\"$img_txt{'331'}\" title=\"$img_txt{'331'}\" border=\"0\" />",
+'eventcal' => "<img src=\"$yyhtml_root/Buttons/$button_language/eventcal.$imgext\" alt=\"$img_txt{'eventcal'}\" title=\"$img_txt{'eventcal'}\" border=\"0\" />",
+'birthdaylist' => "<img src=\"$yyhtml_root/Buttons/$button_language/birthdaylist.$imgext\" alt=\"$img_txt{'birthdaylist'}\" title=\"$img_txt{'birthdaylist'}\" border=\"0\" />",
+'message' => "<img src=\"$yyhtml_root/Buttons/$button_language/message.$imgext\" alt=\"$img_txt{'144'}\" title=\"$img_txt{'144'}\" border=\"0\" />",
+'message_sm' => "<img src=\"$yyhtml_root/Buttons/$button_language/message.$imgext\" alt=\"$img_txt{'144'}\" title=\"$img_txt{'144'}\" border=\"0\" />",
+'modify' => "<img src=\"$yyhtml_root/Buttons/$button_language/modify.$imgext\" alt=\"$img_txt{'66'}\" title=\"$img_txt{'66'}\" border=\"0\" />",
+'modify_profile' => "<img src=\"$yyhtml_root/Buttons/$button_language/modify.$imgext\" alt=\"$img_txt{'66'}\" title=\"$img_txt{'66'}\" border=\"0\" />",
+'mycenter' => "<img src=\"$yyhtml_root/Buttons/$button_language/mycenter.$imgext\" alt=\"$img_txt{'mycenter'}\" title=\"$img_txt{'mycenter'}\" border=\"0\" />",
+'newthread' => "<img src=\"$yyhtml_root/Buttons/$button_language/new_thread.$imgext\" alt=\"$img_txt{'33'}\" title=\"$img_txt{'33'}\" border=\"0\" />",
+'notification' => "<img src=\"$yyhtml_root/Buttons/$button_language/notification.$imgext\" alt=\"$img_txt{'418'}\" title=\"$img_txt{'418'}\" border=\"0\" />",
+'notify' => "<img src=\"$yyhtml_root/Buttons/$button_language/notify.$imgext\" alt=\"$img_txt{'131'}\" title=\"$img_txt{'131'}\" border=\"0\" />",
+'add_notify' => "<img name=\"notifybut\" src=\"$yyhtml_root/Buttons/$button_language/add_notify.$imgext\" alt=\"$img_txt{'131a'}\" title=\"$img_txt{'131a'}\" border=\"0\" />",
+'del_notify' => "<img name=\"notifybut\" src=\"$yyhtml_root/Buttons/$button_language/del_notify.$imgext\" alt=\"$img_txt{'131d'}\" title=\"$img_txt{'131d'}\" border=\"0\" />",
+'print' => "<img src=\"$yyhtml_root/Buttons/$button_language/print.$imgext\" alt=\"$img_txt{'465'}\" title=\"$img_txt{'465'}\" border=\"0\" />",
+'profile' => "<img src=\"$yyhtml_root/Buttons/$button_language/profile.$imgext\" alt=\"$img_txt{'467'}\" title=\"$img_txt{'467'}\" border=\"0\" />",
+'register' => "<img src=\"$yyhtml_root/Buttons/$button_language/register.$imgext\" alt=\"$img_txt{'97'}\" title=\"$img_txt{'97'}\" border=\"0\" />",
+'removetopic' => "<img src=\"$yyhtml_root/Buttons/$button_language/remove.$imgext\" alt=\"$img_txt{'63'}\" title=\"$img_txt{'63'}\" border=\"0\" />",
+'reply' => "<img src=\"$yyhtml_root/Buttons/$button_language/reply.$imgext\" alt=\"$img_txt{'146'}\" title=\"$img_txt{'146'}\" border=\"0\" />",
+'quote' => "<img src=\"$yyhtml_root/Buttons/$button_language/quote.$imgext\" alt=\"$img_txt{'145'}\" title=\"$img_txt{'145'}\" border=\"0\" />",
+'mquote' => "<img src=\"$yyhtml_root/Buttons/$button_language/mark_quote.$imgext\" alt=\"$img_txt{'145q'}\" title=\"$img_txt{'145q'}\" border=\"0\" />",
+'recentquote' => "<img src=\"$yyhtml_root/Buttons/$button_language/quote.$imgext\" alt=\"$img_txt{'145'}\" title=\"$img_txt{'145'}\" border=\"0\" />",
+'search' => "<img src=\"$yyhtml_root/Buttons/$button_language/search.$imgext\" alt=\"$img_txt{'182'}\" title=\"$img_txt{'182'}\" border=\"0\" />",
+'sessreval' => "<img src=\"$yyhtml_root/Buttons/$button_language/session.$imgext\" alt=\"$img_txt{'34a'}\" title=\"$img_txt{'34a'}\" border=\"0\" />",
+'sendtopic' => "<img src=\"$yyhtml_root/Buttons/$button_language/sendtopic.$imgext\" alt=\"$img_txt{'707'}\" title=\"$img_txt{'707'}\" border=\"0\" />",
+'viewprofile' => "<img src=\"$yyhtml_root/Buttons/$button_language/profile.$imgext\" alt=\"$img_txt{'27'}\" title=\"$img_txt{'27'}\" border=\"0\" />",
+'viewprofile_sm' => "<img src=\"$yyhtml_root/Buttons/$button_language/profile.$imgext\" alt=\"$img_txt{'27'}\" title=\"$img_txt{'27'}\" border=\"0\" />",
+'website' => "<img src=\"$yyhtml_root/Buttons/$button_language/www.$imgext\" alt=\"$img_txt{'515'}\" title=\"$img_txt{'515'}\" border=\"0\" />",
+'website_sm' => "<img src=\"$yyhtml_root/Buttons/$button_language/www.$imgext\" alt=\"$img_txt{'515'}\" title=\"$img_txt{'515'}\" border=\"0\" />",
+'markunread' => "<img src=\"$yyhtml_root/Buttons/$button_language/markunread.$imgext\" alt=\"$img_txt{'627'}\" title=\"$img_txt{'627'}\" border=\"0\" />",
+'reply_ims' => "<img src=\"$yyhtml_root/Buttons/$button_language/reply.$imgext\" alt=\"$img_txt{'146'}\" title=\"$img_txt{'146'}\" border=\"0\" />",
+'print_im' => "<img src=\"$yyhtml_root/Buttons/$button_language/print.$imgext\" alt=\"$img_txt{'465'}\" title=\"$img_txt{'465'}\" border=\"0\" />",
+'createpoll' => "<img src=\"$yyhtml_root/Buttons/$button_language/poll_create.$imgext\" alt=\"$img_polltxt{'1'}\" title=\"$img_polltxt{'1'}\" border=\"0\" />",
+'addpoll' => "<img src=\"$yyhtml_root/Buttons/$button_language/poll_add.$imgext\" alt=\"$img_polltxt{'2'}\" title=\"$img_polltxt{'2'}\" border=\"0\" />",
+'modifypoll' => "<img src=\"$yyhtml_root/Buttons/$button_language/poll_modify.$imgext\" alt=\"$img_polltxt{'39'}\" title=\"$img_polltxt{'39'}\" border=\"0\" />",
+'deletepoll' => "<img src=\"$yyhtml_root/Buttons/$button_language/poll_del.$imgext\" alt=\"$img_polltxt{'27'}\" title=\"$img_polltxt{'27'}\" border=\"0\" />",
+'openpoll' => "<img src=\"$yyhtml_root/Buttons/$button_language/poll_unlock.$imgext\" alt=\"$img_polltxt{'20'}\" title=\"$img_polltxt{'20'}\" border=\"0\" />",
+'closepoll' => "<img src=\"$yyhtml_root/Buttons/$button_language/poll_lock.$imgext\" alt=\"$img_polltxt{'21'}\" title=\"$img_polltxt{'21'}\" border=\"0\" />",
+'viewvotes' => "<img src=\"$yyhtml_root/Buttons/$button_language/poll_vvote.$imgext\" alt=\"$img_polltxt{'33'}\" title=\"$img_polltxt{'33'}\" border=\"0\" />",
+'viewthread' => "<img src=\"$yyhtml_root/Buttons/$button_language/thread.$imgext\" alt=\"$img_polltxt{'33a'}\" title=\"$img_polltxt{'33a'}\" border=\"0\" />",
+'deletevote' => "<img src=\"$yyhtml_root/Buttons/$button_language/poll_dvote.$imgext\" alt=\"$img_polltxt{'43'}\" title=\"$img_polltxt{'43'}\" border=\"0\" />",
+'addfav' => "<img name=\"favbut\" src=\"$yyhtml_root/Buttons/$button_language/addfav.$imgext\" alt=\"$img_txt{'625'}\" title=\"$img_txt{'625'}\" border=\"0\" />",
+'remfav' => "<img name=\"favbut\" src=\"$yyhtml_root/Buttons/$button_language/remfav.$imgext\" alt=\"$img_txt{'626'}\" title=\"$img_txt{'626'}\" border=\"0\" />",
+'addbuddy' => "<img src=\"$yyhtml_root/Buttons/$button_language/addbuddy.$imgext\" alt=\"$img_txt{'addbuddy'}\" title=\"$img_txt{'addbuddy'}\" border=\"0\" />",
+'pmadmin' => "<img src=\"$yyhtml_root/Buttons/$button_language/message.$imgext\" alt=\"$img_txt{'pmadmin'}\" title=\"$img_txt{'pmadmin'}\" border=\"0\" />",
+'sendbmess' => "<img src=\"$yyhtml_root/Buttons/$button_language/new_bcpm.$imgext\" alt=\"$img_txt{'sendbmess'}\" title=\"$img_txt{'sendbmess'}\" border=\"0\" />",
+'lastpost' => "<img src=\"$imagesdir/lastpost.gif\" alt=\"$img_txt{'105'}\" title=\"$img_txt{'105'}\" border=\"0\" />",
+'pollicon' => "<img src=\"$imagesdir/poll_open.gif\" alt=\"$img_polltxt{'44'}\" title=\"$img_polltxt{'44'}\" border=\"0\" />",
+'polliconnew' => "<img src=\"$imagesdir/poll_new.gif\" alt=\"$img_polltxt{'45'}\" title=\"$img_polltxt{'45'}\" border=\"0\" />",
+'polliconclosed' => "<img src=\"$imagesdir/poll_lock.gif\" alt=\"$img_polltxt{'46'}\" title=\"$img_polltxt{'46'}\" border=\"0\" />",
+);
+
+1;
