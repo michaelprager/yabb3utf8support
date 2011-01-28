@@ -198,8 +198,8 @@ sub timeformat {
 			$mytimeformat =~ s/D/$newday/g;
 			$mytimeformat =~ s/\+/$dayext/g;
 			if ($mytimeformat =~ m/MM/) {
-				if ($use_rfc) { $mytimeformat =~ s/MM/$months_rfc[$newmonth-1]/g; }
-				else { $mytimeformat =~ s/MM/$months[$newmonth-1]/g; }
+				if ($use_rfc) { $mytimeformat =~ s/MM/$months_rfc[$newmonth - 1]/g; }
+				else { $mytimeformat =~ s/MM/$months[$newmonth - 1]/g; }
 			} elsif ($mytimeformat =~ m/M/){
 				$mytimeformat =~ s/M/$newmonth/g;
 			}
@@ -301,8 +301,8 @@ sub CalcAge {
 
 sub NumberFormat {
 	my ($decimal, $fraction) = split(/\./, $_[0]);
-	my $tmpforumformat = $forumnumberformat || 1;
-	my $numberformat = ${$uid.$username}{'numberformat'} || $tmpforumformat;
+	my ($separator,$decimalpt);
+	my $numberformat = ${$uid.$username}{'numberformat'} || $forumnumberformat || 1;
 	if ($numberformat == 1) {
 		$separator = "";
 		$decimalpt = ".";
@@ -319,7 +319,7 @@ sub NumberFormat {
 		$separator = " ";
 		$decimalpt = ",";
 	}
-	if($decimal =~ m/\d{4,}/) {
+	if ($decimal =~ m/\d{4,}/) {
 		$decimal = reverse $decimal;
 		$decimal =~ s/(\d{3})/$1$separator/g;
 		$decimal = reverse $decimal;

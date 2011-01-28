@@ -19,9 +19,7 @@ sub ErrorLog {
 	&is_admin_or_gmod;
 	$yytitle    = "$errorlog{'1'}";
 	$errorcount = 0;
-	fopen(ERRORFILE, "$vardir/errorlog.txt");
-	@errors = <ERRORFILE>;
-	fclose(ERRORFILE);
+	my @errors = &read_DBorFILE(0,'',$vardir,'errorlog','txt');
 	$errorcount = @errors;
 	$date2      = $date;
 	for ($i = 0; $i < $errorcount; $i++) {
@@ -31,7 +29,6 @@ sub ErrorLog {
 		$date_ref = $result;
 		$tmplist[$i] = qq~$date_ref\|$errors[$i]~;
 	}
-	
 	$sortmode  = $INFO{'sort'};
 	$sortorder = $INFO{'order'};
 	if ($sortmode eq "") {
@@ -239,7 +236,6 @@ $print_errorlog
 	~;
 
 if ($errorcount > 0) {
-
 	$yymain .= qq~
  <div class="bordercolor" style="padding: 0px; width: 99%; margin-left: 0px; margin-right: auto;">
    <table width="100%" cellspacing="1" cellpadding="4">
@@ -262,22 +258,21 @@ if ($errorcount > 0) {
 
 sub CleanErrorLog {
 	&is_admin_or_gmod;
-	if (-e ("$vardir/errorlog.txt")) { unlink("$vardir/errorlog.txt") || die "$!" }
+	if (&checkfor_DBorFILE("$vardir/errorlog.txt")) { &delete_DBorFILE("$vardir/errorlog.txt") || die "$!" }
 	$yySetLocation = qq~$adminurl?action=errorlog~;
 	&redirectexit;
 }
 
 sub DeleteError {
 	&is_admin_or_gmod;
-	my ($count, $memnum, $currentmem, @deademails, $start, $sortmode, $sortorder);
+	my ($count, $currentmem, @deademails, $start, $sortmode, $sortorder);
 	chomp $FORM{"button"};
-	if ($FORM{"button"} ne "4") { &admin_fatal_error("no_access"); }
-	fopen(FILE, "$vardir/errorlog.txt");
-	@errors = <FILE>;
-	fclose(FILE);
-	unlink("$vardir/errorlog.txt");
-	fopen(FILE, ">>$vardir/errorlog.txt");
+	if ($FORM{"button"} ne "4") { &fatal_error("no_access"); }
+	my @errors = &read_DBorFILE(0,'',$vardir,'errorlog','txt');
 
+	&delete_DBorFILE("$vardir/errorlog.txt");
+
+	&read_DBorFILE(0,FILE,$vardir,'errorlog','txt');
 	foreach my $line (@errors) {
 		chomp $line;
 		my ($tmp_id, $tmp_date, $tmp_username, $tmp_error, $tmp_board, $tmp_action) = split(/\|/, $line);
@@ -285,7 +280,8 @@ sub DeleteError {
 			print FILE $line . "\n";
 		}
 	}
-	fclose(FILE);
+	&write_DBorFILE(0,FILE,$vardir,'errorlog','txt',(''));
+
 	$yySetLocation = qq~$adminurl?action=errorlog~;
 	&redirectexit;
 }

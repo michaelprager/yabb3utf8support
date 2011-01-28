@@ -20,7 +20,8 @@ $profilelngver = 'YaBB 3.0 Beta $Revision: 100 $';
 '4' => 'Add this member to your MSN Buddy List',
 '5' => 'Send MSN message to',
 '6' => 'This member doesn\'t have a MSN account.',
-'8' => 'For security reasons, it\'s not advisable to have your displayed name the same as your login ID.',
+'8' => 'For security reasons it is not allowed to use the same name here as your User ID.',
+'9' => 'For security reasons it\'s not advisable to choose a name that looks like your ID.',
 '21' => 'Posts',
 '30' => 'on',
 '34' => 'Login',
@@ -144,7 +145,7 @@ $profilelngver = 'YaBB 3.0 Beta $Revision: 100 $';
 '777' => 'the user',
 '778' => 'from the forum?',
 '810' => 'Do you want to reverse the displayed order of posts in the topic?',
-'811' => 'If checked, posts are displayed from most recent post first to oldest post last.  If unchecked, the oldest post displays first, newest post displayed last.<br /><b>Note:</b> You can change this option by clicking on the name of the topic on the topic page.',
+'811' => 'If checked, posts are displayed from most recent post first to oldest post last. If unchecked, the oldest post displays first, newest post displayed last.<br /><b>Note:</b> You can change this option by clicking on the name of the topic on the topic page.',
 '814' => 'Which Template would you like to use?',
 '815' => '(If more than one is available)',
 '817' => 'Which Language would you like to use?',
@@ -197,7 +198,7 @@ $profilelngver = 'YaBB 3.0 Beta $Revision: 100 $';
 'onlinealert' => 'Post and Board Notifications',
 'onlinealertexplain' => 'If you check this, you will see an additional Popup alert when you visit the Board Index if you have <i>New</i> Board or Post Notifications.',
 'stealth' => 'Allow me to run Stealth Mode',
-'stealthexplain' => 'Use this to log on secretly. Your Displayed Name will not show in the "Online" list, and your status in Profile and Message pages will show as "Offline" (Note:  Status will show as "Away" if you have the "Away" option enabled).',
+'stealthexplain' => 'Use this to log on secretly. Your Displayed Name will not show in the "Online" list, and your status in Profile and Message pages will show as "Offline" (Note: Status will show as "Away" if you have the "Away" option enabled).',
 'viewmess' => 'View message text in list view of Personal Messages?',
 'viewmessexplain' => 'Enable viewing first line of message text in list views. Disable to view only sender/recipient and date etc.',
 'view' => 'View',
@@ -215,6 +216,14 @@ $profilelngver = 'YaBB 3.0 Beta $Revision: 100 $';
 %mycenter_profile_txt = (
 'siddescript' => 'For security reasons you must confirm your password to access the settings.',
 'timeoutdescript' => 'Profile Session timed out. Please Re-Authenticate.',
+);
+
+%profile_display_options = (
+'hide_avatars'     => 'Hide User Avatars in Threads',
+'hide_user_text'   => 'Hide User Text in Threads',
+'hide_attach_img'  => 'Hide Attached Images in Threads',
+'hide_signat'      => 'Hide User Signatures in Threads',
+'hide_smilies_row' => 'Hide Smilies row below the Post-Message-inputarea',
 );
 
 %profile_imtxt = (

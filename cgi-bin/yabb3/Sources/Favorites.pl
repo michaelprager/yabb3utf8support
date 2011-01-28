@@ -37,18 +37,18 @@ sub Favorites {
 			foreach (@moved) {
 				$myfav = $_;
 				if ($myfav ne $moved[$#moved]) {
-					if (-e "$datadir/$myfav.ctb") {
+					if (&checkfor_DBorFILE("$datadir/$myfav.ctb")) {
 						&RemFav($moved[$#moved], "nonexist");
 						&AddFav($myfav,0,1);
 						last;
 					}
-				} elsif (!-e "$datadir/$myfav.ctb") {
+				} elsif (!&checkfor_DBorFILE("$datadir/$myfav.ctb")) {
 					&RemFav($myfav, "nonexist");
 					$myfav = 0;
 				}
 			}
 			next if !$myfav;
-		} elsif (!-e "$datadir/$myfav.ctb") {
+		} elsif (!&checkfor_DBorFILE("$datadir/$myfav.ctb")) {
 			&RemFav($myfav, "nonexist");
 			next;
 		}
@@ -65,24 +65,20 @@ sub Favorites {
 
 		next if !$iamadmin && !&CatAccess((split(/\|/, $catinfo{"${$uid.$loadboard}{'cat'}"}))[1]);
 
-		fopen(BRDTXT, "$boardsdir/$loadboard.txt") || &fatal_error("cannot_open","$boardsdir/$currentboard.txt", 1);
-		foreach (<BRDTXT>) {
+		foreach (&read_DBorFILE(0,'',$boardsdir,$loadboard,'txt')) {
 			if ((split(/\|/, $_, 2))[0] eq $loadfav) { push(@threads, $_); }
 		}
-		fclose(BRDTXT);
 	}
 
-	my $curfav = @threads;
+	my $curfav =  &NumberFormat(scalar @threads);
 
 	&LoadCensorList;
 
 	my %attachments;
 	if (-s "$vardir/attachments.txt" > 5) {
-		fopen(ATM, "$vardir/attachments.txt");
-		while (<ATM>) {
+		foreach (&read_DBorFILE(0,'',$vardir,'attachments','txt')) {
 			$attachments{(split(/\|/, $_, 2))[0]}++;
 		}
-		fclose(ATM);
 	}
 
 	# Print the header and board info.
@@ -97,7 +93,7 @@ sub Favorites {
 
 		# Set thread class depending on locked status and number of replies.
 		if ($mnum == '') { next; }
-		#if ($mstate =~ /h/i && ((!$iamadmin && !$iamgmod && !$iammod) || $sessionvalid == 0)) { next; }
+		#if ($mstate =~ /h/i && !$staff) { next; }
 
 		&MessageTotals('load', $mnum);
 
@@ -141,20 +137,16 @@ sub Favorites {
 
 		$micon = qq~<img src="$imagesdir/$micon.gif" alt="" border="0" align="middle" />~;
 		$mpoll = "";
-		if (-e "$datadir/$mnum.poll") {
+		if (&checkfor_DBorFILE("$datadir/$mnum.poll")) {
 			$mpoll = qq~<b>$messageindex_txt{'15'}: </b>~;
-			fopen(POLL, "$datadir/$mnum.poll");
-			my @poll = <POLL>;
-			fclose(POLL);
+			my @poll = &read_DBorFILE(0,'',$datadir,$mnum,'poll');
 			my ($poll_question, $poll_locked, $poll_uname, $poll_name, $poll_email, $poll_date, $guest_vote, $hide_results, $multi_vote, $poll_mod, $poll_modname, $poll_comment, $vote_limit, $pie_radius, $pie_legends, $poll_end) = split(/\|/, $poll[0]);
 			chomp $poll_end;
 			if ($poll_end && !$poll_locked && $poll_end < $date) {
 				$poll_locked = 1;
 				$poll_end = '';
 				$poll[0] = "$poll_question|$poll_locked|$poll_uname|$poll_name|$poll_email|$poll_date|$guest_vote|$hide_results|$multi_vote|$poll_mod|$poll_modname|$poll_comment|$vote_limit|$pie_radius|$pie_legends|$poll_end\n";
-				fopen(POLL, ">$datadir/$mnum.poll");
-				print POLL @poll;
-				fclose(POLL);
+				&write_DBorFILE(1,'',$datadir,$mnum,'poll',@poll);
 			}
 			$micon = qq~$img{'pollicon'}~;
 			if ($poll_locked) { $micon = $img{'polliconclosed'}; }
@@ -162,9 +154,7 @@ sub Favorites {
 				if ($dlp < $createpoll_date) {
 					$micon = qq~$img{'polliconnew'}~;
 				} else {
-					fopen(POLLED, "$datadir/$mnum.polled");
-					my $polled = <POLLED>;
-					fclose(POLLED);
+					my $polled = &read_DBorFILE(0,'',$datadir,$mnum,'polled');
 					if ($dlp < (split(/\|/, $polled))[3]) { $micon = qq~$img{'polliconnew'}~; }
 				}
 			}
@@ -174,7 +164,7 @@ sub Favorites {
 		if ($musername ne 'Guest') {
 			&LoadUser($musername);
 			if (${$uid.$musername}{'realname'}) {
-				$mname = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}">$ {$uid.$musername}{'realname'}</a>~;
+				$mname = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}" rel="nofollow">$ {$uid.$musername}{'realname'}</a>~;
 			} else {
 				$mname .= qq~ ($messageindex_txt{'470a'})~;
 			}
@@ -218,12 +208,12 @@ sub Favorites {
 		$lastposter = ${$mnum}{'lastposter'};
 		if ($lastposter =~ m~\AGuest-(.*)~) {
 			$lastposter = $1;
-		} elsif ($lastposter !~ m~Guest~ && !(-e "$memberdir/$lastposter.vars")) {
+		} elsif ($lastposter !~ m~Guest~ && !&checkfor_DBorFILE("$memberdir/$lastposter.vars")) {
 			$lastposter = $messageindex_txt{'470a'};
 		} else {
-			unless (($lastposter eq $messageindex_txt{'470'} || $lastposter eq $messageindex_txt{'470a'}) && -e "$memberdir/$lastposter.vars") {
+			unless (($lastposter eq $messageindex_txt{'470'} || $lastposter eq $messageindex_txt{'470a'}) && &checkfor_DBorFILE("$memberdir/$lastposter.vars")) {
 				&LoadUser($lastposter);
-				if (${$uid.$lastposter}{'realname'}) { $lastposter = qq~<a href="$scripturl?action=viewprofile;username=$lastposter">${$uid.$lastposter}{'realname'}</a>~; }
+				if (${$uid.$lastposter}{'realname'}) { $lastposter = qq~<a href="$scripturl?action=viewprofile;username=$lastposter" rel="nofollow">${$uid.$lastposter}{'realname'}</a>~; }
 			}
 		}
 		$lastpostername = $lastposter || $messageindex_txt{'470'};
@@ -290,7 +280,7 @@ sub Favorites {
 		<img src="$imagesdir/stickylock.gif" alt="$messageindex_txt{'780'}" title="$messageindex_txt{'780'}" /> $messageindex_txt{'780'}<br />
 	~;
 
-	if (($iamadmin || $iamgmod || $iammod) && $sessionvalid == 1) {
+	if ($staff) {
 		$yabbadminicons = qq~<img src="$imagesdir/hide.gif" alt="$messageindex_txt{'458'}" title="$messageindex_txt{'458'}" /> $messageindex_txt{'458'}<br />~;
 		$yabbadminicons .= qq~<img src="$imagesdir/hidesticky.gif" alt="$messageindex_txt{'459'}" title="$messageindex_txt{'459'}" /> $messageindex_txt{'459'}<br />~;
 		$yabbadminicons .= qq~<img src="$imagesdir/hidelock.gif" alt="$messageindex_txt{'460'}" title="$messageindex_txt{'460'}" /> $messageindex_txt{'460'}<br />~;
@@ -331,7 +321,6 @@ sub Favorites {
 	$messageindex_template =~ s/({|<)yabb board(}|>)/$favboard/g;
 	$messageindex_template =~ s/({|<)yabb moderators(}|>)//g;
 	$bdescrip = qq~$messageindex_txt{'75'}<br />$messageindex_txt{'76'} $curfav $messageindex_txt{'77'} $maxfavs $messageindex_txt{'78'}~;
-	$curfav = &NumberFormat($curfav);
 	$treplies = &NumberFormat($treplies);
 
 	&ToChars($bdescrip);

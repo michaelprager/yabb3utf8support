@@ -104,7 +104,7 @@ $BodyItem = qq~
 <tr>
 <td width="100%" class="windowbg2" align="left" valign="middle">
 <yabb item><br />
-<span style="float:right;"><b><a href="#helptop">^</a></b>&nbsp;</span>
+<span style="float:right;"><b><a href="#helptop">&#94;</a></b>&nbsp;</span>
 </td>
 </tr>
 ~;

@@ -198,7 +198,7 @@ sub SaveSettings {
 
 	if (length $settings{'masterkey'} < 8 || length $settings{'masterkey'} > 24) {
 		&LoadLanguage('Error');
-		&admin_fatal_error("invalid_key");
+		&fatal_error("invalid_key");
 	}
 
 	&SaveSettingsTo('Settings.pl', %settings);

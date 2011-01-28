@@ -476,9 +476,7 @@ sub update_htaccess {
 	my ($action, @values) = @_;
 	my ($htheader, $htfooter, @denies, @htout);
 	if (!$action) { return 0; }
-	fopen(HTA, ".htaccess");
-	@htlines = <HTA>;
-	fclose(HTA);
+	@htlines = &read_DBorFILE(1,'',".",'','htaccess');
 
 	# header to determine only who has access to the main script, not the admin script
 	$htheader = qq~<Files YaBB*>~;
@@ -496,18 +494,17 @@ sub update_htaccess {
 	if ($action eq "load") {
 		return @denies;
 	} elsif ($action eq "save") {
-		fopen(HTA, ">.htaccess");
-		print HTA "# Last modified by The Guardian: " . &timeformat($date, 1) . " #\n\n";
-		print HTA @htout;
+		my $htaccess  = "# Last modified by The Guardian: " . &timeformat($date, 1) . " #\n\n";
+		$htaccess    .= "@htout";
 		if (@values){
-			print HTA "\n$htheader\n";
+			$htaccess .= "\n$htheader\n";
 			foreach (@values) {
 				chomp $_;
-				if ($_ ne "") { print HTA "Deny from $_\n"; }
+				if ($_ ne "") { $htaccess .= "Deny from $_\n"; }
 			}
-			print HTA "$htfooter\n";
+			$htaccess .= "$htfooter\n";
 		}
-		fclose(HTA);
+		&write_DBorFILE(0,'',".",'','htaccess',($htaccess));
 	}
 }
 

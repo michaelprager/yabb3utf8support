@@ -32,7 +32,7 @@ $set_subjectMaxLength ||= 50;
 
 sub Post {
 	if ($iamguest && $enable_guestposting == 0) { &fatal_error("not_logged_in"); }
-	if (!$iamadmin && !$iamgmod && !$iammod && $speedpostdetection && ${$uid.$username}{'spamcount'} >= $post_speed_count) {
+	if (!$staff && $speedpostdetection && ${$uid.$username}{'spamcount'} >= $post_speed_count) {
 		$detention_time = ${$uid.$username}{'spamtime'} + $spd_detention_time;
 		if($date <= $detention_time){
 			$detention_left = $detention_time - $date;
@@ -44,17 +44,14 @@ sub Post {
 	}
 	if ($currentboard eq '' && !$iamguest) { &fatal_error("no_access"); }
 	my ($filetype_info, $filesize_info);
-	my ($subtitle, $x, $mnum, $msub, $mname, $memail, $mdate, $mreplies, $musername, $micon, $mstate, $msubject, $mattach, $mip, $mmessage, $mns);
+	my ($subtitle, $x, $mnum, $msub, $mname, $memail, $mdate, $mreplies, $musername, $micon, $mstate, $msubject, $mreplyno, $mip, $mmessage, $mns);
 	my $quotemsg = $INFO{'quote'};
 	$threadid = $INFO{'num'};
 
 	($mnum, $msub, $mname, $memail, $mdate, $mreplies, $musername, $micon, $mstate) = split(/\|/, $yyThreadLine);
 
-	my $icanbypass;
 	## only if bypass switched on
-	if ($mstate =~ /l/i && $bypass_lock_perm) { $icanbypass = &checkUserLockBypass; }
-	if ($action eq 'modalert') { $icanbypass = 1; }
-	if ($mstate =~ /l/i && !$icanbypass) { &fatal_error('topic_locked'); }
+	if ($mstate =~ /l/i) { &fatal_error('topic_locked') unless ($bypass_lock_perm && &checkUserLockBypass) }
 	#if ($mstate =~ /a/i && !$iamadmin && !$iamgmod) { &fatal_error('no_access'); }
 
 	# Determine category
@@ -111,12 +108,10 @@ sub Post {
 	$settofield = 'subject';
 	if ($threadid ne '') {
 		unless (ref($thread_arrayref{$threadid})) {
-			fopen(FILE, "$datadir/$threadid.txt") || &fatal_error("cannot_open","$datadir/$threadid.txt", 1);
-			@{$thread_arrayref{$threadid}} = <FILE>;
-			fclose(FILE);
+			@{$thread_arrayref{$threadid}} = &read_DBorFILE(0,'',$datadir,$threadid,'txt');
 		}
 		if ($quotemsg ne '') {
-			($msubject, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $mmessage, $mns) = split(/\|/, ${$thread_arrayref{$threadid}}[$quotemsg]);
+			($msubject, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $mmessage, $mns) = split(/\|/, ${$thread_arrayref{$threadid}}[$quotemsg]);
 			$message = $mmessage;
 			$message =~ s~<br.*?>~\n~ig;
 			$message =~ s/ \&nbsp; \&nbsp; \&nbsp;/\t/ig;
@@ -142,7 +137,7 @@ sub Post {
 			$message = qq~[quote author=$hidename link=$threadid/$quotemsg#$quotemsg date=$mdate\]$message\[/quote\]\n~;
 			if ($mns eq 'NS') { $nscheck = qq~ checked="checked"~; }
 		} else {
-			($msubject, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $mmessage, $mns) = split(/\|/, ${$thread_arrayref{$threadid}}[0]);
+			($msubject, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $mmessage, $mns) = split(/\|/, ${$thread_arrayref{$threadid}}[0]);
 		}
 		$msubject =~ s/\bre:\s+//ig;
 		$sub = "Re: $msubject";
@@ -392,7 +387,7 @@ function checkForm(theForm) {
 		
 		# Change the target of the form submit to the parent if this is a pop up
 		$target_pop_up = $INFO{'popup'} ? qq~target="_parent"~ : "";
-		if (&AccessCheck($currentboard, 4) eq "granted" && $allowattach && ${$uid.$currentboard}{'attperms'} == 1) {
+		if (&AccessCheck($currentboard, 4) eq 'granted' && $allowattach && ${$uid.$currentboard}{'attperms'} == 1 && -d "$uploaddir" && $action =~ /^(post|modify)2?$/ && (($allowguestattach == 0 && !$iamguest) || $allowguestattach == 1)) {
 			$yymain .= qq~<form action="$scripturl?$thecurboard" $target_pop_up method="post" id="postmodify" name="postmodify" enctype="multipart/form-data" onsubmit="if(!checkForm(this)) {return false} else {return submitproc()}">~;
 		} else {
 			$yymain .= qq~<form action="$scripturl?$thecurboard" $target_pop_up method="post" id="postmodify" name="postmodify" enctype="application/x-www-form-urlencoded" onsubmit="if(!checkForm(this)) {return false} else {return submitproc()}">~;
@@ -539,7 +534,7 @@ function checkForm(theForm) {
 		@repliers = @tmprepliers;
 		&MessageTotals("update", $curnum);
 
-		if ($showtopicrepliers && $template_viewers && (($iamadmin || $iamgmod || $iammod) && $sessionvalid == 1)) {
+		if (($showtopicviewers == 1 && $staff) || ($showtopicviewers == 2 && !$iamguest) || $showtopicviewers == 3) {
 			$template_viewers =~ s/\, \Z/\./;
 			$yymain .= qq~
 	<tr>
@@ -562,10 +557,8 @@ function checkForm(theForm) {
 		$vote_limit     ||= 0;
 		$pie_radius     ||= 100;
 
-		if (($iamadmin || $iamgmod) && -e "$datadir/showcase.poll") {
-			fopen (FILE, "$datadir/showcase.poll");
-			$scchecked = ' checked="checked"' if $threadid == <FILE>;
-			fclose (FILE);
+		if ($iamadmin || $iamgmod) {
+			$scchecked = ' checked="checked"' if $threadid == (&read_DBorFILE(1,'',$datadir,'poll','showcase'))[0];
 		}
 		if ($guest_vote)   { $gvchecked = ' checked="checked"'; }
 		if ($hide_results) { $hrchecked = ' checked="checked"'; }
@@ -737,6 +730,7 @@ function checkForm(theForm) {
 	$yymain .= qq~
 <table border="0" width="100%" cellpadding="3" cellspacing="0" class="windowbg" style="table-layout: fixed;">~;
 
+	my ($threadclass,$hidestatus);
 	if ($postid ne 'Poll') {
 		$yymain .= qq~
 		<tr>
@@ -770,36 +764,35 @@ function checkForm(theForm) {
 		</td>
 	</tr>~;
 
-		$topicstatus_row = "";
-		$stselect        = "";
-		$lcselect        = "";
-		$hdselect        = "";
-		$threadclass     = 'thread';
-
+		$threadclass = 'thread';
 		($mnum, $msub, $mname, $memail, $mdate, $mreplies, $musername, $micon, $mstate) = split(/\|/, $yyThreadLine);
 		if ($FORM{'topicstatus'}) { $thestatus = $FORM{'topicstatus'}; }
 		else { $thestatus = $mstate; }
 		if ($currentboard eq $annboard) {
-			$threadclass     = 'announcement';
+			$threadclass = 'announcement';
 		} else {
 			if ($mreplies >= $VeryHotTopic) { $threadclass = 'veryhotthread'; }
 			elsif ($mreplies >= $HotTopic) { $threadclass = 'hotthread'; }
 		}
 		if($action ne "modalert") {
-			if ($thestatus =~ /s/) { $stselect = qq~selected="selected"~; }
-			if ($thestatus =~ /l/) { $lcselect = qq~selected="selected"~; }
-			if ($thestatus =~ /h/) { $hdselect = qq~selected="selected"~; }
-			$hidestatus = "";
+			if ($staff) {
+				my $stselect = $thestatus =~ /s/ ? qq~ selected="selected"~ : '';
+				my $lcselect = $thestatus =~ /l/ ? qq~ selected="selected"~ : '';
+				my $hdselect = $thestatus =~ /h/ ? qq~ selected="selected"~ : '';
 
-			if (($iamadmin || $iamgmod || $iammod) && $sessionvalid == 1) {
+				# check if user can bypass locked threads
+				my $icanbypass = &checkUserLockBypass;
+				my $size = $currentboard ne $annboard ? 3 : 2;
+				$size-- unless $icanbypass;
+
 				$yymain .= qq~
 	<tr id="feature_status_4">
 		<td class="windowbg" align="left" valign="top" width="23%"><label for="topicstatus"><b>$post_txt{'34'}:</b></label></td>
 		<td class="windowbg" align="left" valign="middle" width="77%">
-			<select multiple="multiple" name="topicstatus" id="topicstatus" size="~ . ($currentboard ne $annboard ? 3 : 2) . qq~" style="vertical-align: middle;" onchange="showtpstatus()">
-			~ . ($currentboard ne $annboard ? qq~<option value="s" $stselect>$post_txt{'35'}</option>~ : "") . qq~
-			<option value="l" $lcselect>$post_txt{'36'}</option>
-			<option value="h" $hdselect>$post_txt{'37'}</option>
+			<select multiple="multiple" name="topicstatus" id="topicstatus" size="$size" style="vertical-align: middle;" onchange="showtpstatus()">~ . ($currentboard ne $annboard ? qq~
+			<option value="s"$stselect>$post_txt{'35'}</option>~ : "") . ($icanbypass ? qq~
+			<option value="l"$lcselect>$post_txt{'36'}</option>~ : "") . qq~
+			<option value="h"$hdselect>$post_txt{'37'}</option>
 			</select>
 			<img src="$imagesdir/$threadclass.gif" name="thrstat" border="0" hspace="15" alt="" style="vertical-align: middle;" />
 		</td>
@@ -1243,10 +1236,11 @@ function checkForm(theForm) {
 			document.write("<img src='$imagesdir/cry.gif' onclick='cry();' "+HAND+" align='bottom' alt='$post_txt{'530'}' title='$post_txt{'530'}' border='0'> ");$moresmilieslist
 			document.write("</div>");
 			//-->
-			</script>\n~ if !$removenormalsmilies;
+			</script>\n~ if !$removenormalsmilies && (!${$uid.$username}{'hide_smilies_row'} || !$user_hide_smilies_row);
 
 		if (($showadded == 3 && $showsmdir != 2) || ($showsmdir == 3 && $showadded != 2)) {
 			$yymain .= qq~
+			&nbsp;
 		</td>
 		<td width="77%" valign="middle" class="windowbg2">~ if $removenormalsmilies;
 			$yymain .= qq~
@@ -1261,7 +1255,7 @@ function checkForm(theForm) {
 	</tr>~;
 
 		# File Attachment's Browse Box Code
-		if (&AccessCheck($currentboard, 4) eq 'granted' && $allowattach && ${$uid.$currentboard}{'attperms'} == 1 && -d "$uploaddir" && ($action eq 'post' || $action eq 'post2' || $action eq 'modify' || $action eq 'modify2') && (($allowguestattach == 0 && !$iamguest) || $allowguestattach == 1)) {
+		if (&AccessCheck($currentboard, 4) eq 'granted' && $allowattach && ${$uid.$currentboard}{'attperms'} == 1 && -d "$uploaddir" && $action =~ /^(post|modify)2?$/ && (($allowguestattach == 0 && !$iamguest) || $allowguestattach == 1)) {
 			$mfn = $mfn || $FORM{'oldattach'};
 			my @files = split(/,/, $mfn);
 
@@ -1284,7 +1278,7 @@ function checkForm(theForm) {
 
 			my $startcount;
 			for (my $y = 1; $y <= $allowattach; $y++) {
-				if (($action eq 'modify' || $action eq 'modify2') && $files[$y-1] ne "" && -e "$uploaddir/$files[$y-1]") {
+				if (($action eq 'modify' || $action eq 'modify2') && $files[$y-1] ne "" && &checkfor_DBorFILE("$uploaddir/$files[$y-1]")) {
 					$startcount++;
 					$yymain .= qq~
 			<div id="attform_a_$y" style="float:left; width:23%;~ . ($y > 1 ? qq~ padding-top:5px~ : '') . qq~"><b>$fatxt{'6'} $y:</b></div>
@@ -1427,184 +1421,81 @@ $lastmod
 </form>
 ~;
 
-if ($speedpostdetection){
-	$yymain .= qq~
-	<script language="JavaScript1.2" type="text/javascript">
-		<!--
-		var postdelay = $min_post_speed*1000;
-		document.postmodify.$post.value='$post_txt{"delay"}';
-		document.postmodify.$post.disabled=true;
-		document.postmodify.$post.style.cursor='default';
-		var delay = window.setInterval('releasepost()',postdelay );
-		function releasepost() {
-			document.postmodify.$post.value='$submittxt';
-			document.postmodify.$post.disabled=false;
-			document.postmodify.$post.style.cursor='pointer';
-			window.clearInterval(delay);
-		}
-		//-->
-	</script>~;
-}
+	if ($speedpostdetection){
+		$yymain .= qq~
+		<script language="JavaScript1.2" type="text/javascript">
+			<!--
+			var postdelay = $min_post_speed*1000;
+			document.postmodify.$post.value='$post_txt{"delay"}';
+			document.postmodify.$post.disabled=true;
+			document.postmodify.$post.style.cursor='default';
+			var delay = window.setInterval('releasepost()',postdelay );
+			function releasepost() {
+				document.postmodify.$post.value='$submittxt';
+				document.postmodify.$post.disabled=false;
+				document.postmodify.$post.style.cursor='pointer';
+				window.clearInterval(delay);
+			}
+			//-->
+		</script>~;
+	}
 
 
 	if($postid ne 'Poll') {
-	
 		$yymain .= qq~
 <script type="text/javascript" language="JavaScript1.2">
 <!--
+	// set size of messagebox and text START
+	var oldwidth = parseInt(document.getElementById('message').style.width) - $jsdragwpos;
+	var olddragwidth = parseInt(document.getElementById('dragbgh').style.width) - $jsdragwpos;
+	var oldheight = parseInt(document.getElementById('message').style.height) - $jsdraghpos;
+	var olddragheight = parseInt(document.getElementById('dragbgw').style.height) - $jsdraghpos;
+	var orgsize = $textsize;
+	skydobject.initialize();
+	// set size of messagebox and text END
 
-var oldwidth = parseInt(document.getElementById('message').style.width) - $jsdragwpos;
-var olddragwidth = parseInt(document.getElementById('dragbgh').style.width) - $jsdragwpos;
-var oldheight = parseInt(document.getElementById('message').style.height) - $jsdraghpos;
-var olddragheight = parseInt(document.getElementById('dragbgw').style.height) - $jsdraghpos;
-
-var skydobject={
-x: 0, y: 0, temp2 : null, temp3 : null, targetobj : null, skydNu : 0, delEnh : 0,
-
-initialize:function() {
-	document.onmousedown = this.skydeKnap
-	document.onmouseup=function(){
-		this.skydNu = 0;
-		document.getElementById('messagewidth').value = parseInt(document.getElementById('message').style.width);
-		document.getElementById('messageheight').value = parseInt(document.getElementById('message').style.height);
-	}
-},
-changeSize:function(deleEnh, knapId) {
-	if (knapId == "dragImg1") {
-		newwidth = oldwidth+parseInt(deleEnh);
-		newdragwidth = olddragwidth+parseInt(deleEnh);
-		document.getElementById('message').style.width = newwidth+'px';
-		document.getElementById('dragbgh').style.width = newdragwidth+'px';
-		document.getElementById('dragImg2').style.width = newdragwidth+'px';
-	}
-	if (knapId == "dragImg2") {
-		newheight = oldheight+parseInt(deleEnh);
-		newdragheight = olddragheight+parseInt(deleEnh);
-		document.getElementById('message').style.height = newheight+'px';
-		document.getElementById('dragbgw').style.height = newdragheight+'px';
-		document.getElementById('dragImg1').style.height = newdragheight+'px';
-		document.getElementById('dragcanvas').style.height = newdragheight+'px';
-	}
-	$call_pop_up_resize
-},
-flytKnap:function(e) {
-	var evtobj = window.event ? window.event : e
-	if (this.skydNu == 1) {
-		sizestop = f_clientWidth()
-		maxstop = parseInt(((sizestop*66)/100)-427)
-		if(maxstop > 413) maxstop = 413
-		if(maxstop < 60) maxstop = 60
-
-		glX = parseInt(this.targetobj.style.left)
-		this.targetobj.style.left = this.temp2 + evtobj.clientX - this.x + "px"
-		nyX = parseInt(this.temp2 + evtobj.clientX - this.x)
-		if (nyX > glX) retning = "vn"; else retning = "hj";
-		if (nyX < 1 && retning == "hj") { this.targetobj.style.left = 0 + "px"; nyX = 0; retning = "vn"; }
-		if (nyX > maxstop && retning == "vn") { this.targetobj.style.left = maxstop + "px"; nyX = maxstop; retning = "hj"; }
-		delEnh = parseInt(nyX)
-		var knapObj = this.targetobj.id
-		skydobject.changeSize(delEnh, knapObj)
-		return false
-	}
-	if (this.skydNu == 2) {
-		glY = parseInt(this.targetobj.style.top)
-		this.targetobj.style.top = this.temp3 + evtobj.clientY - this.y + "px"
-		nyY = parseInt(this.temp3 + evtobj.clientY - this.y)
-		if (nyY > glY) retning = "vn"; else retning = "hj";
-		if (nyY < 1 && retning == "hj") { this.targetobj.style.top = 0 + "px"; nyY = 0; retning = "vn"; }
-		if (nyY > 270 && retning == "vn") { this.targetobj.style.top = 270 + "px"; nyY = 270; retning = "hj"; }
-		delEnh = parseInt(nyY)
-		var knapObj = this.targetobj.id
-		skydobject.changeSize(delEnh, knapObj)
-		return false
-	}
-},
-skydeKnap:function(e) {
-	var evtobj = window.event ? window.event : e
-	this.targetobj = window.event ? event.srcElement : e.target
-	if (this.targetobj.className == "drag") {
-		if(this.targetobj.id == "dragImg1") this.skydNu = 1
-		if(this.targetobj.id == "dragImg2") this.skydNu = 2
-		this.knapObj = this.targetobj
-		if (isNaN(parseInt(this.targetobj.style.left))) this.targetobj.style.left = 0
-		if (isNaN(parseInt(this.targetobj.style.top))) this.targetobj.style.top = 0
-		this.temp2 = parseInt(this.targetobj.style.left)
-		this.temp3 = parseInt(this.targetobj.style.top)
-		this.x = evtobj.clientX
-		this.y = evtobj.clientY
-		if (evtobj.preventDefault) evtobj.preventDefault()
-		document.onmousemove = skydobject.flytKnap
-	}
-}
-}
-
-function f_clientWidth() {
-	return f_filterResults (
-		window.innerWidth ? window.innerWidth : 0,
-		document.documentElement ? document.documentElement.clientWidth : 0,
-		document.body ? document.body.clientWidth : 0
-	);
-}
-
-function f_filterResults(n_win, n_docel, n_body) {
-	var n_result = n_win ? n_win : 0;
-	if (n_docel && (!n_result || (n_result > n_docel))) n_result = n_docel;
-	return n_body && (!n_result || (n_result > n_body)) ? n_body : n_result;
-}
-
-var orgsize = $textsize;
-
-function sizetext(sizefact) {
-	orgsize = orgsize + sizefact;
-	if(orgsize < 6) orgsize = 6;
-	if(orgsize > 16) orgsize = 16;
-	document.getElementById('message').style.fontSize = orgsize+'pt';
-	document.getElementById('txtsize').value = orgsize;
-}
-
-skydobject.initialize()
-
-// Collapse/Expand additional features
-var col_row = $col_row;
-function show_features() {
-	document.getElementById('col_row').value = col_row;
-	if (col_row == 1) {
-		for (var i = 1; 14 > i; i++) {
-			try {
-				if (typeof(document.getElementById("feature_status_" + i).style)) throw "1";
-			} catch (e) {
-				if (e == "1") {
-					document.getElementById("feature_status_" + i).style.display = "none";		
+	// Collapse/Expand additional features START
+	var col_row = $col_row;
+	function show_features() {
+		document.getElementById('col_row').value = col_row;
+		if (col_row == 1) {
+			for (var i = 1; 14 > i; i++) {
+				try {
+					if (typeof(document.getElementById("feature_status_" + i).style)) throw "1";
+				} catch (e) {
+					if (e == "1") {
+						document.getElementById("feature_status_" + i).style.display = "none";
+					}
 				}
 			}
-		}
-		document.images.feature_col.alt = "$npf_txt{'expand_features'}";
-		document.images.feature_col.title = "$npf_txt{'expand_features'}";
-		document.images.feature_col.src="$defaultimagesdir/cat_expand.gif";
-		col_row = 0;
-	} else {
-		for (var i = 1; 14 > i; i++) {
-			try {
-				if (typeof(document.getElementById("feature_status_" + i).style)) throw "1";
-			} catch (e) {
-				if (e == "1") {
-					document.getElementById("feature_status_" + i).style.display = "";
+			document.images.feature_col.alt = "$npf_txt{'expand_features'}";
+			document.images.feature_col.title = "$npf_txt{'expand_features'}";
+			document.images.feature_col.src = "$defaultimagesdir/cat_expand.gif";
+			col_row = 0;
+		} else {
+			for (var i = 1; 14 > i; i++) {
+				try {
+					if (typeof(document.getElementById("feature_status_" + i).style)) throw "1";
+				} catch (e) {
+					if (e == "1") {
+						document.getElementById("feature_status_" + i).style.display = "";
+					}
 				}
 			}
+			document.images.feature_col.alt = "$npf_txt{'collapse_features'}";
+			document.images.feature_col.title = "$npf_txt{'collapse_features'}";
+			document.images.feature_col.src = "$defaultimagesdir/cat_collapse.gif";
+			col_row = 1;
 		}
-		document.images.feature_col.alt = "$npf_txt{'collapse_features'}";
-		document.images.feature_col.title = "$npf_txt{'collapse_features'}";
-		document.images.feature_col.src="$defaultimagesdir/cat_collapse.gif";
-		col_row = 1;
+		$call_pop_up_resize	
 	}
-	$call_pop_up_resize	
-}
-show_features();
+	show_features();
+	// Collapse/Expand additional features END
 //-->
 </script>~;
 	}
 
-	if ($postid ne 'Poll' && $post ne 'imsend' && ($iamadmin || $iamgmod || $iammod) && $sessionvalid == 1) {
+	if ($postid ne 'Poll' && $post ne 'imsend' && $staff) {
 		$yymain .= qq~
 <script language="JavaScript1.2" type="text/javascript">
 <!--
@@ -1617,21 +1508,21 @@ function showtpstatus() {
 	}~;
 		if ($currentboard ne $annboard) {
 			$yymain .= qq~
-	if(z == 1 && x == 0)  theimg = 'sticky';
-	if(z == 1 && x == 1)  theimg = 'locked';
-	if(z == 2 && x == 1)  theimg = 'stickylock';
-	if(z == 1 && x == 2)  theimg = 'hide';
-	if(z == 2 && x == 2)  theimg = 'hidesticky';
-	if(z == 2 && x == 3)  theimg = 'hidelock';
-	if(z == 3 && x == 3)  theimg = 'hidestickylock';~;
+	if(z == 1 && x == 0) theimg = 'sticky';
+	if(z == 1 && x == 1) theimg = 'locked';
+	if(z == 2 && x == 1) theimg = 'stickylock';
+	if(z == 1 && x == 2) theimg = 'hide';
+	if(z == 2 && x == 2) theimg = 'hidesticky';
+	if(z == 2 && x == 3) theimg = 'hidelock';
+	if(z == 3 && x == 3) theimg = 'hidestickylock';~;
 		} else {
 			$yymain .= qq~
-	if(z == 1 && x == 0)  theimg = 'announcementlock';
-	if(z == 1 && x == 1)  theimg = 'hide';
-	if(z == 2 && x == 1)  theimg = 'hidelock';~;
+	if(z == 1 && x == 0) theimg = 'announcementlock';
+	if(z == 1 && x == 1) theimg = 'hide';
+	if(z == 2 && x == 1) theimg = 'hidelock';~;
 		}
 		$yymain .= qq~
-	document.images.thrstat.src='$imagesdir/'+theimg+'.gif';
+	document.images.thrstat.src='$defaultimagesdir/'+theimg+'.gif';
 }
 showtpstatus();
 //-->
@@ -1962,7 +1853,7 @@ sub Preview {
 	$postid = $FORM{'postid'};
 	$thestatus = $FORM{'topicstatus'};
 	$isBMess = $FORM{'isBMess'};
-	if (!$iamguest) {
+	if (!$iamguest && ${$uid.$username}{'postlayout'} ne qq~$FORM{'messageheight'}|$FORM{'messagewidth'}|$FORM{'txtsize'}|$FORM{'col_row'}~) {
 		${$uid.$username}{'postlayout'} = qq~$FORM{'messageheight'}|$FORM{'messagewidth'}|$FORM{'txtsize'}|$FORM{'col_row'}~;
 		&UserAccount($username, "update");
 	}
@@ -2004,21 +1895,22 @@ sub Preview {
 
 	&CheckIcon;
 
-	if    ($icon eq "xx")          { $ic1  = " selected=\"selected\" "; }
-	elsif ($icon eq "thumbup")     { $ic2  = " selected=\"selected\" "; }
-	elsif ($icon eq "thumbdown")   { $ic3  = " selected=\"selected\" "; }
-	elsif ($icon eq "exclamation") { $ic4  = " selected=\"selected\" "; }
-	elsif ($icon eq "question")    { $ic5  = " selected=\"selected\" "; }
-	elsif ($icon eq "lamp")        { $ic6  = " selected=\"selected\" "; }
-	elsif ($icon eq "smiley")      { $ic7  = " selected=\"selected\" "; }
-	elsif ($icon eq "angry")       { $ic8  = " selected=\"selected\" "; }
-	elsif ($icon eq "cheesy")      { $ic9  = " selected=\"selected\" "; }
-	elsif ($icon eq "grin")        { $ic10 = " selected=\"selected\" "; }
-	elsif ($icon eq "sad")         { $ic11 = " selected=\"selected\" "; }
-	elsif ($icon eq "wink")        { $ic12 = " selected=\"selected\" "; }
-	if ($FORM{'status'} eq 'c')    { $icon = 'confidential'; }
-	elsif ($FORM{'status'} eq 'u') { $icon = 'urgent'; }
-	elsif ($FORM{'status'} eq 's') { $icon = 'standard'; }
+	if    ($icon eq "xx")           { $ic1  = " selected=\"selected\" "; }
+	elsif ($icon eq "thumbup")      { $ic2  = " selected=\"selected\" "; }
+	elsif ($icon eq "thumbdown")    { $ic3  = " selected=\"selected\" "; }
+	elsif ($icon eq "exclamation")  { $ic4  = " selected=\"selected\" "; }
+	elsif ($icon eq "no_postcount") { $ic4  = " selected=\"selected\" "; }
+	elsif ($icon eq "question")     { $ic5  = " selected=\"selected\" "; }
+	elsif ($icon eq "lamp")         { $ic6  = " selected=\"selected\" "; }
+	elsif ($icon eq "smiley")       { $ic7  = " selected=\"selected\" "; }
+	elsif ($icon eq "angry")        { $ic8  = " selected=\"selected\" "; }
+	elsif ($icon eq "cheesy")       { $ic9  = " selected=\"selected\" "; }
+	elsif ($icon eq "grin")         { $ic10 = " selected=\"selected\" "; }
+	elsif ($icon eq "sad")          { $ic11 = " selected=\"selected\" "; }
+	elsif ($icon eq "wink")         { $ic12 = " selected=\"selected\" "; }
+	if ($FORM{'status'} eq 'c')     { $icon = 'confidential'; }
+	elsif ($FORM{'status'} eq 'u')  { $icon = 'urgent'; }
+	elsif ($FORM{'status'} eq 's')  { $icon = 'standard'; }
 
 	$name_field = $iamguest ? qq~      <tr>
     <td class="windowbg" align="left" width="23%"><label for="name"><b>$post_txt{'68'}:</b></label></td>
@@ -2188,7 +2080,7 @@ var GB_ROOT_DIR = "$yyhtml_root/greybox/";
 sub Post2 {
 	if ($iamguest && $enable_guestposting == 0) { &fatal_error("not_logged_in"); }
 	#if ($currentboard eq $annboard && !$iamadmin && !$iamgmod) { &fatal_error('not_allowed'); }
-	if (!$iamadmin && !$iamgmod && !$iammod && $speedpostdetection && ${$uid.$username}{'spamcount'} >= $post_speed_count) {
+	if (!$staff && $speedpostdetection && ${$uid.$username}{'spamcount'} >= $post_speed_count) {
 		$detention_time = ${$uid.$username}{'spamtime'} + $spd_detention_time;
 		if($date <= $detention_time){
 			$detention_left = $detention_time - $date;
@@ -2201,7 +2093,7 @@ sub Post2 {
 	if ($iamguest && $gpvalid_en) {
 		&validation_check($FORM{'verification'});
 	}
-	my ($email, $ns, $notify, $hasnotify, @memberlist, $i, $membername, $testname, @reserve, @reservecfg, $matchword, $matchcase, $matchuser, $matchname, $namecheck, $reserved, $reservecheck, $mnum, $msub, $mname, $memail, $mdate, $musername, $micon, $mstate, $pageindex, $tempname);
+	my ($email, $ns, $notify, $hasnotify, $i, $membername, $testname, @reserve, @reservecfg, $matchword, $matchcase, $matchuser, $matchname, $namecheck, $reserved, $reservecheck, $mnum, $msub, $mname, $memail, $mdate, $musername, $micon, $mstate, $pageindex, $tempname);
 
 	&BoardTotals("load", $currentboard);
 
@@ -2240,7 +2132,7 @@ sub Post2 {
 	my $spamdetected = &spamcheck("$name $subject $message");
 	if (!${$uid.$FORM{$username}}{'spamcount'}) { ${$uid.$FORM{$username}}{'spamcount'} = 0; }
 	$postspeed = $date - $posttime;
-	if (!$iamadmin && !$iamgmod && !$iammod){
+	if (!$staff){
 		if (($speedpostdetection && $postspeed < $min_post_speed) || $spamdetected == 1) {
 			${$uid.$username}{'spamcount'}++;
 			${$uid.$username}{'spamtime'} = $date;
@@ -2314,7 +2206,7 @@ sub Post2 {
 	if ($testmessage eq "" && $message ne "" && $pollthread != 2) { fatal_error("useless_post","$testmessage"); }
 
 	if (!$minlinkpost){ $minlinkpost = 0 ;}
-	if (${$uid.$username}{'postcount'} < $minlinkpost && !$iamadmin && !$iamgmod && !$iammod) { 
+	if (${$uid.$username}{'postcount'} < $minlinkpost && !$staff) { 
 		if ($message =~ m~http:\/\/~ || $message =~ m~https:\/\/~ || $message =~ m~ftp:\/\/~ || $message =~ m~www.~ || $message =~ m~ftp.~ =~ m~\[url~ || $message=~ m~\[link~ || $message=~ m~\[img~ || $message=~ m~\[ftp~) {
 			&fatal_error("no_links_allowed");
 		}
@@ -2338,7 +2230,7 @@ sub Post2 {
 	$message =~ s/([\000-\x09\x0b\x0c\x0e-\x1f\x7f])/\x0d/g;
 	&CheckIcon;
 
-	if (-e ("$datadir/.txt")) { unlink("$datadir/.txt"); }
+	if (!$use_MySQL) { &delete_DBorFILE("$datadir/.txt"); }
 
 	if (!$iamguest) {
 		# If not guest, get name and email.
@@ -2431,7 +2323,7 @@ sub Post2 {
 				&ToHTML($FORM{"option$i"});
 
 				$numcount++;
-				$split[$i] = $FORM{"split$i"} || 0;
+				$split[$i] = $FORM{"split$i"} ? 1 : 0;
 				push(@poll_data, qq~0|$FORM{"option$i"}|$FORM{"slicecol$i"}|$split[$i]\n~);
 			}
 		}
@@ -2448,7 +2340,7 @@ sub Post2 {
 				# Transliteration
 				my @ISO_8859_1 = qw(A B V G D E JO ZH Z I J K L M N O P R S T U F H C CH SH SHH _ Y _ JE JU JA a b v g d e jo zh z i j k l m n o p r s t u f h c ch sh shh _ y _ je ju ja);
 				my $x = 0;
-				foreach (qw(ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½)) {
+				foreach (qw(À Á Â Ã Ä Å ¨ Æ Ç È É Ê Ë Ì Í Î Ï Ð Ñ Ò Ó Ô Õ Ö × Ø Ù Ú Û Ü Ý Þ ß à á â ã ä å ¸ æ ç è é ê ë ì í î ï ð ñ ò ó ô õ ö ÷ ø ù ú û ü ý þ ÿ)) {
 					 $fixfile =~ s/$_/$ISO_8859_1[$x]/ig;
 					 $x++;
 				}
@@ -2462,13 +2354,13 @@ sub Post2 {
 			my $fixext = $2;
 
 			my $spamdetected = &spamcheck("$fixname");
-			if (!$iamadmin && !$iamgmod && !$iammod){
+			if (!$staff){
 				if ($spamdetected == 1) {
 					${$uid.$username}{'spamcount'}++;
 					${$uid.$username}{'spamtime'} = $date;
 					&UserAccount($username,"update");
 					$spam_hits_left_count = $post_speed_count - ${$uid.$username}{'spamcount'};
-					foreach (@filelist) { unlink("$uploaddir/$_"); }
+					foreach (@filelist) { &delete_DBorFILE("$uploaddir/$_"); }
 					&fatal_error("tsc_alert");
 				}
 			}
@@ -2478,8 +2370,8 @@ sub Post2 {
 			$fixfile = qq~$fixname$fixext~;
 
 			if (!$overwrite) { $fixfile = &check_existence($uploaddir, $fixfile); }
-			elsif ($overwrite == 2 && -e "$uploaddir/$fixfile") {
-				foreach (@filelist) { unlink("$uploaddir/$_"); }
+			elsif ($overwrite == 2 && &checkfor_DBorFILE("$uploaddir/$fixfile")) {
+				foreach (@filelist) { &delete_DBorFILE("$uploaddir/$_"); }
 				&fatal_error("file_overwrite");
 			}
 
@@ -2491,25 +2383,25 @@ sub Post2 {
 				}
 			}
 			if ($match) {
-				unless ($allowattach && (($allowguestattach == 0 && $username ne 'Guest') || $allowguestattach == 1)) {
-					foreach (@filelist) { unlink("$uploaddir/$_"); }
+				unless ($allowattach && (($allowguestattach == 0 && !$iamguest) || $allowguestattach == 1)) {
+					foreach (@filelist) { &delete_DBorFILE("$uploaddir/$_"); }
 					&fatal_error("no_perm_att");
 				}
 			} else {
-				foreach (@filelist) { unlink("$uploaddir/$_"); }
+				foreach (@filelist) { &delete_DBorFILE("$uploaddir/$_"); }
 				&Preview("$fixfile $fatxt{'20'} @ext");
 			}
 
 			my ($size,$buffer,$filesize,$file_buffer);
 			while ($size = read($file, $buffer, 512)) { $filesize += $size; $file_buffer .= $buffer; }
 			if ($limit && $filesize > (1024 * $limit)) {
-				foreach (@filelist) { unlink("$uploaddir/$_"); }
+				foreach (@filelist) { &delete_DBorFILE("$uploaddir/$_"); }
 				&Preview("$fatxt{'21'} $fixfile (" . int($filesize / 1024) . " KB) $fatxt{'21b'} " . $limit);
 			}
 			if ($dirlimit) {
 				my $dirsize = &dirsize($uploaddir);
 				if ($filesize > ((1024 * $dirlimit) - $dirsize)) {
-					foreach (@filelist) { unlink("$uploaddir/$_"); }
+					foreach (@filelist) { &delete_DBorFILE("$uploaddir/$_"); }
 					&Preview("$fatxt{'22'} $fixfile (" . (int($filesize / 1024) - $dirlimit + int($dirsize / 1024)) . " KB) $fatxt{'22b'}");
 				}
 			}
@@ -2521,14 +2413,14 @@ sub Post2 {
 				fclose(NEWFILE);
 
 			} else { # return the server's error message if the new file could not be created
-				foreach (@filelist) { unlink("$uploaddir/$_"); }
+				foreach (@filelist) { &delete_DBorFILE("$uploaddir/$_"); }
 				&fatal_error("file_not_open","$uploaddir");
 			}
 
 			# check if file has actually been uploaded, by checking the file has a size
 			$filesizekb{$fixfile} = -s "$uploaddir/$fixfile";
 			unless ($filesizekb{$fixfile}) {
-				foreach (qw("@filelist" $fixfile)) { unlink("$uploaddir/$_"); }
+				foreach (qw("@filelist" $fixfile)) { &delete_DBorFILE("$uploaddir/$_"); }
 				&fatal_error("file_not_uploaded",$fixfile);
 			}
 			$filesizekb{$fixfile} = int($filesizekb{$fixfile} / 1024);
@@ -2550,7 +2442,7 @@ sub Post2 {
 				}
 				fclose(ATTFILE);
 				if(!$okatt) { # delete the file as it contains illegal code
-					foreach (qw("@filelist" $fixfile)) { unlink("$uploaddir/$_"); }
+					foreach (qw("@filelist" $fixfile)) { &delete_DBorFILE("$uploaddir/$_"); }
 					&fatal_error("file_not_uploaded","$fixfile <= illegal code inside image file!");
 				}
 			}
@@ -2582,37 +2474,19 @@ sub Post2 {
 		else { $mstate = "0"; }
 
 		# This is a new thread. Save it.
-		fopen(FILE, "+<$boardsdir/$currentboard.txt", 1) || &fatal_error("cannot_open","$boardsdir/$currentboard.txt", 1);
-		seek FILE, 0, 0;
-		my @buffer = <FILE>;
-		truncate FILE, 0;
-		seek FILE, 0, 0;
-		print FILE qq~$newthreadid|$subject|$name|$email|$date|$mreplies|$username|$icon|$mstate\n~;
-		print FILE @buffer;
-		fclose(FILE);
-		fopen(FILE, ">$datadir/$newthreadid.txt") || &fatal_error("cannot_open","$datadir/$newthreadid.txt", 1);
-		print FILE qq~$subject|$name|$email|$date|$username|$icon|0|$user_ip|$message|$ns|||$fixfile\n~;
-		fclose(FILE);
+		my @buffer = &read_DBorFILE(0,FILE,$boardsdir,$currentboard,'txt');
+		&write_DBorFILE(0,FILE,$boardsdir,$currentboard,'txt',(qq~$newthreadid|$subject|$name|$email|$date|$mreplies|$username|$icon|$mstate\n~,@buffer));
 
+		&write_DBorFILE(0,'',$datadir,$newthreadid,'txt',(qq~$subject|$name|$email|$date|$username|$icon|0|$user_ip|$message|$ns|||$fixfile\n~));
 
 		if (@filelist) {
-			fopen(AMP, ">>$vardir/attachments.txt") || &fatal_error("cannot_open","$vardir/attachments.txt");
+			my @temp = &read_DBorFILE(0,AMP,$vardir,'attachments','txt');
 			foreach $fixfile (@filelist) {
-				print AMP qq~$newthreadid|$mreplies|$subject|$name|$currentboard|$filesizekb{$fixfile}|$date|$fixfile|0\n~;
+				push(@temp, qq~$newthreadid|$mreplies|$subject|$name|$currentboard|$filesizekb{$fixfile}|$date|$fixfile|0\n~);
 			}
-			fclose(AMP);
+			&write_DBorFILE(0,AMP,$vardir,'attachments','txt',@temp);
 		}
-		if ($pollthread) { # Save Poll data for new thread
-			if (($iamadmin || $iamgmod) && $FORM{'scpoll'}) { # Save ShowcasePoll
-					fopen (SCFILE, ">$datadir/showcase.poll");
-					print SCFILE $newthreadid;
-					fclose (SCFILE);
-			}
 
-			fopen(POLL, ">$datadir/$newthreadid.poll");
-			print POLL @poll_data;
-			fclose(POLL);
-		}
 		## write the ctb file for the new thread
 		${$newthreadid}{'board'}        = $currentboard;
 		${$newthreadid}{'replies'}      = 0;
@@ -2622,7 +2496,15 @@ sub Post2 {
 		${$newthreadid}{'threadstatus'} = $mstate;
 		&MessageTotals("update", $newthreadid);
 
-		if (($enable_notifications == 1 || $enable_notifications == 3) && -e "$boardsdir/$currentboard.mail") {
+		if ($pollthread) { # Save Poll data of new thread AFTER ctb is created (for SQL)!!!
+			if (($iamadmin || $iamgmod) && $FORM{'scpoll'}) { # Save ShowcasePoll
+					&write_DBorFILE(1,'',$datadir,'poll','showcase',($newthreadid));
+			}
+
+			&write_DBorFILE(1,'',$datadir,$newthreadid,'poll',@poll_data);
+		}
+
+		if (($enable_notifications == 1 || $enable_notifications == 3) && &checkfor_DBorFILE("$boardsdir/$currentboard.mail")) {
 			&ToChars($subject);
 			$subject = &Censor($subject);
 			&NewNotify($newthreadid, $subject);
@@ -2633,45 +2515,38 @@ sub Post2 {
 		($mnum, $msub, $mname, $memail, $mdate, $mreplies, $musername, $micon, $mstate) = split(/\|/, $yyThreadLine);
 
 		if ($mstate =~ /l/i) { # locked thread
-			my $icanbypass = &checkUserLockBypass if $bypass_lock_perm; # only if bypass switched on
-			if (!$icanbypass) { &fatal_error('topic_locked');}
+			unless (!$bypass_lock_perm || &checkUserLockBypass) { &fatal_error('topic_locked'); }
 		}
-		if ($iammod || $iamgmod || $iamadmin) { $mstate = $currentboard eq $annboard ? "0a$thestatus" : "0$thestatus"; } # Leave the status as is if the user isn't allowed to change it
+		if ($staff) { $mstate = $currentboard eq $annboard ? "0a$thestatus" : "0$thestatus"; } # Leave the status as is if the user isn't allowed to change it
 
-		# Get the right timeformat for the .ctb file
-		# First save the user time format
-		my $timeformat = ${$uid.$username}{'timeformat'};
-		my $timeselect = ${$uid.$username}{'timeselect'};
-		# Override user settings
-		${$uid.$username}{'timeformat'} = 'SDT, DD MM YYYY HH:mm:ss zzz'; # The .ctb time format
-		${$uid.$username}{'timeselect'} = 7;
-		# Get the time for the .ctb
-		my $newtime = &timeformat($date,1,"rfc");
-		# Now restore the user settings
-		${$uid.$username}{'timeformat'} = $timeformat;
-		${$uid.$username}{'timeselect'} = $timeselect;
-
-		# First load the current .ctb info but don't close the file befor saving the changed data
+		# ctb START
+		# Load the current .ctb info but don't close the file befor saving the changed data
 		# or you can get wrong .ctb files if two users save at the exact same moment.
 		# Therfore we can't use &MessageTotals("load", $threadid); her.
 		# File locking should be enabled in AdminCenter!
 		# Changes here on @tag must also be done in System.pl -> sub MessageTotals -> my @tag = ...
+		# and in Subs.pl in the SQL/File management block: my %db_table = (...
 		my @tag = qw(board replies views lastposter lastpostdate threadstatus repliers);
-		fopen(UPDATE_CTB, "+<$datadir/$threadid.ctb",1) || &fatal_error('cannot_open', "$datadir/$threadid.ctb", 1);
-		foreach (<UPDATE_CTB>) {
-			if ($_ =~ /^'(.*?)',"(.*?)"/) { ${$threadid}{$1} = $2; }
+
+		my $i = 0;
+		foreach (&read_DBorFILE(0,'UPDATE_CTB',$datadir,$threadid,'ctb')) {
+			if ($use_MySQL) { ${$threadid}{$tag[$i]} = $_; $i++; }
+			else { if ($_ =~ /^'(.*?)',"(.*?)"/) { ${$threadid}{$1} = $2; } }
 		}
-		truncate UPDATE_CTB, 0;
-		seek UPDATE_CTB, 0, 0;
-		print UPDATE_CTB qq~### ThreadID: $threadid, LastModified: $newtime ###\n\n~;
+
+		${$threadid}{'mysql'} = ($use_MySQL && ${$threadid}{'lastpostdate'}) ? 1 : 0;
 
 		# Check if thread has moved. And do necessary access check
 		if (${$threadid}{'board'} ne $currentboard) {
 			if (&AccessCheck(${$threadid}{'board'}, 2) ne "granted") {
-				for (my $cnt = 0; $cnt < @tag; $cnt++) {
-					print UPDATE_CTB qq~'$tag[$cnt]',"${$threadid}{$tag[$cnt]}"\n~;
+				if ($use_MySQL) {
+					# no need to write back to DB
+					&mysql_process(0,'do',"UNLOCK TABLES");
+				} else {
+					@tag = map { qq~'$_',"${$threadid}{$_}"\n~ } @tag;
+					unshift(@tag, "### ThreadID: $threadid ###\n\n");
+					&write_DBorFILE(0,'UPDATE_CTB',$datadir,$threadid,'ctb',@tag);
 				}
-				fclose(UPDATE_CTB);
 				&fatal_error("no_perm_reply");
 			}
 
@@ -2687,47 +2562,39 @@ sub Post2 {
 		${$threadid}{'lastpostdate'} = $date;
 		${$threadid}{'threadstatus'} = $mstate;
 
-		for (my $cnt = 0; $cnt < @tag; $cnt++) {
-			print UPDATE_CTB qq~'$tag[$cnt]',"${$threadid}{$tag[$cnt]}"\n~;
+		if ($use_MySQL) {
+			@tag = map { ${$threadid}{$_} } @tag;
+		} else {
+			@tag = map { qq~'$_',"${$threadid}{$_}"\n~ } @tag;
+			unshift(@tag, "### ThreadID: $threadid ###\n\n");
 		}
-		fclose(UPDATE_CTB);
-		# end of .ctb file saving
+
+		&write_DBorFILE(${$threadid}{'mysql'},'UPDATE_CTB',$datadir,$threadid,'ctb',@tag);
+		# ctb END
 
 		$mreplies = ${$threadid}{'replies'};
 
 		if ($pollthread) { # Save new Poll data
 			if (($iamadmin || $iamgmod) && $FORM{'scpoll'}) { # Save ShowcasePoll
-					fopen (SCFILE, ">$datadir/showcase.poll");
-					print SCFILE $threadid;
-					fclose (SCFILE);
+					&write_DBorFILE(1,'',$datadir,'poll','showcase',($threadid));
 			}
-			fopen(POLL, ">$datadir/$threadid.poll");
-			print POLL @poll_data;
-			fclose(POLL);
+			&write_DBorFILE(1,'',$datadir,$threadid,'poll',@poll_data);
 		}
 
-		fopen(BOARDFILE, "+<$boardsdir/$currentboard.txt", 1) || &fatal_error("cannot_open","$boardsdir/$currentboard.txt", 1);
-		seek BOARDFILE, 0, 0;
-		my @buffer = <BOARDFILE>;
-		truncate BOARDFILE, 0;
-		seek BOARDFILE, 0, 0;
+		my @buffer = &read_DBorFILE(0,BOARDFILE,$boardsdir,$currentboard,'txt');
 		for ($i = 0; $i < @buffer; $i++) {
 			if ($buffer[$i] =~ m~\A$mnum\|~o) { $buffer[$i] = ""; last; }
 		}
-		print BOARDFILE qq~$mnum|$msub|$mname|$memail|$date|$mreplies|$musername|$micon|$mstate\n~;
-		print BOARDFILE @buffer;
-		fclose(BOARDFILE);
+		&write_DBorFILE(0,BOARDFILE,$boardsdir,$currentboard,'txt',(qq~$mnum|$msub|$mname|$memail|$date|$mreplies|$musername|$micon|$mstate\n~,@buffer));
 
-		fopen(THREADFILE, ">>$datadir/$threadid.txt") || &fatal_error("cannot_open","$datadir/$threadid.txt", 1);
-		print THREADFILE qq~$subject|$name|$email|$date|$username|$icon|0|$user_ip|$message|$ns|||$fixfile\n~;
-		fclose(THREADFILE);
+		&write_DBorFILE(0,'',$datadir,$threadid,'txt',(@{$thread_arrayref{$threadid}},qq~$subject|$name|$email|$date|$username|$icon|~ . scalar(@{$thread_arrayref{$threadid}}) . qq~|$user_ip|$message|$ns|||$fixfile\n~));
 
 		if (@filelist) {
-			fopen(AMP, ">>$vardir/attachments.txt") || &fatal_error("cannot_open","$vardir/attachments.txt");
+			my @temp = &read_DBorFILE(0,AMP,$vardir,'attachments','txt');
 			foreach $fixfile (@filelist) {
-				print AMP qq~$mnum|$mreplies|$subject|$name|$currentboard|$filesizekb{$fixfile}|$date|$fixfile|0\n~;
+				push(@temp, qq~$mnum|$mreplies|$subject|$name|$currentboard|$filesizekb{$fixfile}|$date|$fixfile|0\n~);
 			}
-			fclose(AMP);
+			&write_DBorFILE(0,AMP,$vardir,'attachments','txt',@temp);
 		}
 
 		&ToChars($subject);
@@ -2754,7 +2621,7 @@ sub Post2 {
 					}
 				}
 			}
-			&ManageMemberinfo("update", $username, '', '', $grp_after, ${$uid.$username}{'postcount'});
+			&ManageMemberinfo("update", $username, '', '', '', $grp_after, ${$uid.$username}{'postcount'});
 		}
 		&UserAccount($username, "update", "lastpost+lastonline");
 	}
@@ -2857,7 +2724,7 @@ sub NewNotify {
 		if ($curuser ne $username) {
 			&LoadUser($curuser);
  			if (${$uid.$curuser}{'notify_me'} == 1 || ${$uid.$curuser}{'notify_me'} == 3) {
-				(undef, $curmail, undef) = split(/\|/, $memberinf{$curuser}, 3);
+				(undef, undef, $curmail, undef) = split(/\|/, $memberinf{$curuser}, 4);
 				&sendmail($curmail, "$notifysubjects{$curlang}{'136'}: $thissubject", &template_email($notifystrings{$curlang}{'boardnewtopicnotificationemail'}, {'subject' => $thissubject, 'num' => $thisthread}), '', $notifycharset{$curlang}{'emailcharset'});
  			}
 			undef %{$uid.$curuser};
@@ -2884,7 +2751,7 @@ sub ReplyNotify {
 
 	my %mailsent;
 	&ManageMemberinfo("load");
-	if (-e "$boardsdir/$currentboard.mail") {
+	if (&checkfor_DBorFILE("$boardsdir/$currentboard.mail")) {
 		&ManageBoardNotify("load", $currentboard);
 		my %languages;
 		foreach (keys %theboard) {
@@ -2897,7 +2764,7 @@ sub ReplyNotify {
 			if ($curuser ne $username && $notify_type == 2) {
 				&LoadUser($curuser);
  				if (${$uid.$curuser}{'notify_me'} == 1 || ${$uid.$curuser}{'notify_me'} == 3) {
-					(undef, $curmail, undef) = split(/\|/, $memberinf{$curuser}, 3);
+					(undef, undef, $curmail, undef) = split(/\|/, $memberinf{$curuser}, 4);
 					&sendmail($curmail, "$notifysubjects{$curlang}{'136'}: $thissubject", &template_email($notifystrings{$curlang}{'boardnotificationemail'}, {'subject' => $thissubject, 'num' => $thisthread, 'start' => $page}), '', $notifycharset{$curlang}{'emailcharset'});
 					$mailsent{$curuser} = 1;
  				}
@@ -2906,7 +2773,7 @@ sub ReplyNotify {
 		}
 		undef %theboard;
 	}
-	if (-e "$datadir/$thisthread.mail") {
+	if (&checkfor_DBorFILE("$datadir/$thisthread.mail")) {
 		&ManageThreadNotify("load", $thisthread);
 		my %languages;
 		foreach (keys %thethread) {
@@ -2919,7 +2786,7 @@ sub ReplyNotify {
 			if ($curuser ne $username && !exists $mailsent{$curuser} && $hasviewed) {
 				&LoadUser($curuser);
  				if (${$uid.$curuser}{'notify_me'} == 1 || ${$uid.$curuser}{'notify_me'} == 3) {
-					(undef, $curmail, undef) = split(/\|/, $memberinf{$curuser}, 3);
+					(undef, undef, $curmail, undef) = split(/\|/, $memberinf{$curuser}, 4);
 					&sendmail($curmail, "$notifysubjects{$curlang}{'118'}: $thissubject", &template_email($notifystrings{$curlang}{'topicnotificationemail'}, {'subject' => $thissubject, 'num' => $thisthread, 'start' => $page}), '', $notifycharset{$curlang}{'emailcharset'});
 					$thethread{$curuser} = qq~$curlang|$notify_type|0~;
 				}
@@ -2936,9 +2803,7 @@ sub doshowthread {
 	if ($INFO{'start'}) { $INFO{'start'} = "/$INFO{'start'}"; }
 
 	unless (ref($thread_arrayref{$threadid}) || !$threadid) {
-		fopen(THREADFILE, "$datadir/$threadid.txt") || &fatal_error("cannot_open","$datadir/$threadid.txt", 1);
-		@{$thread_arrayref{$threadid}} = <THREADFILE>;
-		fclose(THREADFILE);
+		@{$thread_arrayref{$threadid}} = &read_DBorFILE(0,'',$datadir,$threadid,'txt');
 	}
 	my @messages = @{$thread_arrayref{$threadid}};
 
@@ -2977,14 +2842,14 @@ sub doshowthread {
 			$tempdate = &timeformat($tempdate);
 			$parseflash = 0;
 
-			if ($tempname ne 'Guest' && -e ("$memberdir/$tempname.vars")) { &LoadUser($tempname); }
+			if ($tempname ne 'Guest' && &checkfor_DBorFILE("$memberdir/$tempname.vars")) { &LoadUser($tempname); }
 			if (${$uid.$tempname}{'regtime'}) {
 				$registrationdate = ${$uid.$tempname}{'regtime'};
 			} else {
 				$registrationdate = int(time);
 			}
 			if (${$uid.$tempname}{'regdate'} && $messagedate > $registrationdate) {
-				$displaynamelink = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$tempname}">${$uid.$tempname}{'realname'}</a>~;
+				$displaynamelink = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$tempname}" rel="nofollow">${$uid.$tempname}{'realname'}</a>~;
 			} elsif ($tempname !~ m~Guest~ && $messagedate < $registrationdate) {
 				$displaynamelink = qq~$tempname - $display_txt{'470a'}~;
 			} else {
@@ -3186,7 +3051,7 @@ sub sendGuestPM2 {
 	$message =~ s/([\000-\x09\x0b\x0c\x0e-\x1f\x7f])/\x0d/g;
 	&CheckIcon;
 
-	if (-e ("$datadir/.txt")) { unlink("$datadir/.txt"); }
+	if (-e ("$datadir/.txt")) { &delete_DBorFILE("$datadir/.txt"); }
 
 	# User is Guest, then make sure the chosen name and email is not reserved or used by a member
 	if (lc $name eq lc &MemberIndex('check_exist', $name)) { &fatal_error('guest_taken', "($name)"); }
@@ -3199,18 +3064,11 @@ sub sendGuestPM2 {
 	$mreplies = 0;
 
 	# set announcement flag according to status of current board
-	if(-e "$memberdir/broadcast.messages") {
-		fopen(INBOX, "$memberdir/broadcast.messages");
-		@bmessages = <INBOX>;
-		fclose(INBOX);
-	}
-	fopen(INBOX, ">$memberdir/broadcast.messages");
+	@bmessages = &read_DBorFILE(1,'',$memberdir,'broadcast','messages');
 	# new format:  #messageid|from user|touser(s)|(ccuser(s))|(bccuser(s))|
 	#    subject|date|message|(parentmid)|(reply#)|ip|
 	#		messagestatus|flags|storefolder|attachment
-	print INBOX "$newthreadid|$name $email|admin|||$subject|$date|$message|$newthreadid|0|$ENV{'REMOTE_ADDR'}|g|||\n";
-	print INBOX @bmessages;
-	fclose(INBOX);
+	&write_DBorFILE(0,'',$memberdir,'broadcast','messages',("$newthreadid|$name $email|admin|||$subject|$date|$message|$newthreadid|0|$ENV{'REMOTE_ADDR'}|g|||\n",@bmessages));
 	undef @bmessages;
 
 	# The thread ID, regardless of whether it's a new thread or not
@@ -3272,12 +3130,10 @@ sub modAlert {
 	$settofield = 'subject';
 	if ($threadid ne '') {
 		unless (ref($thread_arrayref{$threadid})) {
-			fopen(FILE, "$datadir/$threadid.txt") || &fatal_error("cannot_open","$datadir/$threadid.txt", 1);
-			@{$thread_arrayref{$threadid}} = <FILE>;
-			fclose(FILE);
+			@{$thread_arrayref{$threadid}} = &read_DBorFILE(0,'',$datadir,$threadid,'txt');
 		}
 		if ($quotemsg ne '') {
-			($msubject, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $mmessage, $mns) = split(/\|/, ${$thread_arrayref{$threadid}}[$quotemsg]);
+			($msubject, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $mmessage, $mns) = split(/\|/, ${$thread_arrayref{$threadid}}[$quotemsg]);
 			$message = $mmessage;
 			$message =~ s~<br.*?>~\n~ig;
 			$message =~ s/ \&nbsp; \&nbsp; \&nbsp;/\t/ig;
@@ -3298,7 +3154,7 @@ sub modAlert {
 			$msubject =~ s/\bre:\s+//ig;
 			if ($mns eq 'NS') { $nscheck = 'checked'; }
 		} else {
-			($msubject, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $mmessage, $mns) = split(/\|/, ${$thread_arrayref{$threadid}}[0]);
+			($msubject, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $mmessage, $mns) = split(/\|/, ${$thread_arrayref{$threadid}}[0]);
 			$msubject =~ s/\bre:\s+//ig;
 		}
 		$sub = "Re: $msubject";
@@ -3376,7 +3232,7 @@ sub modAlert2 {
 	my $spamdetected = &spamcheck("$name $subject $message");
 	if (!${$uid.$FORM{$username}}{'spamcount'}) { ${$uid.$FORM{$username}}{'spamcount'} = 0; }
 	$postspeed = $date - $posttime;
-	if (!$iamadmin && !$iamgmod && !$iammod){
+	if (!$staff){
 		if (($speedpostdetection && $postspeed < $min_post_speed) || $spamdetected == 1) {
 			${$uid.$username}{'spamcount'}++;
 			${$uid.$username}{'spamtime'} = $date;
@@ -3434,7 +3290,7 @@ sub modAlert2 {
 	$message =~ s~\n~<br />~g;
 	$message =~ s/([\000-\x09\x0b\x0c\x0e-\x1f\x7f])/\x0d/g;
 
-	if (-e ("$datadir/.txt")) { unlink("$datadir/.txt"); }
+	if (-e ("$datadir/.txt")) { &delete_DBorFILE("$datadir/.txt"); }
 	
 	# Find a valid random ID for it
 	$newthreadid = &getnewid;
@@ -3460,9 +3316,9 @@ sub modAlert2 {
 	if ($PMenableBm_level && $modgrps) {
 		if ($modgrps =~ /admins|gmods|mods/) { $x = 1; }
 		else {
-			&ManageMemberinfo("load") if !%memberinf;
+			&ManageMemberinfo("load");
 			manageinfo: foreach (keys %memberinf) {
-				map { if ($_ && $modgrps =~ /\b$_\b/) { $x = 1; last manageinfo; } } split(/,/, (split(/\|/, $memberinf{$_}))[4]);
+				map { if ($_ && $modgrps =~ /\b$_\b/) { $x = 1; last manageinfo; } } split(/,/, (split(/\|/, $memberinf{$_}, 7))[5]);
 			}
 			$mods = 'admin' if !$x && !$mods;
 		}
@@ -3491,37 +3347,26 @@ sub modAlert2 {
 				&sendmail(${$uid.$toBoardMod}{'email'}, $notify_txt{'145'}, $chmessage, '', $emailcharset);
 
 			} elsif ($PMenableBm_level && $x) {
-				&ManageMemberinfo("load") if !%memberinf;
-				map { if ($_ && $modgrps =~ /\b$_\b/) { next managemods; } } split(/,/, (split(/\|/, $memberinf{$toBoardMod}))[4]);
+				&ManageMemberinfo("load");
+				map { if ($_ && $modgrps =~ /\b$_\b/) { next managemods; } } split(/,/, (split(/\|/, $memberinf{$toBoardMod}, 7))[5]);
 			}
 
 			# Send message to user
-			fopen(INBOX, "$memberdir/$toBoardMod.msg");
-			my @inmessages = <INBOX>;
-			fclose(INBOX);
-			fopen(INBOX, ">$memberdir/$toBoardMod.msg");
+			my @inmessages = &read_DBorFILE(0,'',$memberdir,$toBoardMod,'msg');
 			# new format: messageid|from user|touser(s)|(ccuser(s))|(bccuser(s))|
 			#	subject|date|message|(parentmid)|(reply#)|ip|
 			#		messagestatus|flags|storefolder|attachment
-			print INBOX "$newthreadid|$name|$toBoardMod|||$subject|$date|$message|$newthreadid|0|$ENV{'REMOTE_ADDR'}|a|u||\n";
-			print INBOX @inmessages;
-			fclose(INBOX);
-
+			&write_DBorFILE(0,'',$memberdir,$toBoardMod,'msg',("$newthreadid|$name|$toBoardMod|||$subject|$date|$message|$newthreadid|0|$ENV{'REMOTE_ADDR'}|a|u||\n", @inmessages));
 		}
 	}
 
 	if ($PMenableBm_level && $x) {
 		# set announcement flag according to status of current board
-		fopen(INBOX, "$memberdir/broadcast.messages") || &fatal_error("cannot_open","$memberdir/broadcast.messages");
-		my @inmessages = <INBOX>;
-		fclose(INBOX);
-		fopen(INBOX, ">$memberdir/broadcast.messages");
+		my @inmessages = &read_DBorFILE(0,'',$memberdir,'broadcast','messages');
 		# new format:  #messageid|from user|touser(s)|(ccuser(s))|(bccuser(s))|
 		#    subject|date|message|(parentmid)|(reply#)|ip|
 		#		messagestatus|flags|storefolder|attachment
-		print INBOX "$newthreadid|$name|$modgrps|||$subject|$date|$message|$newthreadid|0|$ENV{'REMOTE_ADDR'}|ab|||\n";
-		print INBOX @inmessages;
-		fclose(INBOX);
+		&write_DBorFILE(0,'',$memberdir,'broadcast','messages',("$newthreadid|$name|$modgrps|||$subject|$date|$message|$newthreadid|0|$ENV{'REMOTE_ADDR'}|ab|||\n",@inmessages));
 	}
 
 	$yySetLocation = qq~$scripturl?num=$threadid/$postid#$postid~;

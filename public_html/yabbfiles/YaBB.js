@@ -49,14 +49,13 @@ function IFrameShrink() {
 
 // Caps Lock and Not Allowed Characters detection
 function capsLock(eve,ident){
-	keyCode = eve.keyCode ? eve.keyCode : eve.which;
-	shiftKey = eve.shiftKey ? eve.shiftKey : ((keyCode == 16) ? true : false);
+	var keyCode = eve.keyCode ? eve.keyCode : eve.which;
+	var shiftKey = eve.shiftKey ? eve.shiftKey : ((keyCode == 16) ? true : false);
 
 	// check for Caps Lock
-	if (((keyCode > 64 && keyCode < 91) && !shiftKey)||((keyCode > 96 && keyCode < 123) && shiftKey)) {
+	if (((keyCode > 64 && keyCode < 91) && !shiftKey) || ((keyCode > 96 && keyCode < 123) && shiftKey)) {
 		document.getElementById(ident + '_char').style.display = 'none';
 		document.getElementById(ident).style.display = 'block';
-
 	} else {
 		document.getElementById(ident).style.display = 'none';
 
@@ -73,22 +72,23 @@ function capsLock(eve,ident){
 }
 
 
-//scroll fix for IE
-window.onload = function () {
-			if (document.all) {
-				var codeFix = document.all.tags("div");
-				for (var codeI = 0; codeI < codeFix.length; codeI++) {
-					if (codeFix[codeI].className == "scroll" && (codeFix[codeI].scrollWidth > codeFix[codeI].clientWidth || codeFix[codeI].clientWidth == 0))
-					codeFix[codeI].style.height = (codeFix[codeI].clientHeight + 34) + "px";
-				}
-			}
+// scroll fix for IE
+window.onload = function() {
+	if (document.all) {
+		var codeFix = document.all.tags("div");
+		for (var codeI = 0; codeI < codeFix.length; codeI++) {
+			if (codeFix[codeI].className == "scroll" && (codeFix[codeI].scrollWidth > codeFix[codeI].clientWidth || codeFix[codeI].clientWidth == 0))
+			codeFix[codeI].style.height = (codeFix[codeI].clientHeight + 34) + "px";
 		}
+	}
+}
 
 
 // for email decoding
 function SpamInator(title,v1,v2,adr,subbody) {
-	v2 = unescape(v2); var v3 = '';
-	for(var v4 = 0; v4 < v1.length; v4++) { v3 += String.fromCharCode(v1.charCodeAt(v4)^v2.charCodeAt(v4)); }
+	v2 = unescape(v2);
+	var v3 = '';
+	for (var v4 = 0; v4 < v1.length; v4++) { v3 += String.fromCharCode(v1.charCodeAt(v4)^v2.charCodeAt(v4)); }
 	if (!title) title = v3;
 	document.write('<a href="javascript:void(0)" onclick="window.location=\'' + adr + v3 + subbody + '\'">' + title + '</a>');
 }
@@ -275,7 +275,7 @@ function resize_images() {
 * Original 'fader.js' by NRg (allbrowsers_fader.mod v2.02 01/12/2002)
 *
 * Based upon uni-directional fading code from:
-* Fading Scroller- ï¿½ Dynamic Drive DHTML code library (www.dynamicdrive.com)
+* Fading Scroller- © Dynamic Drive DHTML code library (www.dynamicdrive.com)
 * This notice MUST stay intact for legal use
 * Visit Dynamic Drive at http://www.dynamicdrive.com/ for full source code
 ***********************************************/
@@ -290,7 +290,7 @@ var closetag = '';
 function HexToR(h) { return parseInt((cutHex(h)).substring(0,2),16) }
 function HexToG(h) { return parseInt((cutHex(h)).substring(2,4),16) }
 function HexToB(h) { return parseInt((cutHex(h)).substring(4,6),16) }
-function cutHex(h) { return (h.charAt(0)=="#") ? h.substring(1,7) : h}
+function cutHex(h) { return (h.charAt(0)=="#") ? h.substring(1,7) : h }
 
 function changecontent() {
 	if (index >= fcontent.length) index = 0;
@@ -392,3 +392,107 @@ function Clock(ampm) {
 	}
 	return (hour + ":" + min + ":" + sec);
 }
+
+// Size of messagebox and text START
+var skydobject = {
+	x: 0, y: 0, temp2 : null, temp3 : null, targetobj : null, skydNu : 0, delEnh : 0,
+
+	initialize:function() {
+		document.onmousedown = this.skydeKnap
+		document.onmouseup = function(){
+			this.skydNu = 0;
+			document.getElementById('messagewidth').value = parseInt(document.getElementById('message').style.width);
+			document.getElementById('messageheight').value = parseInt(document.getElementById('message').style.height);
+		}
+	},
+	changeSize:function(deleEnh, knapId) {
+		if (knapId == "dragImg1") {
+			newwidth = oldwidth+parseInt(deleEnh);
+			newdragwidth = olddragwidth+parseInt(deleEnh);
+			document.getElementById('message').style.width = newwidth+'px';
+			document.getElementById('dragbgh').style.width = newdragwidth+'px';
+			document.getElementById('dragImg2').style.width = newdragwidth+'px';
+		}
+		if (knapId == "dragImg2") {
+			newheight = oldheight+parseInt(deleEnh);
+			newdragheight = olddragheight+parseInt(deleEnh);
+			document.getElementById('message').style.height = newheight+'px';
+			document.getElementById('dragbgw').style.height = newdragheight+'px';
+			document.getElementById('dragImg1').style.height = newdragheight+'px';
+			document.getElementById('dragcanvas').style.height = newdragheight+'px';
+		}
+	},
+
+	flytKnap:function(e) {
+		var evtobj = window.event ? window.event : e;
+		if (this.skydNu == 1) {
+			sizestop = f_clientWidth()
+			maxstop = parseInt(((sizestop*66)/100)-427);
+			if (maxstop > 413) maxstop = 413;
+			if (maxstop < 60) maxstop = 60;
+
+			glX = parseInt(this.targetobj.style.left);
+			this.targetobj.style.left = this.temp2 + evtobj.clientX - this.x + "px";
+			nyX = parseInt(this.temp2 + evtobj.clientX - this.x);
+			if (nyX > glX) retning = "vn"; else retning = "hj";
+			if (nyX < 1 && retning == "hj") { this.targetobj.style.left = 0 + "px"; nyX = 0; retning = "vn"; }
+			if (nyX > maxstop && retning == "vn") { this.targetobj.style.left = maxstop + "px"; nyX = maxstop; retning = "hj"; }
+			delEnh = parseInt(nyX);
+			var knapObj = this.targetobj.id;
+			skydobject.changeSize(delEnh, knapObj);
+			return false;
+		}
+		if (this.skydNu == 2) {
+			glY = parseInt(this.targetobj.style.top);
+			this.targetobj.style.top = this.temp3 + evtobj.clientY - this.y + "px";
+			nyY = parseInt(this.temp3 + evtobj.clientY - this.y);
+			if (nyY > glY) retning = "vn"; else retning = "hj";
+			if (nyY < 1 && retning == "hj") { this.targetobj.style.top = 0 + "px"; nyY = 0; retning = "vn"; }
+			if (nyY > 270 && retning == "vn") { this.targetobj.style.top = 270 + "px"; nyY = 270; retning = "hj"; }
+			delEnh = parseInt(nyY);
+			var knapObj = this.targetobj.id;
+			skydobject.changeSize(delEnh, knapObj);
+			return false;
+		}
+	},
+	skydeKnap:function(e) {
+		var evtobj = window.event ? window.event : e;
+		this.targetobj = window.event ? event.srcElement : e.target;
+		if (this.targetobj.className == "drag") {
+			if (this.targetobj.id == "dragImg1") this.skydNu = 1;
+			if (this.targetobj.id == "dragImg2") this.skydNu = 2;
+			this.knapObj = this.targetobj;
+			if (isNaN(parseInt(this.targetobj.style.left))) this.targetobj.style.left = 0;
+			if (isNaN(parseInt(this.targetobj.style.top))) this.targetobj.style.top = 0;
+			this.temp2 = parseInt(this.targetobj.style.left);
+			this.temp3 = parseInt(this.targetobj.style.top);
+			this.x = evtobj.clientX;
+			this.y = evtobj.clientY;
+			if (evtobj.preventDefault) evtobj.preventDefault();
+			document.onmousemove = skydobject.flytKnap;
+		}
+	}
+} // End of: var skydobject={
+
+function f_clientWidth() {
+	return f_filterResults (
+		window.innerWidth ? window.innerWidth : 0,
+		document.documentElement ? document.documentElement.clientWidth : 0,
+		document.body ? document.body.clientWidth : 0
+	);
+}
+
+function f_filterResults(n_win, n_docel, n_body) {
+	var n_result = n_win ? n_win : 0;
+	if (n_docel && (!n_result || n_result > n_docel)) n_result = n_docel;
+	return n_body && (!n_result || n_result > n_body) ? n_body : n_result;
+}
+
+function sizetext(sizefact) {
+	orgsize = orgsize + sizefact;
+	if(orgsize < 6) orgsize = 6;
+	if(orgsize > 16) orgsize = 16;
+	document.getElementById('message').style.fontSize = orgsize+'pt';
+	document.getElementById('txtsize').value = orgsize;
+}
+// Size of message box, characters in message box END

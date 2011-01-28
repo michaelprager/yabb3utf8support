@@ -48,7 +48,7 @@ $display_template = qq~
 	</td>
 	<td valign="bottom" align="right">
 	<span class="small">
-		‹ {yabb prev} | {yabb next} ›
+		&lsaquo; {yabb prev} | {yabb next} &rsaquo;
 	</span>
 	</td>
 </tr>
@@ -130,7 +130,7 @@ $display_template = qq~
 <tr>
 	<td valign="top" align="right">
 	<span class="small">
-		‹ {yabb prev} | {yabb next} ›
+		&lsaquo; {yabb prev} | {yabb next} &rsaquo;
 	</span>
 	</td>
 </tr>
@@ -261,10 +261,10 @@ $messageblock = qq~
 		<div class="small" style="float: left; width: 99%; text-align: right;">
 			{yabb modified} &nbsp;
 		</div>
-		<div class="small" style="float: left; width: 99%; text-align: left;">
+		<div class="small" style="float: left; width: 99%; text-align: left;{yabb hideatt}">
 			{yabb att}{yabb showatt}
 		</div>
-		<div class="small" style="width: 99%; text-align: left;">
+		<div class="small" style="width: 99%; text-align: left;{yabb hidesignat}">
 			{yabb signature}
 		</div>
 		

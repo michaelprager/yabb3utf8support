@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<!-- YaBB 2.5 $Revision: 1.5.2.6 $ -->
+<!-- YaBB 3.0 Beta $Revision$ -->
 <title>YaBB Quick Start Guide - Upgrading your YaBB 2.x</title>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 <link rel="stylesheet" href="../../style.css" type="text/css" />
@@ -50,7 +50,7 @@
 			<ol>
 				<li>If you are upgrading from YaBB 2.3 or higher you can use the upgrade package we provide to download and follow the instructions in the README_UPDATE.txt in that package. You will not need the files in this package here and you can stop reading here now.</li>
 				<li>If you are upgrading from a "beta" version of YaBB 2.0, OR if you are upgrading from a YaBB 2.0 beta earlier than YaBB 2.0 Pre-Release, see <a href="http://codex.yabbforum.com/YaBB.pl?num=1223296852/0#0" target="_blank">this post in the YaBB Codex</a> for further instructions on how to proceed before continuing.</li>
-				<li>If you are upgrading from YaBB 2.1 or later, you will need to install a completely new version of YaBB 2.5 AE forum.</li>
+				<li>If you are upgrading from YaBB 2.1 or later, you will need to install a completely new version of YaBB 3.0 forum.</li>
 				<li>Go to the Installation section of this Quick Guide and follow all steps up through "Step 4 - Setting Up", including point 5 (which has you run the Setup program on the new forum). Then return here to the next step below.</li>
 				<li>Your NEW forum is already in Maintenance Mode now, leave it that way while you complete the following steps.</li>
 				<li>Be sure your OLD forum is in Maintenance Mode too.<br />Versions 2.2 and later are described above, versions 2.1 and earlier, the Maintenance Mode setting is at the top of the Forum Configuration/Forum Settings page.</li>
@@ -78,9 +78,9 @@
 							</ul>
 							then move the renamed files into cgi-bin/yabb2/Variables/ of your <i>new</i> forum.<br /><br />
 						</li>
-			 			<li>If you have any special template files, you may wish to upload those files also, but they will need some modification before they will work properly with YaBB 2.5 AE.<br />
+			 			<li>If you have any special template files, you may wish to upload those files also, but they will need some modification before they will work properly with YaBB 3.0.<br />
 						<b><u>Note:</u></b><br />
-						If you plan on keeping your old YaBB 2.x Templates and CSS settings, <b>do not copy over the new template files with older templates of the same file name</b> or you will not get what you expect. These files have changed, so you will either have to modify the new template/css files that come with YaBB 2.5 AE, or follow the procedures in the link below to update your existing template files before overwriting the YaBB 2.5 AE template/css files.<br />We recommend you create a new folder in your new forum: cgi-bin/yabb2/Templates/<i>new_folder_name</i>/ and put your old template files (html) in it. Now rename the .html file to <i>new_folder_name</i>.html. Rename also your old CSS file to <i>new_folder_name</i>.css and put it in the public_html/yabbfiles/Templates/Forum/ directory. Repeat this for each of your existing custom templates in your old forum.
+						If you plan on keeping your old YaBB 2.x Templates and CSS settings, <b>do not copy over the new template files with older templates of the same file name</b> or you will not get what you expect. These files have changed, so you will either have to modify the new template/css files that come with YaBB 2.5 AE, or follow the procedures in the link below to update your existing template files before overwriting the YaBB 3.0 template/css files.<br />We recommend you create a new folder in your new forum: cgi-bin/yabb2/Templates/<i>new_folder_name</i>/ and put your old template files (html) in it. Now rename the .html file to <i>new_folder_name</i>.html. Rename also your old CSS file to <i>new_folder_name</i>.css and put it in the public_html/yabbfiles/Templates/Forum/ directory. Repeat this for each of your existing custom templates in your old forum.
 <a href="http://codex.yabbforum.com/YaBB.pl?num=1223136303/0#0" target="_blank">Template and CSS Comparisons from earlier versions to YaBB 2.5 AE</a></li>
 					</ul>
 				</li>
@@ -89,8 +89,8 @@
 				<li>Now verify CHMODs for all your imported files.</li>
 				<li>Log in your new forum as Administrator with the Admin username and password you used in your old forum and go <u>directy</u> to the "Admin Center" =&gt; "Forum Settings".<br />  Note: doing ANY upgrade, it is very important to change the install date in the Admin Center > Forum Settings to a date and time "before" the older forums oldest member registration.  If not done, Search will not function and the possibility of causing ex-members being generated. Save this page once with the Button at the bottom.</li>
 				<li>Then go to "Admin Center" =&gt; "Maintenance Controls" and <b>run the "Rebuild Notifications Files" first!</b><br />Now run the other Maintenance Controls starting with "Rebuild Message Index" going through "Rebuild Members History."</li>
-				<li>Go to <b>ALL</b> tabs in the "Forum Settings" and "Advanced Settings" sections and verify all your settings. There are many new settings in version 2.5 AE, so take your time here. Click the Save button at the bottom of each page even if you do not change any settings on the page.</li>
-				<li>Go to "Maintenance Settings" and turn "Maintenance Mode?" off. Return to your forum. Refresh the page or clear the browser chache and start enjoying your brand new YaBB 2.5 AE Forum!<br />
+				<li>Go to <b>ALL</b> tabs in the "Forum Settings" and "Advanced Settings" sections and verify all your settings. There are many new settings in version 3.0, so take your time here. Click the Save button at the bottom of each page even if you do not change any settings on the page.</li>
+				<li>Go to "Maintenance Settings" and turn "Maintenance Mode?" off. Return to your forum. Refresh the page or clear the browser chache and start enjoying your brand new YaBB 3.0 Forum!<br />
 				<b><u>Note:</u></b><br />
 				If you did allow users to get Email notification on new "Notifications" or new "PM" before you updated, you will have to set these settings again as new in your "Profile" =&gt; "Options" and "PM Preferences". If no other users logged in before you ran the "Rebuild Notifications Files" maintenance function, you (the Admin) will be the only one who has to reset these as new settings.</li>
 			</ol>

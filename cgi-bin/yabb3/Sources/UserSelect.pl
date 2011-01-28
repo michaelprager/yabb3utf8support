@@ -21,7 +21,7 @@ if ($iamguest && $INFO{'toid'} ne "userspec" && $action ne "checkavail") { &fata
 $MembersPerPage = 10;
 
 sub FindMem {
-	if (-e "$memberdir/$username.usctmp") { unlink("$memberdir/$username.usctmp"); }
+	if (&checkfor_DBorFILE("$memberdir/$username.usctmp")) { &delete_DBorFILE("$memberdir/$username.usctmp"); }
 
 	$SearchStr = $FORM{'member'};
 
@@ -50,7 +50,7 @@ sub FindMem {
 sub MemberList {
 	if ($iamguest && $INFO{'toid'} ne "userspec") { &fatal_error("members_only"); }
 
-	if (-e "$memberdir/$username.usctmp" && $INFO{'sort'} ne "pmsearch") { unlink("$memberdir/$username.usctmp"); }
+	if (&checkfor_DBorFILE("$memberdir/$username.usctmp") && $INFO{'sort'} ne "pmsearch") { &delete_DBorFILE("$memberdir/$username.usctmp"); }
 
 	if ($INFO{'start'} eq '') { $start = 0; }
 	else { $start = $INFO{'start'}; }
@@ -162,42 +162,41 @@ sub MemberList {
 	$myRealname = ${$uid.$username}{'realname'};
 	$myEmail = ${$uid.$username}{'email'};
 	if ($INFO{'sort'} eq 'recentpm') {
-		foreach my $recentname (@recentUsers) {
-			if (!${$uid.$recentname}{'password'}) { &LoadUser($recentname); }
-			$memberinf{$recentname} = qq~${$uid.$recentname}{'realname'}|${$uid.$recentname}{'email'}~;
+		foreach (@recentUsers) {
+			&LoadUser($_);
+			$memberinf{$_} = qq~${$uid.$_}{'regtime'}|${$uid.$_}{'realname'}|${$uid.$_}{'email'}~;
 		}
 
 	} elsif ($INFO{'sort'} eq 'pmsearch') {
-		if (!-e "$memberdir/$username.usctmp") {
+		if (!&checkfor_DBorFILE("$memberdir/$username.usctmp")) {
 			&ManageMemberinfo("load");
-			fopen(FILE, ">$memberdir/$username.usctmp");
+			my ($membername, $mregdate, $memrealname, $mememail);
+			&read_DBorFILE(0,FILE,$memberdir,$username,'usctmp');
 			foreach $membername (sort { lc $memberinf{$a} cmp lc $memberinf{$b} } keys %memberinf) {
-				($memrealname, $mememail, undef) = split(/\|/, $memberinf{$membername}, 3);
+				($mregdate, $memrealname, $mememail, undef) = split(/\|/, $memberinf{$membername}, 4);
 				## don't find own name - unless for search or board mods!
 				if ($to_id !~ /moderators\d/ && $to_id !~ /userspec/) {
 					if ($memrealname =~ /$LookFor/ig && $membername ne $username  ) {
-						print FILE "$membername,$memrealname|$mememail\n";
+						print FILE "$membername,$mregdate|$memrealname|$mememail\n";
 					} elsif($mememail =~ /$LookFor/ig && $membername ne $username) {
-						print FILE "$membername,$memrealname|$mememail\n";
+						print FILE "$membername,$mregdate|$memrealname|$mememail\n";
 					}
 				} else {
 					if ($memrealname =~ /$LookFor/ig) {
-						print FILE "$membername,$memrealname|$mememail\n";
+						print FILE "$membername,$mregdate|$memrealname|$mememail\n";
 					} elsif($mememail =~ /$LookFor/ig) {
-						print FILE "$membername,$memrealname|$mememail\n";
+						print FILE "$membername,$mregdate|$memrealname|$mememail\n";
 					}
 				}
 			}
-			fclose(FILE);
+			&write_DBorFILE(0,FILE,$memberdir,$username,'usctmp',(''));
 			undef %memberinf;
 		}
-		fopen(FILE, "$memberdir/$username.usctmp");
-		while ($line = <FILE>) {
+		foreach my $line (&read_DBorFILE(0,'',$memberdir,$username,'usctmp')) {
 			chomp $line;
-			($recentname, $realinfo) = split(/\,/, $line);
+			($recentname, $realinfo) = split(/,/, $line);
 			$memberinf{$recentname} = $realinfo;
 		}
-		fclose(FILE);
 
 	} elsif ($to_id eq 'groups') {
 		$ToShow[0] = 'bmallmembers';
@@ -222,12 +221,12 @@ sub MemberList {
 	else { $selUser = qq~class="windowbg2"~; }
 
 	unless (($to_id =~ /toshow/ && (!$PM_level || ($PM_level == 2 && !$staff) || ($PM_level == 3 && !$iamadmin && !$iamgmod))) or ($to_id =~ /userspec/ && (($ML_Allowed == 1 && $iamguest) || ($ML_Allowed == 2 && !$staff) || ($ML_Allowed == 3 && !$iamadmin && !$iamgmod)))) {
-		foreach $membername (sort { lc $memberinf{$a} cmp lc $memberinf{$b} } keys %memberinf) {
+		foreach my $membername (sort { lc $memberinf{$a} cmp lc $memberinf{$b} } keys %memberinf) {
 			if ($to_id =~ /toshow/) {
 				if ($PM_level == 2) { &CheckUserPM_Level($membername); next if $UserPM_Level{$membername} < 2; }
 				elsif ($PM_level == 3) { &CheckUserPM_Level($membername); next if $UserPM_Level{$membername} != 3; }
 			}
-			($memrealname, $mememail, undef) = split(/\|/, $memberinf{$membername}, 3);
+			(undef, $memrealname, $mememail, undef) = split(/\|/, $memberinf{$membername}, 4);
 			if ($letter) {
 				$SearchName = lc(substr($memrealname, 0, 1));
 				if ($SearchName eq $letter && ($membername ne $username || ($to_id =~ /moderators\d/ || $to_id =~ /userspec/))) { $ToShow[$i] = $membername; }
@@ -335,7 +334,7 @@ sub MemberList {
 sub buildIndex {
 	unless ($memcount == 0) {
 		if (!$iamguest) {
-			(undef, undef, $usermemberpage, undef) = split(/\|/, ${$uid.$username}{'pageindex'});
+			(undef, undef, $usermemberpage, undef) = split(/\|/, ${$uid.$username}{'pageindex'}, 4);
 		}
 		my ($pagetxtindex, $pagetextindex, $pagedropindex, $all, $allselected);
 		$indexdisplaynum = 3;
@@ -690,24 +689,18 @@ sub loadRecentPMs {
 	## put simple, this reads the msg , outbox and storage files to
 	## harvest already-used membernames
 	my (@userinbox, @useroutbox, @userstore, @usermessages);
-	if (-e "$memberdir/$username.msg") {
-		fopen(USERMSG,"$memberdir/$username.msg");
-		@userinbox = <USERMSG>;
-		fclose(USERMSG);
+	if (&checkfor_DBorFILE("$memberdir/$username.msg")) {
+		@userinbox = &read_DBorFILE(0,'',$memberdir,$username,'msg');
 		if (@userinbox) { push(@usermessages, @userinbox); }
 		undef @userinbox;
 	}
-	if (-e "$memberdir/$username.outbox") {
-		fopen(USEROUT,"$memberdir/$username.outbox");
-		@useroutbox = <USEROUT>;
-		fclose(USEROUT);
+	if (&checkfor_DBorFILE("$memberdir/$username.outbox")) {
+		@useroutbox = &read_DBorFILE(0,'',$memberdir,$username,'outbox');
 		if (@useroutbox) { push(@usermessages, @useroutbox); }
 		undef @useroutbox;
 	}
-	if (-e "$memberdir/$username.imstore") {
-		fopen(USERSTR,"$memberdir/$username.imstore");
-		@userstore = <USERSTR>;
-		fclose(USERSTR);
+	if (&checkfor_DBorFILE("$memberdir/$username.imstore")) {
+		@userstore = &read_DBorFILE(0,'',$memberdir,$username,'imstore');
 		if (@userstore) { push(@usermessages, @userstore); }
 		undef @userstore;
 	}
@@ -780,9 +773,9 @@ sub doquicksearch {
 	&fatal_error("no_access") if !$iamadmin && !$iamgmod;
 
 	&ManageMemberinfo("load");
-	my (@matches,$realname,$membername);
+	my (@matches, $realname, $membername);
 	foreach $membername (sort { lc $memberinf{$a} cmp lc $memberinf{$b} } keys %memberinf) {
-		($realname,undef) = split(/\|/, $memberinf{$membername}, 2);
+		(undef, $realname, undef) = split(/\|/, $memberinf{$membername}, 3);
 		if ($realname =~ /^$INFO{'letter'}/i) {
 			push(@matches, $realname,$membername);
 		}
@@ -795,90 +788,87 @@ sub doquicksearch {
 
 sub checkUserAvail {
 
-     &LoadLanguage('Register');
+	&LoadLanguage('Register');
 
-     my $taken = "false";
-     
-     fopen(RESERVE, "$vardir/reserve.txt") || &fatal_error("cannot_open","$vardir/reserve.txt", 1);
-     @reserve = <RESERVE>;
-     fclose(RESERVE);
-     fopen(RESERVECFG, "$vardir/reservecfg.txt") || &fatal_error("cannot_open","$vardir/reservecfg.txt", 1);
-     @reservecfg = <RESERVECFG>;
-     fclose(RESERVECFG);
-     for ($a = 0; $a < @reservecfg; $a++) {
- 	    chomp $reservecfg[$a];
-     }
-     $matchword = $reservecfg[0] eq 'checked';
-     $matchcase = $reservecfg[1] eq 'checked';
-     $matchuser = $reservecfg[2] eq 'checked';
-     $matchname = $reservecfg[3] eq 'checked';
-     $namecheck = $matchcase eq 'checked' ? $INFO{'user'} : lc $INFO{'user'};
-     $realnamecheck = $matchcase eq 'checked' ? $INFO{'display'} : lc $INFO{'display'};
+	my $taken = "false";
 
-     if ($INFO{'type'} eq "email") {
- 	    $INFO{'email'} =~ s~\A\s+|\s+\z~~g;
- 	    $type = $register_txt{'112'};
- 	    if (lc $INFO{'email'} eq lc &MemberIndex("check_exist", $INFO{'email'})) { $taken = "true"; }
-     } elsif ($INFO{'type'} eq "display") {
- 	    $INFO{'display'} =~ s~\A\s+|\s+\z~~g;
- 	    $type = $register_txt{'111'};
- 	    if (lc $INFO{'display'} eq lc &MemberIndex("check_exist", $INFO{'display'})) {
- 		    $taken = "true";
- 	    }
- 	    if ($matchname) {
- 		    foreach $reserved (@reserve) {
- 			    chomp $reserved;
- 			    $reservecheck = $matchcase ? $reserved : lc $reserved;
- 			    if ($matchword) {
- 				    if ($realnamecheck eq $reservecheck) { $taken = "reg"; break; }
- 			    } else {
- 				    if ($realnamecheck =~ $reservecheck) { $taken = "reg"; break; }
- 			    }
- 		    }
- 	    }
-     } elsif ($INFO{'type'} eq "nouserid") {
- 	    $type = $register_txt{'110'};
-	    $taken = "notuserid";
-     } elsif ($INFO{'type'} eq "nodisplay") {
- 	    $type = $register_txt{'111'};
-	    $taken = "notdisplay";
-     } elsif ($INFO{'type'} eq "user") {
- 	    $INFO{'user'} =~ s~\A\s+|\s+\z~~g;
- 	    $INFO{'user'} =~ s/\s/_/g;
- 	    $type = $register_txt{'110'};
- 	    if (lc $INFO{'user'} eq lc &MemberIndex("check_exist", $INFO{'user'})) {
- 		    $taken = "true";
- 	    }
- 	    if ($matchuser) {
- 		    foreach $reserved (@reserve) {
- 			    chomp $reserved;
- 			    $reservecheck = $matchcase ? $reserved : lc $reserved;
- 			    if ($matchword) {
- 				    if ($namecheck eq $reservecheck) { $taken = "reg"; break; }
- 			    } else {
- 				    if ($namecheck =~ $reservecheck) { $taken = "reg"; break; }
- 			    }
- 		    }
- 	    }
-     }
-     
-     if ($taken eq "false") {
- 	    $avail = qq~<img src="$imagesdir/check.png">&nbsp;&nbsp;<span style="color:#00dd00">$type$register_txt{'114'}</span>~;
-     } elsif ($taken eq "true") {
- 	    $avail = qq~<img src="$imagesdir/cross.png">&nbsp;&nbsp;<span style="color:#dd0000">$type$register_txt{'113'}</span>~;
-     } elsif ($taken eq "notuserid") {
- 	    $avail = qq~<img src="$imagesdir/cross.png">&nbsp;&nbsp;<span style="color:#dd0000">$type$register_txt{'117'}</span>~;
-	    $INFO{'type'} = "user";
-     } elsif ($taken eq "notdisplay") {
- 	    $avail = qq~<img src="$imagesdir/cross.png">&nbsp;&nbsp;<span style="color:#dd0000">$type$register_txt{'116'}</span>~;
-	    $INFO{'type'} = "display";
-     } else {
- 	    $avail = qq~<img src="$imagesdir/cross.png">&nbsp;&nbsp;<span style="color:#dd0000">$type$register_txt{'115'}</span>~;
-     }
 
-     print "Content-type: text/plain\n\n$INFO{'type'}|$avail";
+	my @reserve = &read_DBorFILE(0,'',$vardir,'reserve','txt');
+	my @reservecfg = &read_DBorFILE(0,'',$vardir,'reservecfg','txt');
+	for ($a = 0; $a < @reservecfg; $a++) {
+		chomp $reservecfg[$a];
+	}
+	$matchword = $reservecfg[0] eq 'checked';
+	$matchcase = $reservecfg[1] eq 'checked';
+	$matchuser = $reservecfg[2] eq 'checked';
+	$matchname = $reservecfg[3] eq 'checked';
+	$namecheck = $matchcase eq 'checked' ? $INFO{'user'} : lc $INFO{'user'};
+	$realnamecheck = $matchcase eq 'checked' ? $INFO{'display'} : lc $INFO{'display'};
 
-     CORE::exit; # This is here only to avoid server error log entries!
+	if ($INFO{'type'} eq "email") {
+		$INFO{'email'} =~ s~\A\s+|\s+\z~~g;
+		$type = $register_txt{'112'};
+		if (lc $INFO{'email'} eq lc &MemberIndex("check_exist", $INFO{'email'})) { $taken = "true"; }
+	} elsif ($INFO{'type'} eq "display") {
+		$INFO{'display'} =~ s~\A\s+|\s+\z~~g;
+		$type = $register_txt{'111'};
+		if (lc $INFO{'display'} eq lc &MemberIndex("check_exist", $INFO{'display'})) {
+			$taken = "true";
+		}
+		if ($matchname) {
+			foreach $reserved (@reserve) {
+				chomp $reserved;
+				$reservecheck = $matchcase ? $reserved : lc $reserved;
+				if ($matchword) {
+					if ($realnamecheck eq $reservecheck) { $taken = "reg"; break; }
+				} else {
+					if ($realnamecheck =~ $reservecheck) { $taken = "reg"; break; }
+				}
+			}
+		}
+	} elsif ($INFO{'type'} eq "nouserid") {
+		$type = $register_txt{'110'};
+		$taken = "notuserid";
+	} elsif ($INFO{'type'} eq "nodisplay") {
+		$type = $register_txt{'111'};
+		$taken = "notdisplay";
+	} elsif ($INFO{'type'} eq "user") {
+		$INFO{'user'} =~ s~\A\s+|\s+\z~~g;
+		$INFO{'user'} =~ s/\s/_/g;
+		$type = $register_txt{'110'};
+		if (lc $INFO{'user'} eq lc &MemberIndex("check_exist", $INFO{'user'})) {
+			$taken = "true";
+		}
+		if ($matchuser) {
+			foreach $reserved (@reserve) {
+				chomp $reserved;
+				$reservecheck = $matchcase ? $reserved : lc $reserved;
+				if ($matchword) {
+					if ($namecheck eq $reservecheck) { $taken = "reg"; break; }
+				} else {
+					if ($namecheck =~ $reservecheck) { $taken = "reg"; break; }
+				}
+			}
+		}
+	}
+
+	if ($taken eq "false") {
+		$avail = qq~<img src="$imagesdir/check.png">&nbsp;&nbsp;<span style="color:#00dd00">$type$register_txt{'114'}</span>~;
+	} elsif ($taken eq "true") {
+		$avail = qq~<img src="$imagesdir/cross.png">&nbsp;&nbsp;<span style="color:#dd0000">$type$register_txt{'113'}</span>~;
+	} elsif ($taken eq "notuserid") {
+		$avail = qq~<img src="$imagesdir/cross.png">&nbsp;&nbsp;<span style="color:#dd0000">$type$register_txt{'117'}</span>~;
+		$INFO{'type'} = "user";
+	} elsif ($taken eq "notdisplay") {
+		$avail = qq~<img src="$imagesdir/cross.png">&nbsp;&nbsp;<span style="color:#dd0000">$type$register_txt{'116'}</span>~;
+		$INFO{'type'} = "display";
+	} else {
+		$avail = qq~<img src="$imagesdir/cross.png">&nbsp;&nbsp;<span style="color:#dd0000">$type$register_txt{'115'}</span>~;
+	}
+
+	print "Content-type: text/plain\n\n$INFO{'type'}|$avail";
+
+	CORE::exit; # This is here only to avoid server error log entries!
 }
 
 1;

@@ -60,7 +60,7 @@ if (!$action) {
 	&tempstarter;
 	$yytabmenu = qq~$tabsep<span onclick="location.href='$set_cgi?action=members2';"><a href="$set_cgi?action=members2" title="Update file structure">$tabfill Update file structure $tabfill</a></span>$tabsep~;
 	$yyim = 'Update file structure';
-	$yytitle = 'YaBB 2.5 AE';
+	$yytitle = 'YaBB 3 Beta';
 	&FixFileTemplate;
 }
 
@@ -69,7 +69,7 @@ if ($action eq 'members2') {
 	&FixNopost;
 	$yytabmenu = qq~$tabsep<span onclick="location.href='$scripturl?action=login';"><a href="$scripturl?action=login" title="$img_txt{'34'}">$tabfill$img_txt{'34'}$tabfill</a></span>$tabsep~;
 	$yyim = 'File structure updated!';
-	$yytitle = 'YaBB 2.5 AE';
+	$yytitle = 'YaBB 3 Beta';
 	&FixFileTemplate;
 }
 
@@ -151,12 +151,11 @@ sub FixNopost {
 		fclose(FORUMCONTROL);
 	}
 	require "$admindir/NewSettings.pl";
-	&SaveSettingsTo('Settings.pl'); # save %Group, %NoPost, %Post and unlink $vardir/membergroups.txt
+	&SaveSettingsTo('Settings.pl'); # save %Group, %NoPost, %Post and &delete_DBorFILE("$vardir/membergroups.txt")
 
 	opendir(MEMBERS, $memberdir) || die "Unable to open ($memberdir) :: $!";
 	@contents = grep { /\.vars$/ } readdir(MEMBERS);
 	closedir(MEMBERS);
-	&ManageMemberlist("load");
 	&ManageMemberinfo("load");
 	foreach $member (@contents) {
 		$member =~ s/\.vars$//g;
@@ -187,16 +186,13 @@ sub FixNopost {
 				${$uid.$member }{'addgroups'} = $newaddigrp;
 				&UserAccount($member, "update");
 			}
-			$regtime = stringtotime(${$uid.$member}{'regdate'});
-			$formatregdate = sprintf("%010d", $regtime);
+			$formatregdate = sprintf("%010d", &stringtotime(${$uid.$member}{'regdate'}));
 			if (!$actposition) { $actposition = &MemberPostGroup(${$uid.$member}{'postcount'}); }
-			$memberlist{$member} = qq~$formatregdate~;
-			$memberinf{$member}  = qq~${$uid.$member}{'realname'}|${$uid.$member}{'email'}|$actposition|${$uid.$member}{'postcount'}|$newaddigrp~;
+			$memberinf{$member}  = qq~$formatregdate|${$uid.$member}{'realname'}|${$uid.$member}{'email'}|$actposition|${$uid.$member}{'postcount'}|$newaddigrp|${$uid.$member}{'bday'}~;
 			undef %{$uid.$member};
 			$regcounter++;
 		}
 	}
-	&ManageMemberlist("save");
 	&ManageMemberinfo("save");
 
 	require "$sourcedir/Notify.pl";
@@ -220,7 +216,7 @@ sub FixNopost {
 			}
 		}
 		fclose(FILE);
-		if (!-s "$boardsdir/$boardfile.mail") { unlink("$boardsdir/$boardfile.mail"); }
+		if (!-s "$boardsdir/$boardfile.mail") { &delete_DBorFILE("$boardsdir/$boardfile.mail"); }
 	}
 	foreach $threadfile (@tmaildir) {
 		chomp $threadfile;
@@ -239,14 +235,14 @@ sub FixNopost {
 			}
 		}
 		fclose(FILE);
-		if (!-s "$datadir/$threadfile.mail") { unlink("$datadir/$threadfile.mail"); }
+		if (!-s "$datadir/$threadfile.mail") { &delete_DBorFILE("$datadir/$threadfile.mail"); }
 	}
 }
 
 sub tempstarter {
 	require "Paths.pl";
 
-	$YaBBversion = 'YaBB 2.5 AE';
+	$YaBBversion = 'YaBB 3 Beta';
 
 	# Make sure the module path is present
 	# Some servers need all the subdirs in @INC too.
@@ -368,7 +364,7 @@ sub FixFileTemplate {
 					if (!$yyYaBBCloaded) { require "$sourcedir/YaBBC.pl"; }
 					&DoUBBC;
 				}
-				$yynews   = $message;
+				$yynews = $message;
 			}
 		}
 		$yyurl = $scripturl;

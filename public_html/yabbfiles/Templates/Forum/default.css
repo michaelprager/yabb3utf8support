@@ -168,7 +168,7 @@ input, .button {
 	text-align: left;
 	font-style: normal;
 	font-size: 11px;
-	color: #FFFFFF;
+	color: #fff;
 	font-weight: bold;
 }
 .post_tools_a a{
@@ -201,7 +201,7 @@ input, .button {
 	text-decoration:none;
 }
 .post_tools_menu li a:visited {
-	color: #FFFFFF;
+	color: #fff;
 	text-decoration:none;
 }
 /* End Post and Thread Tools */
@@ -236,7 +236,7 @@ input, .button {
 }
 #container{
 	width: 100%;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	padding: 0px;
 	border: 0px;
 	margin: 0px;
@@ -244,56 +244,78 @@ input, .button {
 	padding-right: 1px;
 	color: #000033;
 }
-
-
+/* Soft coded css buttons */
+.buttonleft {
+	padding: 0px 0px 0px 6px;
+	background-image: url(../../Buttons/Button22_left.png);
+}
+.buttonright {
+	padding: 0px 6px 0px 0px;
+	background-image: url(../../Buttons/Button22_right.png);
+}
+.buttonimage {
+	padding: 0px 0px 0px 25px;
+	background-position: 0px 0px;
+}
+.buttontext {
+	position: relative;
+	top: 5px;
+	left: 0px;
+	font-family: verdana, arial, helvetica, sans-serif;
+	font-size: 9px;
+	color: #000000;
+	font-weight: normal;
+	font-style: normal;
+}
+/* Soft coded css buttons end */
 /* Advanced Tabs start */
 .menutop {
 	height: 24px;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	background-image: url(./default/menutop.png);
 	text-align: left;
 }
 .mainbottom {
 	height: 22px;
 	width: 100%;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	text-align: left;
 }
 .tabmenuleft {
 	height: 24px;
 	text-align: left;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	background-image: url(./default/tableft211d.png);
 	background-repeat: repeat-y;
 }
 .tabmenurightshort {
 	height: 24px;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	background-image: url(./default/tabrightshort211d.png);
 	background-repeat: repeat-y;
 }
 .tabmenuright {
 	height: 24px;
 	text-align: left;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	background-image: url(./default/tabright211.png);
 	background-repeat: no-repeat;
 }
 .tabmenu {
 	height: 24px;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	background-image: url(./default/tab211d.png);
 	text-align: left;
 }
 .tabmenubottom {
 	height: 24px;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	background-image: url(./default/tabbottom211d.png);
 }
 .tabmenu span {
 	float: left;
 	height: 24px;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	background-image: url(./default/tab211d.png);
 	background-repeat: repeat-x;
 	margin: 0;
@@ -316,14 +338,14 @@ input, .button {
 }
 .tabmenu span.selected {
 	font-weight: normal;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	background-image: url(./default/tab_selected211d.png);
 	background-repeat: repeat-x;
 }
 .rightbox {
 	height: 24px;
 	text-align: center;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	background-image: url(./default/searchbg211.png);
 	background-repeat: repeat-x;
 	font-size: 11px;
@@ -524,7 +546,7 @@ select optgroup {
 .bordercolor {
 	font-size: 12px;
 	font-family: Verdana, Helvetica, Arial, Sans-Serif;
-	background-color: #FFFFFF;
+	background-color: #fff;
 	border: 1px solid #5F7D96;
 }
 .outerborder {
@@ -635,7 +657,7 @@ select optgroup {
 .imgcatbg {
 	font-style: normal;
 	font-size: 10px;
-	color: #FFFFFF;
+	color: #000000;
 	font-weight: bold;
 }
 .imgtitlebg {

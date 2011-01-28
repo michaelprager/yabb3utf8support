@@ -181,26 +181,26 @@ sub DeleteConverterFiles {
 	foreach $cnvdir (@convertdir) {
 		$convdir = "./Convert/$cnvdir";
 		if (-d "$convdir") {
-			opendir("CNVDIR", $convdir) || &admin_fatal_error("cannot_open_dir","$convdir");
+			opendir("CNVDIR", $convdir) || &fatal_error("cannot_open_dir","$convdir");
 			@convlist = readdir("CNVDIR");
 			closedir("CNVDIR");
 			foreach $file (@convlist) {
-				unlink "$convdir/$file" || &admin_fatal_error("cannot_open_dir","$convdir/$file");
+				&delete_DBorFILE("$convdir/$file") || &fatal_error("cannot_open_dir","$convdir/$file");
 			}
 			rmdir("$convdir");
 		}
 	}
 	$convdir = "./Convert";
 	if (-d "$convdir") {
-		opendir("CNVDIR", $convdir) || &admin_fatal_error("cannot_open_dir","$convdir");
+		opendir("CNVDIR", $convdir) || &fatal_error("cannot_open_dir","$convdir");
 		@convlist = readdir("CNVDIR");
 		closedir("CNVDIR");
 		foreach $file (@convlist) {
-			unlink "$convdir/$file";
+			&delete_DBorFILE("$convdir/$file");
 		}
 		rmdir("$convdir");
 	}
-	if (-e "./Setup.pl") { unlink("./Setup.pl"); }
+	if (-e "./Setup.pl") { &delete_DBorFILE("./Setup.pl"); }
 
 	$yymain .= qq~<b>$admintxt{'10'}</b>~;
 	$yytitle = "$admintxt{'10'}";
@@ -208,9 +208,7 @@ sub DeleteConverterFiles {
 }
 
 sub GetLastLogins {
-	fopen(ADMINLOG, "$vardir/adminlog.txt");
-	@adminlog = <ADMINLOG>;
-	fclose(ADMINLOG);
+	@adminlog = &read_DBorFILE(0,'',$vardir,'adminlog','txt');
 
 	foreach $line (@adminlog) {
 		chomp $line;
@@ -225,11 +223,9 @@ sub GetLastLogins {
 
 sub FullStats {
 	&is_admin_or_gmod;
-	my ($numcats, $numboards, $threadcount, $messagecount, $maxdays, $totalt, $totalm, $avgt, $avgm);
-	my ($memcount, $latestmember) = &MembershipGet;
-	&LoadUser($latestmember);
-	$thelatestmember = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$latestmember}">${$uid.$latestmember}{'realname'}</a>~;
-	$memcount ||= 1;
+	my ($numcats, $numboards, $threadcount, $messagecount, $maxdays, $totalt, $totalm, $avgt, $avgm, $memcount);
+	&LoadUser($last_member);
+	my $thelatestmember = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$last_member}">${$uid.$last_member}{'realname'}</a>~;
 
 	$numcats = 0;
 
@@ -257,14 +253,12 @@ sub FullStats {
 		$totalt += ${$uid.$curboard}{'threadcount'};
 	}
 
-	$avgm = int($totalm / $memcount);
+	$avgm = int($totalm / $members_total);
 	&LoadAdmins;
 
 	if ($enableclicklog) {
 		my (@log);
-		fopen(LOG, "$vardir/clicklog.txt");
-		@log = <LOG>;
-		fclose(LOG);
+		@log = &read_DBorFILE(0,'',$vardir,'clicklog','txt');
 		$yyclicks    = @log;
 		$yyclicks = &NumberFormat($yyclicks);
 		$yyclicktext = $admin_txt{'692'};
@@ -274,11 +268,9 @@ sub FullStats {
 		$yyclicklink = "";
 	}
 	my (@elog);
-	fopen(ELOG, "$vardir/errorlog.txt");
-	@elog = <ELOG>;
-	fclose(ELOG);
+	@elog = &read_DBorFILE(0,'',$vardir,'errorlog','txt');
 	$errorslog = @elog;
-	$memcount = &NumberFormat($memcount);
+	$memcount = &NumberFormat($members_total);
 	$totalt = &NumberFormat($totalt);
 	$totalm = &NumberFormat($totalm);
 	$avgm = &NumberFormat($avgm);
@@ -424,20 +416,20 @@ sub LoadAdmins {
 	$administrators = "";
 	$gmods          = "";
 	&ManageMemberinfo("load");
-	while (($membername, $value) = each(%memberinf)) {
-		($memberrealname, undef, $memposition, $memposts) = split(/\|/, $value);
-		if($do_scramble_id){$membernameCloaked = &cloak($membername); } else { $membernameCloaked = $membername; }
+	my ($memberrealname, $memposition, $membernameCloaked);
+	foreach (keys %memberinf) {
+		(undef, $memberrealname, undef, $memposition, undef) = split(/\|/, $memberinf{$_}, 5);
+		if ($do_scramble_id) { $membernameCloaked = &cloak($_); } else { $membernameCloaked = $_; }
 		if ($memposition eq "Administrator") {
 			$administrators .= qq~ <a href="$scripturl?action=viewprofile;username=$membernameCloaked">$memberrealname</a><span class="small">,</span> \n~;
-		}
-		if ($memposition eq "Global Moderator") {
+		} elsif ($memposition eq "Global Moderator") {
 			$gmods .= qq~ <a href="$scripturl?action=viewprofile;username=$membernameCloaked">$memberrealname</a><span class="small">,</span> \n~;
 		}
 	}
+	undef %memberinf;
 	$administrators =~ s~<span class="small">,</span> \n\Z~~;
 	$gmods          =~ s~<span class="small">,</span> \n\Z~~;
 	if ($gmods eq "") { $gmods = qq~&nbsp;~; }
-	undef %memberinf;
 }
 
 sub ShowClickLog {
@@ -447,9 +439,7 @@ sub ShowClickLog {
 	else { $logtimetext = $admin_txt{'698a'}; }
 
 	my ($totalip, $totalclick, $totalbrow, $totalos, @log, @iplist, $date, @to, @from, @info, @os, @browser, @newiplist, @newbrowser, @newoslist, @newtolist, @newfromlist, $i, $curentry);
-	fopen(LOG, "$vardir/clicklog.txt");
-	@log = <LOG>;
-	fclose(LOG);
+	@log = &read_DBorFILE(0,'',$vardir,'clicklog','txt');
 
 	$i = 0;
 	foreach $curentry (@log) {
@@ -687,9 +677,7 @@ sub ShowClickLog {
 sub DeleteOldMessages {
 	&is_admin_or_gmod;
 
-	fopen(DELETEOLDMESSAGE, "$vardir/oldestmes.txt");
-	$maxdays = <DELETEOLDMESSAGE>;
-	fclose(DELETEOLDMESSAGE);
+	$maxdays = &read_DBorFILE(0,'',$vardir,'oldestmes','txt');
 
 	$yytitle = "$aduptxt{'04'}";
 	$yymain .= qq~
@@ -755,14 +743,10 @@ sub DeleteMultiMembers {
 	chomp $FORM{'emailtext'};
 	$tmpemailsubject = $FORM{'emailsubject'};
 	$tmpemailtext = $FORM{'emailtext'};
-	if ($FORM{'button'} != 1 && $FORM{'button'} != 2) { &admin_fatal_error('no_access'); }
+	if ($FORM{'button'} != 1 && $FORM{'button'} != 2) { &fatal_error('no_access'); }
 
 	if ($FORM{'del_mail'} || $FORM{'emailtext'} ne '') { require "$sourcedir/Mailer.pl"; }
 
-	fopen(FILE, "$memberdir/memberlist.txt");
-	@memnum = <FILE>;
-	fclose(FILE);
-	$count = 0;
 
 	if ($FORM{'button'} == 1 && $FORM{'emailtext'} ne "") {
 		$FORM{'emailsubject'} =~ s~\|~&#124~g;
@@ -774,10 +758,11 @@ sub DeleteMultiMembers {
 
 	my $templanguage = $language;
 
-	while (@memnum >= $count) {
+	$count = 0;
+	while ($members_total >= $count) {
 		$currentmem = $FORM{"member$count"};
 		if (exists $FORM{"member$count"}) {
-			if (-e "$memberdir/$currentmem.vars") { # Bypass dead entries.
+			if (&checkfor_DBorFILE("$memberdir/$currentmem.vars")) { # Bypass dead entries.
 				&LoadUser($currentmem);
 				if ($FORM{'emailtext'} ne '') {
 					$emailsubject = $FORM{'emailsubject'};
@@ -796,15 +781,17 @@ sub DeleteMultiMembers {
 				undef %{$uid.$currentmem} if $currentmem ne $username;
 			}
 			if ($FORM{'button'} == 2) {
-				unlink("$memberdir/$currentmem.dat");
-				unlink("$memberdir/$currentmem.vars");
-				unlink("$memberdir/$currentmem.ims");
-				unlink("$memberdir/$currentmem.msg");
-				unlink("$memberdir/$currentmem.log");
-				unlink("$memberdir/$currentmem.rlog");
-				unlink("$memberdir/$currentmem.outbox");
-				unlink("$memberdir/$currentmem.imstore");
-				unlink("$memberdir/$currentmem.imdraft");
+				&delete_DBorFILE("$memberdir/$currentmem.dat");
+				# &delete_DBorFILE("$memberdir/$currentmem.vars") does delete also the
+				# other files content if in SQL-Database!!! So no further need for &delete_DBorFILE(...)
+				&delete_DBorFILE("$memberdir/$currentmem.vars");
+				&delete_DBorFILE("$memberdir/$currentmem.ims");
+				&delete_DBorFILE("$memberdir/$currentmem.msg");
+				&delete_DBorFILE("$memberdir/$currentmem.log");
+				&delete_DBorFILE("$memberdir/$currentmem.rlog");
+				&delete_DBorFILE("$memberdir/$currentmem.outbox");
+				&delete_DBorFILE("$memberdir/$currentmem.imstore");
+				&delete_DBorFILE("$memberdir/$currentmem.imdraft");
 				# save name up
 				push (@userslist, $currentmem);
 				# For security, remove username from mod position
@@ -813,9 +800,9 @@ sub DeleteMultiMembers {
 		}
 		$count++;
 	}
-	if (@userslist) { &MemberIndex("remove", join(',', @userslist)); }
-
 	&automaintenance("off");
+
+	if (@userslist) { &MemberIndex("remove", join(',', @userslist)); }
 
 	$language = $templanguage;
 	if ($FORM{'button'} == 1) {
@@ -992,9 +979,7 @@ sub ver_detail {
 	close(LNGDIR);
 	foreach $fld (@lfilesanddirs) {
 		if (-d "$langdir/$fld" && $fld =~ m^\A[0-9a-zA-Z_\#\%\-\:\+\?\$\&\~\,\@/]+\Z^ && -e "$langdir/$fld/Main.lng") {
-			fopen(FILE, "$langdir/$fld/version.txt");
-			my @ver = <FILE>;
-			fclose(FILE);
+			my @ver = &read_DBorFILE(0,'',"$langdir/$fld",'version','txt');
 			$yymain .= qq~
 	<tr>
 		<td width="30%" class="windowbg2" align="left">$fld Language Pack</td>
@@ -1062,13 +1047,9 @@ sub Refcontrol {
 	&is_admin_or_gmod;
 	&LoadLanguage('RefControl');
 
-	fopen(FILE, "$sourcedir/SubList.pl");
-	@scriptlines = <FILE>;
-	fclose(FILE);
+	@scriptlines = &read_DBorFILE(0,'',$sourcedir,'SubList','pl');
 
-	fopen(FILE, "$vardir/allowed.txt");
-	@allowed = <FILE>;
-	fclose(FILE);
+	@allowed = &read_DBorFILE(0,'',$vardir,'allowed','txt');
 
 	$startread = 0;
 	$counter   = 0;
@@ -1137,9 +1118,7 @@ sub Refcontrol {
 sub Refcontrol2 {
 	&is_admin_or_gmod;
 
-	fopen(FILE, "$sourcedir/SubList.pl");
-	@scriptlines = <FILE>;
-	fclose(FILE);
+	@scriptlines = &read_DBorFILE(0,'',$sourcedir,'SubList','pl');
 
 	$startread = 0;
 	$counter   = 0;
@@ -1153,13 +1132,12 @@ sub Refcontrol2 {
 		}
 	}
 
+	my @outfile;
 	foreach $actfound (@actfound) {
 		if ($FORM{$actfound}) { push(@outfile, "$actfound\n"); }
 	}
 
-	fopen(FILE, ">$vardir/allowed.txt");
-	print FILE @outfile;
-	fclose(FILE);
+	&write_DBorFILE(0,'',$vardir,'allowed','txt',@outfile);
 
 	$yySetLocation = $adminurl;
 	&redirectexit;
@@ -1395,23 +1373,23 @@ sub AddMember2 {
 
 	# check if there is a system hash named like this by checking existence through size
 	my $hsize = keys(%{ $member{'regusername'} });
-	if ($hsize > 0) { &admin_fatal_error("system_prohibited_id"); }
+	if ($hsize > 0) { &fatal_error("system_prohibited_id"); }
 	if (length($member{'regusername'}) > 25) { $member{'regusername'} = substr($member{'regusername'}, 0, 25); }
-	&admin_fatal_error("no_username","($member{'regusername'})") if $member{'regusername'} eq '';
-	&admin_fatal_error("id_alfa_only","($member{'regusername'})") if $member{'regusername'} eq '_' || $member{'regusername'} eq '|';
-	&admin_fatal_error("id_reserved","($member{'regusername'})") if $member{'regusername'} =~ /guest/i;
-	&admin_fatal_error("invalid_character","$register_txt{'35'} $register_txt{'241re'}") if $member{'regusername'} =~ /[^\w\+\-\.\@]/;
-	&admin_fatal_error("no_email","($member{'regusername'})") if $member{'email'} eq "";
-	&admin_fatal_error("id_taken","($member{'regusername'})") if -e "$memberdir/$member{'regusername'}.vars";
-	&admin_fatal_error("password_is_userid") if $member{'regusername'} eq $member{'passwrd1'};
+	&fatal_error("no_username","($member{'regusername'})") if $member{'regusername'} eq '';
+	&fatal_error("id_alfa_only","($member{'regusername'})") if $member{'regusername'} eq '_' || $member{'regusername'} eq '|';
+	&fatal_error("id_reserved","($member{'regusername'})") if $member{'regusername'} =~ /guest/i;
+	&fatal_error("invalid_character","$register_txt{'35'} $register_txt{'241re'}") if $member{'regusername'} =~ /[^\w\+\-\.\@]/;
+	&fatal_error("no_email","($member{'regusername'})") if $member{'email'} eq "";
+	&fatal_error("id_taken","($member{'regusername'})") if &checkfor_DBorFILE("$memberdir/$member{'regusername'}.vars");
+	&fatal_error("password_is_userid") if $member{'regusername'} eq $member{'passwrd1'};
 
 	&FromChars($member{'regrealname'});
 	$convertstr = $member{'regrealname'};
 	$convertcut = 30;
 	&CountChars;
 	$member{'regrealname'} = $convertstr;
-	&admin_fatal_error("realname_to_long","($member{'regrealname'} => $convertstr)") if $cliped;
-	&admin_fatal_error("invalid_character", "$register_txt{'38'} $register_txt{'241re'}") if $member{'regrealname'} =~ /[^ \w\x80-\xFF\[\]\(\)#\%\+,\-\|\.:=\?\@\^]/;
+	&fatal_error("realname_to_long","($member{'regrealname'} => $convertstr)") if $cliped;
+	&fatal_error("invalid_character", "$register_txt{'38'} $register_txt{'241re'}") if $member{'regrealname'} =~ /[^ \w\x80-\xFF\[\]\(\)#\%\+,\-\|\.:=\?\@\^]/;
 
 	if ($regcheck) {
 		require "$sourcedir/Decoder.pl";
@@ -1436,26 +1414,22 @@ sub AddMember2 {
 		$member{'passwrd1'} .= $_;
 
 	} else {
-		&admin_fatal_error("password_mismatch","($member{'regusername'})") if ($member{'passwrd1'} ne $member{'passwrd2'});
-		&admin_fatal_error("no_password","($member{'regusername'})") if ($member{'passwrd1'} eq '');
-		&admin_fatal_error("invalid_character","$register_txt{'36'} $register_txt{'241'}") if ($member{'passwrd1'}  =~ /[^\s\w!\@#\$\%\^&\*\(\)\+\|`~\-=\\:;'",\.\/\?\[\]\{\}]/);
+		&fatal_error("password_mismatch","($member{'regusername'})") if ($member{'passwrd1'} ne $member{'passwrd2'});
+		&fatal_error("no_password","($member{'regusername'})") if ($member{'passwrd1'} eq '');
+		&fatal_error("invalid_character","$register_txt{'36'} $register_txt{'241'}") if ($member{'passwrd1'}  =~ /[^\s\w!\@#\$\%\^&\*\(\)\+\|`~\-=\\:;'",\.\/\?\[\]\{\}]/);
 	}
 
-	&admin_fatal_error("invalid_character","$register_txt{'69'} $register_txt{'241e'}") if ($member{'email'} !~ /^[\w\-\.\+]+\@[\w\-\.\+]+\.\w{2,4}$/);
-	&admin_fatal_error("invalid_email") if (($member{'email'} =~ /(@.*@)|(\.\.)|(@\.)|(\.@)|(^\.)|(\.$)/) || ($member{'email'} !~ /\A.+@\[?(\w|[-.])+\.[a-zA-Z]{2,4}|[0-9]{1,4}\]?\Z/));
+	&fatal_error("invalid_character","$register_txt{'69'} $register_txt{'241e'}") if ($member{'email'} !~ /^[\w\-\.\+]+\@[\w\-\.\+]+\.\w{2,4}$/);
+	&fatal_error("invalid_email") if (($member{'email'} =~ /(@.*@)|(\.\.)|(@\.)|(\.@)|(^\.)|(\.$)/) || ($member{'email'} !~ /\A.+@\[?(\w|[-.])+\.[a-zA-Z]{2,4}|[0-9]{1,4}\]?\Z/));
 
-	if (lc $member{'regusername'} eq lc &MemberIndex("check_exist", $member{'regusername'})) { &admin_fatal_error("id_taken","($member{'regusername'})"); }
-	if (lc $member{'email'} eq lc &MemberIndex("check_exist", $member{'email'})) { &admin_fatal_error("email_taken","($member{'email'})"); }
-	if (lc $member{'regrealname'} eq lc &MemberIndex("check_exist", $member{'regrealname'})) { &admin_fatal_error("name_taken","($member{'regrealname'})"); }
+	if (lc $member{'regusername'} eq lc &MemberIndex("check_exist", $member{'regusername'})) { &fatal_error("id_taken","($member{'regusername'})"); }
+	if (lc $member{'email'} eq lc &MemberIndex("check_exist", $member{'email'})) { &fatal_error("email_taken","($member{'email'})"); }
+	if (lc $member{'regrealname'} eq lc &MemberIndex("check_exist", $member{'regrealname'})) { &fatal_error("name_taken","($member{'regrealname'})"); }
 
-	if ($name_cannot_be_userid && lc $member{'regusername'} eq lc $member{'regrealname'}) { &admin_fatal_error("name_is_userid"); }
+	if ($name_cannot_be_userid && lc $member{'regusername'} eq lc $member{'regrealname'}) { &fatal_error("name_is_userid"); }
 
-	fopen(RESERVE, "$vardir/reserve.txt") || &admin_fatal_error("cannot_open","$vardir/reserve.txt", 1);
-	@reserve = <RESERVE>;
-	fclose(RESERVE);
-	fopen(RESERVECFG, "$vardir/reservecfg.txt") || &admin_fatal_error("cannot_open","$vardir/reservecfg.txt", 1);
-	@reservecfg = <RESERVECFG>;
-	fclose(RESERVECFG);
+	@reserve = &read_DBorFILE(0,'',$vardir,'reserve','txt');
+	@reservecfg = &read_DBorFILE(0,'',$vardir,'reservecfg','txt');
 	for ($a = 0; $a < @reservecfg; $a++) {
 		chomp $reservecfg[$a];
 	}
@@ -1471,29 +1445,27 @@ sub AddMember2 {
 		$reservecheck = $matchcase ? $reserved : lc $reserved;
 		if ($matchuser) {
 			if ($matchword) {
-				if ($namecheck eq $reservecheck) { &admin_fatal_error('id_reserved',"$reserved"); }
+				if ($namecheck eq $reservecheck) { &fatal_error('id_reserved',"$reserved"); }
 			} else {
-				if ($namecheck =~ $reservecheck) { &admin_fatal_error('id_reserved',"$reserved"); }
+				if ($namecheck =~ $reservecheck) { &fatal_error('id_reserved',"$reserved"); }
 			}
 		}
 		if ($matchname) {
 			if ($matchword) {
-				if ($realnamecheck eq $reservecheck) { &admin_fatal_error('name_reserved',"$reserved"); }
+				if ($realnamecheck eq $reservecheck) { &fatal_error('name_reserved',"$reserved"); }
 			} else {
-				if ($realnamecheck =~ $reservecheck) { &admin_fatal_error('name_reserved',"$reserved"); }
+				if ($realnamecheck =~ $reservecheck) { &fatal_error('name_reserved',"$reserved"); }
 			}
 		}
 	}
 
-	&admin_fatal_error("id_taken") if (-e ("$memberdir/$member{'username'}.vars"));
+	&fatal_error("id_taken") if &checkfor_DBorFILE("$memberdir/$member{'username'}.vars");
 
 	if ($send_welcomeim == 1) {
 		# new format msg file:
 		# messageid|(from)user|(touser(s))|(ccuser(s))|(bccuser(s))|subject|date|message|(parentmid)|reply#|ip|messagestatus|flags|storefolder|attachment
 		$messageid = $^T . $$;
-		fopen(IM, ">$memberdir/$member{'regusername'}.msg", 1);
-		print IM "$messageid|$sendname|$member{'regusername'}|||$imsubject|$date|$imtext|$messageid|0|$ENV{'REMOTE_ADDR'}|s|u||\n";
-		fclose(IM);
+		&write_DBorFILE(0,'',$memberdir,$member{'regusername'},'msg',"$messageid|$sendname|$member{'regusername'}|||$imsubject|$date|$imtext|$messageid|0|$ENV{'REMOTE_ADDR'}|s|u||\n");
 	}
 	$encryptopass = &encode_password($member{'passwrd1'});
 	$reguser      = $member{'regusername'};
@@ -1519,7 +1491,7 @@ sub AddMember2 {
 	${$uid.$reguser}{'timeformat'}    = qq~MM D+ YYYY @ HH:mm:ss*~;
 	${$uid.$reguser}{'template'}      = $new_template;
 	${$uid.$reguser}{'language'}      = $member{'userlang'};
-	${$uid.$reguser}{'pageindex'}     = qq~1|1|1~;
+	${$uid.$reguser}{'pageindex'}     = qq~1|1|1|0~;
 
 	&UserAccount($reguser, "register") & MemberIndex("add", $reguser) & FormatUserName($reguser);
 

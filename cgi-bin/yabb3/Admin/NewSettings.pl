@@ -331,7 +331,7 @@ sub settings2 {
 
 				# Piece together the patterns. It only needs to validate 1 pattern, but the pattern must be the whole string.
 				my $pattern = '^(?:' . join('|', @regexes{split(/,/, $item->{'validate'})}) . ')$';
-				&admin_fatal_error('invalid_value', qq~$name ($item->{'description'})~) unless $settings{$name} =~ /$pattern/;
+				&fatal_error('invalid_value', qq~$name ($item->{'description'})~) unless $settings{$name} =~ /$pattern/;
 
 				# Set numeric options to 0 if they are null
 				if ($item->{'validate'} eq 'boolean') {
@@ -377,9 +377,7 @@ sub SaveSettingsTo {
 			# The following is for upgrades from YaBB versions < 2.4 START
 			if (-e "$vardir/membergroups.txt") { require "$vardir/membergroups.txt"; }
 			if (!@nopostorder && -e "$vardir/nopostorder.txt") {
-				fopen(NPORDER, "$vardir/nopostorder.txt");
-				@nopostorder = <NPORDER>;
-				fclose(NPORDER);
+				@nopostorder = &read_DBorFILE(0,'',$vardir,'nopostorder','txt');
 				chomp(@nopostorder);
 			}
 
@@ -402,48 +400,40 @@ sub SaveSettingsTo {
 			if (-e "$vardir/Guardian.settings") { require "$vardir/Guardian.settings"; }
 
 			if (-e "$vardir/ban.txt") {
-				fopen(BAN, "$vardir/ban.txt");
-				foreach (<BAN>) {
+				foreach (&read_DBorFILE(0,'',$vardir,'ban','txt')) {
 					my ($type, $bannedlist) = split(/\|/, $_, 2);
 					chomp($bannedlist);
 					$ip_banlist = $bannedlist if $type =~ /I/i;
 					$email_banlist = $bannedlist if $type =~ /E/i;
 					$user_banlist = $bannedlist if $type =~ /U/i;
 				}
-				fclose(BAN);
 			}
 
 			if (-e "$vardir/HelpSettings.txt") { require "$vardir/HelpSettings.txt"; }
 			if (-e "$vardir/BackupSettings.cgi") { require "$vardir/BackupSettings.cgi"; @backup_paths = @paths; }
 
 			if (-e "$vardir/extended_profiles_order.txt") {
-				fopen(EXT_FILE, "$vardir/extended_profiles_order.txt");
-				@ext_prof_order = <EXT_FILE>;
-				fclose(EXT_FILE);
+				@ext_prof_order = &read_DBorFILE(0,'',$vardir,'extended_profiles_order','txt');
 				chomp(@ext_prof_order);
 			}
 			if (-e "$vardir/extended_profiles_fields.txt") {
-				fopen(EXT_FILE, "$vardir/extended_profiles_fields.txt");
-				@ext_prof_fields = <EXT_FILE>;
-				fclose(EXT_FILE);
+				@ext_prof_fields = &read_DBorFILE(0,'',$vardir,'extended_profiles_fields','txt');
 				chomp(@ext_prof_fields);
 			}
 
 			if (-e "$vardir/palette.def") {
-				fopen(DEFPAL, "$vardir/palette.def"); @pallist = <DEFPAL>; fclose(DEFPAL); chomp(@pallist);
+				@pallist = &read_DBorFILE(0,'',$vardir,'palette','def'); chomp(@pallist);
 			}
 
 			if (!@AdvancedTabs) {
 				if (-e "$vardir/taborder.txt") {
-					fopen(TABFILE, "$vardir/taborder.txt");
-					@AdvancedTabs = <TABFILE>;
-					fclose(TABFILE);
+					@AdvancedTabs = &read_DBorFILE(0,'',$vardir,'taborder','txt');
 					chomp(@AdvancedTabs);
-				} else { @AdvancedTabs = qw (home help search ml admin revalidatesession login register guestpm mycenter logout); }
+				} else { @AdvancedTabs = qw (home help search ml eventcal birthdaylist admin revalidatesession login register guestpm mycenter logout); }
 
-				if (fopen(EXTTAB, "$vardir/tabs_ext.def")) {
-					my %exttabs = map /(.*)\t(.*)/, <EXTTAB>;
-					fclose(EXTTAB);
+				my @temp = &read_DBorFILE(1,'',$vardir,'tabs_ext','def');
+				if (@temp) {
+					my %exttabs = map /(.*)\t(.*)/, @temp;
 					for (my $i = 0; $i < @AdvancedTabs; $i++) {
 						if ($exttabs{$AdvancedTabs[$i]}) {
 							$exttabs{$AdvancedTabs[$i]} =~ s/"//g;
@@ -454,6 +444,16 @@ sub SaveSettingsTo {
 				}
 			}
 			# The following is for upgrades from YaBB versions < 2.4 END
+
+			# The following is for upgrades from YaBB versions < 2.5 START
+			# Add event calendar to Tabs
+			my %testTabs;
+			map { $testTabs{$_} = 1 } @AdvancedTabs;
+			push(@AdvancedTabs, 'eventcal') if !$testTabs{'eventcal'};
+			push(@AdvancedTabs, 'birthdaylist') if !$testTabs{'birthdaylist'};
+
+			
+			# The following is for upgrades from YaBB versions < 2.5 END
 
 			# The following is for upgrades from YaBB versions < 2.3 START
 			if (-e "$vardir/upgrade_secsettings.txt") { require "$vardir/upgrade_secsettings.txt"; }
@@ -501,6 +501,11 @@ sub SaveSettingsTo {
 
 		my $backup_paths = join(' ', @backup_paths);
 
+		my $use_MySQL_comment = '#' if !$use_MySQL;
+		my $db_user_vars_col = join("", map { qq~'$_' => '$db_user_vars_col{$_}',~; } keys %db_user_vars_col) if %db_user_vars_col;
+		my $db_vars_col = join("", map { qq~'$_' => 1,~; } keys %db_vars_col) if %db_vars_col;
+		my $db_vars_tabs_order = "'" . join("','", @db_vars_tabs_order) . "'" if @db_vars_tabs_order;
+
 		$smtp_server =~ s/^\s+|\s+$//g;
 
 		$setfile = << "EOF";
@@ -526,6 +531,9 @@ sub SaveSettingsTo {
 \%templateset = (
 $templateset);						# Forum templates settings
 
+\$members_total = $members_total;			# Total number of Members
+\$last_member = "\Q$last_member\E";			# Name of the last Member
+
 \$maintenance = $maintenance;				# Set to 1 to enable Maintenance mode
 \$rememberbackup = $rememberbackup;			# seconds past since last backup until alert is displayed
 \$maintenancetext = "\Q$maintenancetext\E";		# Admin-defined text for Maintenance mode
@@ -542,6 +550,7 @@ $templateset);						# Forum templates settings
 \$regtype = $regtype;					# 0 = registration closed (only admin can register), 1 = pre registration with admin approval, 
 							# 2 = pre registration and email activation, 3 = open registration
 \$RegAgree = $RegAgree;					# Set to 1 to display the registration agreement when registering
+\$allow_self_del = $allow_self_del;				# Set to 1 to allow users to delete their Profile.
 \$RegReasonSymbols = $RegReasonSymbols;			# Maximum allowed symbols in User reason(s) for registering
 \$preregspan = $preregspan;				# Time span in hours for users to account activation before cleanup
 \$pwstrengthmeter_scores = "\Q$pwstrengthmeter_scores\E";	# Password-Strength-Meter Scores
@@ -551,6 +560,7 @@ $templateset);						# Forum templates settings
 \$emailnewpass = $emailnewpass;				# Set to 1 to email a new password to members if they change their email address
 \$emailwelcome = $emailwelcome;				# Set to 1 to email a welcome message to users even when you have mail password turned off
 \$name_cannot_be_userid = $name_cannot_be_userid;	# Set to 1 to require users to have different usernames and display names
+\$cannot_change_displayname = $cannot_change_displayname;	# Set to 1 for users can not change their displayname
 \$birthday_on_reg = $birthday_on_reg;			# Set to 0: don't ask for birthday on registration
 							# 1: ask for the birthday, no input required
 							# 2: ask for the birthday, input required
@@ -576,6 +586,37 @@ $templateset);						# Forum templates settings
 $member_groups
 \@nopostorder = qw(@nopostorder);			# Order how "Post independent Member Groups" are displayed
 
+########## Database ###########
+
+\$use_MySQL = $use_MySQL;				# Set to 1 if you are on MySQL-DB, set to 0 if you are on the default file-DB structure
+$use_MySQL_comment use DBI;				# Add DBI only if needed, comment out otherwise!
+
+\$db_server = "$db_server";				# Name of the SQL-server
+\$db_port = "$db_port";					# Port of the SQL-server
+\$db_socket = "$db_socket";				# Socket of the SQL-server
+\$db = "$db";						# Name of the database
+\$db_username = "$db_username";				# Unsername of the database
+\$db_password = "$db_password";				# Password of the user of the database
+\$db_prefix = "$db_prefix";				# Prefix for YaBB tables inside the database
+
+\$db_user_vars_table = "$db_user_vars_table";		# Name of the table with user 'vars' informations
+\%db_user_vars_col = ($db_user_vars_col);		# Name (key) of the colums in the above table with user 'vars' (value) informations
+\$db_user_vars_key = "$db_user_vars_key";		# DB-Key of the table with user 'vars' informations
+\%db_vars_col = ($db_vars_col);				# Name (key) of the rest 'vars' colums in the YaBB table
+\$db_vars_order = "$db_vars_order";			# Right order of the colums for a fetch of all 'vars'
+\@db_vars_tabs_order = ($db_vars_tabs_order);		# variables tabs order coreponding to $db_vars_order
+\$db_vars_laston_table = "$db_vars_laston_table";	# 'lastonline' table
+\$db_vars_laston = "$db_vars_laston";			# 'lastonline' colum namen
+
+\$db_user_log_table = "$db_user_log_table";		# Name of the table with user 'log' informations
+\$db_user_log_col = "$db_user_log_col";			# Name of the colums in the above table with user 'log' informations
+\$db_user_log_key = "$db_user_log_key";			# DB-Key of the table with user 'log' informations
+\@db_user_log_array_order = qw(@db_user_log_array_order);	# number of the variable in the @log_array for the user_log
+\$db_log_col = "$db_log_col";				# Name of the colums in the 'log' table with user 'log' informations
+\$db_log_order = "$db_log_order";			# Right order of the colums for a fetch of all 'log'
+\$db_log_date = "$db_log_date";				# `date` colum of the 'log' table
+\@db_log_array_order = qw(@db_log_array_order);		# number of the variable in the @log_array in the 'log'
+
 ########## Layout ##########
 
 \$MenuType = $MenuType;					# 1 for text menu or anything else for images menu
@@ -585,6 +626,11 @@ $member_groups
 \$userinfostyle = $userinfostyle;				# 1 for old user info on left, 0 for new user info above posts
 \$usertools = $usertools;				# Allow admin to hide the list of tools that show when clicking a userlink
 \$allow_hide_email = $allow_hide_email;			# Allow users to hide their email from public. Set 0 to disable
+\$user_hide_avatars = $user_hide_avatars;		# Allow users to hide Avatars in threads. Set 0 to disable
+\$user_hide_user_text = $user_hide_user_text;		# Allow users to hide User Text in threads. Set 0 to disable
+\$user_hide_attach_img = $user_hide_attach_img;		# Allow users to hide Attached Images in threads. Set 0 to disable
+\$user_hide_signat = $user_hide_signat;			# Allow users to hide User Signatures in threads. Set 0 to disable
+\$user_hide_smilies_row = $user_hide_smilies_row;	# Allow users to hide Smilies row below the Post Message-inputarea. Set 0 to disable
 \$buddyListEnabled = $buddyListEnabled;			# Enable Buddy List
 \$addmemgroup_enabled = $addmemgroup_enabled;		# Enable Users choose additional MemberGroups
 \$showlatestmember = $showlatestmember;			# Set to 1 to display "Welcome Newest Member" on the Board Index
@@ -594,9 +640,10 @@ $member_groups
 \$ShowBDescrip = $ShowBDescrip;				# Set to 1 to display board descriptions on the topic (message) index for each board
 \$showuserpic = $showuserpic;				# Set to 1 to display each member's picture in the message view (by the ICQ.. etc.)
 \$showusertext = $showusertext;				# Set to 1 to display each member's personal text in the message view (by the ICQ.. etc.)
-\$showtopicviewers = $showtopicviewers;			# Set to 1 to display members viewing a topic
-\$showtopicrepliers = $showtopicrepliers;		# Set to 1 to display members replying to a topic
+\$showtopicviewers = $showtopicviewers;			# Set to 1 to display members viewing/replying a topic for staff
+							# Set to 2 for all members; 3 for all; 0 for none
 \$showgenderimage = $showgenderimage;			# Set to 1 to display each member's gender in the message view (by the ICQ.. etc.)
+\$hide_signat_for_guests = $hide_signat_for_guests;	# Set to 1 to hide all signatures for Guests (only Members can see them).
 \$showyabbcbutt = $showyabbcbutt;			# Set to 1 to display the yabbc buttons on Posting and IM Send Pages
 \$nestedquotes = $nestedquotes;				# Set to 1 to allow quotes within quotes (0 will filter out quotes within a quoted message)
 \$parseflash = $parseflash;				# Set to 1 to parse the flash tag
@@ -659,6 +706,8 @@ $member_groups
 \$stepdelay = $stepdelay;				# Time in miliseconds of a single step
 \$fadelinks = $fadelinks;				# Fade links as well as text?
 
+\$color{'fadertext'} = "\Q$fadertext\E";		# Color of text in the NewsFader (news color)
+\$color{'faderbg'} = "\Q$faderbackground\E";		# Color of background in the NewsFader (news color)
 \$defaultusertxt = "\Q$defaultusertxt\E";		# The dafault usertext visible in users posts
 \$timeout = $timeout;					# Minimum time between 2 postings from the same IP
 \$HotTopic = $HotTopic;					# Number of posts needed in a topic for it to be classed as "Hot"
@@ -983,6 +1032,37 @@ $ext_prof_fields
 \$lastbackup = $lastbackup;
 \$backupsettingsloaded = $backupsettingsloaded;
 
+
+
+###############################################################################
+# CalEventSet.txt                                                             #
+###############################################################################
+
+# Standard Calendar Setting
+\$Show_EventCal = $Show_EventCal;
+\$Show_EventButton = $Show_EventButton;
+\$Show_EventBirthdays = $Show_EventBirthdays;
+\$Show_MiniCalIcons = $Show_MiniCalIcons;
+\$ShowSunday = $ShowSunday;
+\$Show_ColorLinks = $Show_ColorLinks;
+\$No_ShortUbbc = $No_ShortUbbc;
+\$Event_TodayColor = "$Event_TodayColor";
+\$Delete_EventsUntil = $Delete_EventsUntil;
+\$CalShortEvent = $CalShortEvent;
+\$CalEventPerms = qq~$CalEventPerms~;
+\$CalEventMods = qq~$CalEventMods~;
+\$CalEventPrivate = $CalEventPrivate;
+\$CalEventNoName = $CalEventNoName;
+\$Scroll_Events = $Scroll_Events;
+\$DisplayCalEvents = $DisplayCalEvents;
+\$DisplayEvents = $DisplayEvents;
+
+# Birthdaylist Setting
+\$Show_BirthdaysList = $Show_BirthdaysList;
+\$Show_BirthdayButton = $Show_BirthdayButton;
+\$Show_BirthdayDate = $Show_BirthdayDate;
+\$Show_BdColorLinks = $Show_BdColorLinks;
+
 1;
 EOF
 
@@ -996,31 +1076,38 @@ EOF
 	WriteSettingsTo("$vardir/$file", $setfile);
 
 	if ($settings_file_version ne $YaBBversion) { # START upgrade codes
+		# The following is for upgrades from YaBB versions < 2.5 START
+		&delete_DBorFILE("$memberdir/members.ttl") if -e "$memberdir/members.ttl";
+		&delete_DBorFILE("$memberdir/memberlist.txt") if -e "$memberdir/memberlist.txt";
+		rename("$datadir/showcase.poll","$datadir/poll.showcase");
+		&delete_DBorFILE("$vardir/CalEventSet.txt") if -e "$vardir/CalEventSet.txt";
+		# The following is for upgrades from YaBB versions < 2.5 END
+
 		# The following is for upgrades from YaBB versions < 2.4 START
-		unlink("$vardir/nopostorder.txt") if -e "$vardir/nopostorder.txt";
-		unlink("$vardir/advsettings.txt") if -e "$vardir/advsettings.txt";
-		unlink("$vardir/secsettings.txt") if -e "$vardir/secsettings.txt";
-		unlink("$vardir/membergroups.txt") if -e "$vardir/membergroups.txt";
-		unlink("$vardir/Smilies.txt") if -e "$vardir/Smilies.txt";
-		unlink("$vardir/template.cfg") if -e "$vardir/template.cfg";
-		unlink("$vardir/Guardian.banned") if -e "$vardir/Guardian.banned";
-		unlink("$vardir/Guardian.settings") if -e "$vardir/Guardian.settings";
-		unlink("$vardir/ban.txt") if -e "$vardir/ban.txt";
-		unlink("$vardir/ban_email.txt") if -e "$vardir/ban_email.txt";
-		unlink("$vardir/ban_memname.txt") if -e "$vardir/ban_memname.txt";
-		unlink("$vardir/HelpSettings.txt") if -e "$vardir/HelpSettings.txt";
-		unlink("$vardir/BackupSettings.cgi") if -e "$vardir/BackupSettings.cgi";
-		unlink("$vardir/extended_profiles_order.txt") if -e "$vardir/extended_profiles_order.txt";
-		unlink("$vardir/extended_profiles_fields.txt") if -e "$vardir/extended_profiles_fields.txt";
-		unlink("$vardir/palette.def") if -e "$vardir/palette.def";
-		unlink("$vardir/taborder.txt") if -e "$vardir/taborder.txt";
-		unlink("$vardir/tabs_ext.def") if -e "$vardir/tabs_ext.def";
+		&delete_DBorFILE("$vardir/nopostorder.txt") if -e "$vardir/nopostorder.txt";
+		&delete_DBorFILE("$vardir/advsettings.txt") if -e "$vardir/advsettings.txt";
+		&delete_DBorFILE("$vardir/secsettings.txt") if -e "$vardir/secsettings.txt";
+		&delete_DBorFILE("$vardir/membergroups.txt") if -e "$vardir/membergroups.txt";
+		&delete_DBorFILE("$vardir/Smilies.txt") if -e "$vardir/Smilies.txt";
+		&delete_DBorFILE("$vardir/template.cfg") if -e "$vardir/template.cfg";
+		&delete_DBorFILE("$vardir/Guardian.banned") if -e "$vardir/Guardian.banned";
+		&delete_DBorFILE("$vardir/Guardian.settings") if -e "$vardir/Guardian.settings";
+		&delete_DBorFILE("$vardir/ban.txt") if -e "$vardir/ban.txt";
+		&delete_DBorFILE("$vardir/ban_email.txt") if -e "$vardir/ban_email.txt";
+		&delete_DBorFILE("$vardir/ban_memname.txt") if -e "$vardir/ban_memname.txt";
+		&delete_DBorFILE("$vardir/HelpSettings.txt") if -e "$vardir/HelpSettings.txt";
+		&delete_DBorFILE("$vardir/BackupSettings.cgi") if -e "$vardir/BackupSettings.cgi";
+		&delete_DBorFILE("$vardir/extended_profiles_order.txt") if -e "$vardir/extended_profiles_order.txt";
+		&delete_DBorFILE("$vardir/extended_profiles_fields.txt") if -e "$vardir/extended_profiles_fields.txt";
+		&delete_DBorFILE("$vardir/palette.def") if -e "$vardir/palette.def";
+		&delete_DBorFILE("$vardir/taborder.txt") if -e "$vardir/taborder.txt";
+		&delete_DBorFILE("$vardir/tabs_ext.def") if -e "$vardir/tabs_ext.def";
 		# The following is for upgrades from YaBB versions < 2.4 END
 
 		# The following is for upgrades from YaBB versions < 2.3 START
-		unlink("$vardir/upgrade_secsettings.txt") if -e "$vardir/upgrade_secsettings.txt";
-		unlink("$vardir/upgrade_advsettings.txt") if -e "$vardir/upgrade_advsettings.txt";
-		unlink("$vardir/upgrade_Settings.pl") if -e "$vardir/upgrade_Settings.pl";
+		&delete_DBorFILE("$vardir/upgrade_secsettings.txt") if -e "$vardir/upgrade_secsettings.txt";
+		&delete_DBorFILE("$vardir/upgrade_advsettings.txt") if -e "$vardir/upgrade_advsettings.txt";
+		&delete_DBorFILE("$vardir/upgrade_Settings.pl") if -e "$vardir/upgrade_Settings.pl";
 		# The following is for upgrades from YaBB versions < 2.3 END
 	} # END upgrade codes
 }
@@ -1054,9 +1141,15 @@ sub WriteSettingsTo {
 	}
 
 	# Write it out
-	fopen(SETTINGS, ">$file") || &admin_fatal_error('cannot_open', $file, 1);
-	print SETTINGS $setfile;
-	fclose(SETTINGS);
+	if ($file =~ /^(.+)\/(.+?)\.(.+?)$/) {
+		# extract path, filename and extension
+		&write_DBorFILE(0,'',$1,$2,$3,($setfile));
+	} else {
+		# fallback in case of malformed destination filename
+		fopen(SETTINGS, ">$file") || &fatal_error('cannot_open', $file, 1);
+		print SETTINGS $setfile;
+		fclose(SETTINGS);
+	}
 }
 
 1;

@@ -17,8 +17,6 @@ $menulngver = 'YaBB 3.0 Beta $Revision: 100 $';
 if (!$language){$language = $lang;}
 
 %img_txt =(
-'birthdaylist' => 'Birthday List',
-'eventcal' => 'Event Calendar',
 '2' => 'Admin',
 '27' => 'View Profile',
 '31' => 'Remove',
@@ -82,6 +80,16 @@ if (!$language){$language = $lang;}
 'forward' => 'Forward',
 'sendpm' => 'Send message',
 'sendbmess' => 'Send broadcast message',
+'aim' => 'AIM',
+'facebook' => 'Facebook',
+'gtalk' => 'GTalk',
+'icq' => 'ICQ',
+'msn' => 'MSN',
+'myspace' => 'MySpace',
+'skype' => 'Skype/VoIP',
+'yim' => 'YIM',
+'birthdaylist' => 'Birthday List',
+'eventcal' => 'Event Calendar',
 );
 
 %img_polltxt = (

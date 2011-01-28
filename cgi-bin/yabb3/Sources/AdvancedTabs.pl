@@ -130,14 +130,9 @@ sub AddNewTab2 {
 		foreach $lngdir (@languages) {
 			next if $lngdir eq "." || $lngdir eq ".." || !-d "$langdir/$lngdir";
 			undef %tabtxt;
-			if (fopen(TABTXT, "$langdir/$lngdir/tabtext.txt")) {
-				%tabtxt = map /(.*)\t(.*)/, <TABTXT>;
-				fclose(TABTXT);
-			}
+			%tabtxt = map /(.*)\t(.*)/, &read_DBorFILE(1,'',"$langdir/$lngdir",'tabtext','txt');
 			$tabtxt{$tabaction} = $tabtext;
-			fopen(TABTXT, ">$langdir/$lngdir/tabtext.txt") || &fatal_error('file_not_open', "$langdir/$lngdir/tabtext.txt", 1);
-			print TABTXT map "$_\t$tabtxt{$_}\n", keys %tabtxt;
-			fclose(TABTXT);
+			&write_DBorFILE(0,'',"$langdir/$lngdir",'tabtext','txt',(map "$_\t$tabtxt{$_}\n", keys %tabtxt));
 		}
 
 		my @new_tabs_order;
@@ -266,13 +261,9 @@ sub EditTab2 {
 		$tosavetxt = $FORM{$tosave};
 		&ToHTML($tosavetxt);
 		$tab_lang = $language ? $language : $lang;
-		fopen(TABTXT, "$langdir/$tab_lang/tabtext.txt") || &fatal_error('file_not_open', "$langdir/$tab_lang/tabtext.txt");
-		%tabtxt = map /(.*)\t(.*)/, <TABTXT>;
-		fclose(TABTXT);
+		%tabtxt = map /(.*)\t(.*)/, &read_DBorFILE(0,'',"$langdir/$tab_lang",'tabtext','txt');
 		$tabtxt{$tosave} = $tosavetxt;
-		fopen(TABTXT, ">$langdir/$tab_lang/tabtext.txt") || &fatal_error('file_not_open', "$langdir/$tab_lang/tabtext.txt");
-		print TABTXT map "$_\t$tabtxt{$_}\n", keys %tabtxt;
-		fclose(TABTXT);
+		&write_DBorFILE(0,'',"$langdir/$tab_lang",'tabtext','txt',(map "$_\t$tabtxt{$_}\n", keys %tabtxt));
 	}
 
 	$yySetLocation = $scripturl;
@@ -324,16 +315,12 @@ sub DeleteTab {
 		closedir(DIR);
 		foreach $lngdir (@languages) {
 			if ($lngdir eq "." || $lngdir eq ".." || !-d "$langdir/$lngdir" || !-e "$langdir/$lngdir/tabtext.txt") { next; }
-			fopen(TABTXT, "$langdir/$lngdir/tabtext.txt") || &fatal_error('file_not_open', "$langdir/$lngdir/tabtext.txt");
-			%tabtxt = map /(.*)\t(.*)/, <TABTXT>;
-			fclose(TABTXT);
+			%tabtxt = map /(.*)\t(.*)/, &read_DBorFILE(0,'',"$langdir/$lngdir",'tabtext','txt');
 			delete $tabtxt{$todelete};
 			if (!%tabtxt) {
-				unlink("$langdir/$lngdir/tabtext.txt");
+				&delete_DBorFILE("$langdir/$lngdir/tabtext.txt");
 			} else {
-				fopen(TABTXT, ">$langdir/$lngdir/tabtext.txt");
-				print TABTXT map "$_\t$tabtxt{$_}\n", keys %tabtxt;
-				fclose(TABTXT);
+				&write_DBorFILE(0,'',"$langdir/$lngdir",'tabtext','txt',(map "$_\t$tabtxt{$_}\n", keys %tabtxt));
 			}
 		}
 

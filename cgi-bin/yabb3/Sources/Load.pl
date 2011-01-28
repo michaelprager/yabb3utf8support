@@ -15,13 +15,11 @@
 $loadplver = 'YaBB 3.0 Beta $Revision: 100 $';
 
 sub LoadBoardControl {
-		my ($cntcat, $cntboard, $cntpic, $cntdescription, $cntmods, $cntmodgroups, $cnttopicperms, $cntreplyperms, $cntpollperms, $cntzero, $dummy, $dummy, $dummy, $cnttotals, $cntcanpost, $cntparent);
+	my ($cntcat, $cntboard, $cntpic, $cntdescription, $cntmods, $cntmodgroups, $cnttopicperms, $cntreplyperms, $cntpollperms, $cntzero, $dummy, $dummy, $dummy, $cnttotals, $cntcanpost, $cntparent);
 	$binboard = "";
 	$annboard = "";
 
-	fopen(FORUMCONTROL, "$boardsdir/forum.control") || &fatal_error('cannot_open', "$boardsdir/forum.control", 1);
-	my @boardcontrols = <FORUMCONTROL>;
-	fclose(FORUMCONTROL);
+	my @boardcontrols = &read_DBorFILE(0,'',$boardsdir,'forum','control');
 	$maxboards = $#boardcontrols;
 
 	foreach my $boardline (@boardcontrols) {
@@ -76,8 +74,7 @@ sub LoadIMs {
 
 sub LoadCensorList {
 	if ($#censored > 0 || -s "$langdir/$language/censor.txt" < 3 || !-e "$langdir/$language/censor.txt") { return; }
-	fopen(CENSOR, "$langdir/$language/censor.txt") || &fatal_error("cannot_open","$langdir/$language/censor.txt", 1);
-	while (chomp($buffer = <CENSOR>)) {
+	foreach my $buffer (&read_DBorFILE(0,'',"$langdir/$language",'censor','txt')) {
 		$buffer =~ s/\r(?=\n*)//g;
 		if ($buffer =~ m/\~/) {
 			($tmpa, $tmpb) = split(/\~/, $buffer);
@@ -88,36 +85,35 @@ sub LoadCensorList {
 		}
 		push(@censored, [$tmpa, $tmpb, $tmpc]);
 	}
-	fclose(CENSOR);
 }
 
 sub LoadUserSettings {
 	&LoadBoardControl;
-	$iamguest = $username eq 'Guest' ? 1 : 0;
+
+	($iamadmin,$iamgmod,$iammod,$staff,$iamguest,$iambot) = (0,0,0,0,0,0);
+
+	&GetBotlist; # Here because some users can be bots :-(
+	$iambot = 1 if &Is_Bot("$user_host#$ENV{'HTTP_USER_AGENT'}");
+
 	if ($username ne 'Guest') {
 		&LoadUser($username);
-		if (!$maintenance || ${$uid.$username}{'position'} eq 'Administrator') {
+		# Make sure that if the password doesn't match,
+		# or the forum is in maintenace and you are not the admin,
+		# you get FULLY Logged out
+		if (${$uid.$username}{'password'} eq $password && (!$maintenance || ${$uid.$username}{'position'} eq 'Administrator')) {
+			if    (${$uid.$username}{'position'} eq 'Administrator')    { $staff = $iamadmin = 1; }
+			elsif (${$uid.$username}{'position'} eq 'Global Moderator') { $staff = $iamgmod  = 1; }
 			$iammod = &is_moderator($username);
-			if (${$uid.$username}{'position'} eq 'Administrator' || ${$uid.$username}{'position'} eq 'Global Moderator' || $iammod) { $staff = 1; }
-			else { $staff = 0; }
+			$staff = $staff || $iammod;
+
 			$sessionvalid = 1;
-			if ($sessions == 1 && $staff == 1) {
-				$cursession = &encode_password($user_ip);
-				chomp $cursession;
-				if (${$uid.$username}{'session'} ne $cursession || ${$uid.$username}{'session'} ne $cookiesession) { $sessionvalid = 0; }
-			}
-			$spass = ${$uid.$username}{'password'};
-
-			# Make sure that if the password doesn't match you get FULLY Logged out
-			if ($spass && $spass ne $password && $action ne 'logout') {
-				$yySetLocation = $guestaccess ? qq~$scripturl~ : qq~$scripturl?action=login~;
-				&UpdateCookie("delete");
-				&redirectexit;
+			if ($sessions && $staff) {
+				my $cursession = &encode_password($user_ip);
+				if (${$uid.$username}{'session'} !~ /^($cursession|$cookiesession)$/) {
+					$staff = $iammod = $iamgmod = $iamadmin = $sessionvalid = 0;
+				}
 			}
 
-			$iamadmin  = (${$uid.$username}{'position'} eq 'Administrator' && $sessionvalid == 1) ? 1 : 0;
-			$iamgmod   = (${$uid.$username}{'position'} eq 'Global Moderator' && $sessionvalid == 1) ? 1 : 0;
-			if ($sessionvalid == 1) { ${$uid.$username}{'session'} = $cursession; }
 			&CalcAge($username, "calc");
 			# Set the order how Topic summaries are displayed
 			$ttsreverse = ${$uid.$username}{'reversetopic'} if !$adminscreen && $ttsureverse;
@@ -128,9 +124,7 @@ sub LoadUserSettings {
 	&FormatUserName('');
 	&UpdateCookie("delete");
 	$username           = 'Guest';
-	$iamguest           = '1';
-	$iamadmin           = '';
-	$iamgmod            = '';
+	$iamguest           = 1;
 	$password           = '';
 	$ENV{'HTTP_COOKIE'} = '';
 	$yyim               = '';
@@ -149,18 +143,21 @@ sub LoadUser {
 	return 0 if $user eq '' || $user eq 'Guest';
 
 	if (!$userextension){ $userextension = 'vars'; }
-	if (($regtype == 1 || $regtype == 2) && -e "$memberdir/$user.pre") { $userextension = 'pre'; }
-	elsif ($regtype == 1 && -e "$memberdir/$user.wait") { $userextension = 'wait'; }
+	if (($regtype == 1 || $regtype == 2) && &checkfor_DBorFILE("$memberdir/$user.pre")) { $userextension = 'pre'; }
+	elsif ($regtype == 1 && &checkfor_DBorFILE("$memberdir/$user.wait")) { $userextension = 'wait'; }
 
-	if (-e "$memberdir/$user.$userextension") {
-		if ($user ne $username) {
-			fopen(LOADUSER, "$memberdir/$user.$userextension") || &fatal_error('cannot_open', "$memberdir/$user.$userextension", 1);
-			my @settings = <LOADUSER>;
-			fclose(LOADUSER);
-			foreach (@settings) { if ($_ =~ /'(.*?)',"(.*?)"/) { ${$uid.$user}{$1} = $2; } }
+	if (&checkfor_DBorFILE("$memberdir/$user.$userextension")) {
+		if ($use_MySQL || $user ne $username) {
+			my $i = 0;
+			foreach (&read_DBorFILE(0,'',$memberdir,$user,$userextension)) {
+				if ($use_MySQL && $userextension eq 'vars') {
+					${$uid.$user}{$db_vars_tabs_order[$i]} = $_; $i++;
+				} else {
+					if ($_ =~ /'(.*?)',"(.*?)"/) { ${$uid.$user}{$1} = $2; }
+				}
+			}
 		} else {
-			fopen(LOADUSER, "+<$memberdir/$user.$userextension") || &fatal_error('cannot_open', "$memberdir/$user.$userextension", 1);
-			my @settings = <LOADUSER>;
+			my @settings = &read_DBorFILE(0,LOADUSER,$memberdir,$user,$userextension);
 			for (my $i = 0; $i < @settings; $i++) {
 				if ($settings[$i] =~ /'(.*?)',"(.*?)"/) {
 					${$uid.$user}{$1} = $2;
@@ -169,11 +166,23 @@ sub LoadUser {
 						$settings[$i] = qq~'lastonline',"$date"\n~;
 					}
 				}
+			&write_DBorFILE(${$uid.$user}{'mysql'},LOADUSER,$memberdir,$user,$userextension,@settings);
+		}
+	}
+
+	if (${$uid.$user}{'realname'} ne "") {
+		if ($use_MySQL) {
+			${$uid.$user}{'mysql'} = 1;
+			if ($user eq $username && $userextension eq 'vars' && $INFO{'action'} ne "login2") {
+				&write_DBorFILE(${$uid.$user}{'mysql'},'',$memberdir,$user,'lastonline',($date));
 			}
-			seek LOADUSER, 0, 0;
-			truncate LOADUSER, 0;
-			print LOADUSER @settings;
-			fclose(LOADUSER);
+
+			if (${$uid.$user}{'additional_variables'}) { # only in SQL-DB
+				foreach (split(/\n/, ${$uid.$user}{'additional_variables'})) {
+					if ($_ =~ /'(.*?)',"(.*?)"/) { ${$uid.$user}{$1} = $2; }
+				}
+				undef ${$uid.$user}{'additional_variables'};
+			}
 		}
 
 		&ToChars(${$uid.$user}{'realname'});
@@ -183,6 +192,7 @@ sub LoadUser {
 		return 1;
 	}
 
+	undef %{$uid.$user};
 	return 0; # user not found
 }
 
@@ -212,12 +222,9 @@ sub is_moderator {
 
 sub KillModerator {
 	my $killmod = $_[0];
-	my ($cntcat, $cntboard, $cntpic, $cntdescription, $cntmods, $cntmodgroups, $cnttopicperms, $cntreplyperms, $cntpollperms, $cntzero, $dummy, $dummy, $dummy, $cnttotals, @boardcontrol);
-	fopen(FORUMCONTROL, "+<$boardsdir/forum.control") || &fatal_error('cannot_open', "$boardsdir/forum.control", 1);
-	@oldcontrols = <FORUMCONTROL>;
+	my ($cntcat, $cntboard, $cntpic, $cntdescription, $cntmods, $cntmodgroups, $cnttopicperms, $cntreplyperms, $cntpollperms, $cntzero, $dummy, $dummy, $dummy, $cnttotals, @boardcontrol, @newmods);
 
-	my @newmods;
-	foreach $boardline (@oldcontrols) {
+	foreach $boardline (&read_DBorFILE(0,FORUMCONTROL,$boardsdir,'forum','control')) {
 		chomp $boardline;
 		if ($boardline ne "") {
 			@newmods = ();
@@ -229,21 +236,14 @@ sub KillModerator {
 			push(@boardcontrol, "$cntcat|$cntboard|$cntpic|$cntdescription|$cntmods|$cntmodgroups|$cnttopicperms|$cntreplyperms|$cntpollperms|$cntzero|$cntpassword|$cnttotals|$cntattperms|$spare|$cntminageperms|$cntmaxageperms|$cntgenderperms\n");
 		}
 	}
-	seek FORUMCONTROL, 0, 0;
-	truncate FORUMCONTROL, 0;
-	@boardcontrol = &undupe(@boardcontrol);
-	print FORUMCONTROL @boardcontrol;
-	fclose(FORUMCONTROL);
+	&write_DBorFILE(0,FORUMCONTROL,$boardsdir,'forum','control',&undupe(@boardcontrol));
 }
 
 sub KillModeratorGroup {
 	my $killmod = $_[0];
-	my ($cntcat, $cntboard, $cntpic, $cntdescription, $cntmods, $cntmodgroups, $cnttopicperms, $cntreplyperms, $cntpollperms, $cntzero, $dummy, $dummy, $dummy, $cnttotals, @boardcontrol);
-	fopen(FORUMCONTROL, "+<$boardsdir/forum.control") || &fatal_error('cannot_open', "$boardsdir/forum.control", 1);
-	@oldcontrols = <FORUMCONTROL>;
+	my ($cntcat, $cntboard, $cntpic, $cntdescription, $cntmods, $cntmodgroups, $cnttopicperms, $cntreplyperms, $cntpollperms, $cntzero, $dummy, $dummy, $dummy, $cnttotals, @boardcontrol, @newmods);
 
-	my @newmods;
-	foreach $boardline (@oldcontrols) {
+	foreach $boardline (&read_DBorFILE(0,FORUMCONTROL,$boardsdir,'forum','control')) {
 		chomp $boardline;
 		if ($boardline ne "") {
 			@newmods = ();
@@ -255,11 +255,7 @@ sub KillModeratorGroup {
 			push(@boardcontrol, "$cntcat|$cntboard|$cntpic|$cntdescription|$cntmods|$cntmodgroups|$cnttopicperms|$cntreplyperms|$cntpollperms|$cntzero|$cntpassword|$cnttotals|$cntattperms|$spare|$cntminageperms|$cntmaxageperms|$cntgenderperms\n");
 		}
 	}
-	seek FORUMCONTROL, 0, 0;
-	truncate FORUMCONTROL, 0;
-	@boardcontrol = &undupe(@boardcontrol);
-	print FORUMCONTROL @boardcontrol;
-	fclose(FORUMCONTROL);
+	&write_DBorFILE(0,FORUMCONTROL,$boardsdir,'forum','control',&undupe(@boardcontrol));
 }
 
 sub LoadUserDisplay {
@@ -273,7 +269,6 @@ sub LoadUserDisplay {
 
 	${$uid.$user}{'weburl'} = ${$uid.$user}{'weburl'} ? qq~<a href="${$uid.$user}{'weburl'}" target="_blank">~ . ($sm ? $img{'website_sm'} : $img{'website'}) . '</a>' : '';
 
-	$displayname = ${$uid.$user}{'realname'};
 	if (${$uid.$user}{'signature'}) {
 		$message = ${$uid.$user}{'signature'};
 
@@ -294,50 +289,14 @@ sub LoadUserDisplay {
 		}
 	}
 
-	$themsnuser   = $user;
-	$themsnname   = ${$uid.$user}{'realname'};
-	$thegtalkuser = $user;
-	$thegtalkname = ${$uid.$user}{'realname'};
-
-	if ($UseMenuType == 0) {
-		$yimimg = qq~<img src="$imagesdir/yim.gif" alt="${$uid.$user}{'yim'}" title="${$uid.$user}{'yim'}" border="0" />~;
-		$aimimg = qq~<img src="$imagesdir/aim.gif" alt="${$uid.$user}{'aim'}" title="${$uid.$user}{'aim'}" border="0" />~;
-		$skypeimg = qq~<img src="$imagesdir/skype.gif" alt="${$uid.$user}{'skype'}" title="${$uid.$user}{'skype'}" border="0" />~;
-		$myspaceimg = qq~<img src="$imagesdir/myspace.gif" alt="${$uid.$user}{'myspace'}" title="${$uid.$user}{'myspace'}" border="0" />~;
-		$facebookimg = qq~<img src="$imagesdir/facebook.gif" alt="${$uid.$user}{'facebook'}" title="${$uid.$user}{'facebook'}" border="0" />~;
-		$msnimg = qq~<img src="$imagesdir/msn.gif" style="cursor: pointer" onclick="window.open('$scripturl?action=setmsn;msnname=$themsnuser','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'); return false" alt="$themsnname" title="$themsnname" border="0" />~;
-		$gtalkimg = qq~<img src="$imagesdir/gtalk2.gif" style="cursor: pointer" onclick="window.open('$scripturl?action=setgtalk;gtalkname=$thegtalkuser','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'); return false" alt="$thegtalkname" title="$thegtalkname" border="0" />~;
-		$icqimg = qq~<img src="http://web.icq.com/whitepages/online?icq=${$uid.$user}{'icq'}&#38;img=5" alt="${$uid.$user}{'icq'}" title="${$uid.$user}{'icq'}" border="0" />~;
-	} elsif ($UseMenuType == 1) {
-		$yimimg = qq~<span class="imgwindowbg">YIM</span>~;
-		$aimimg = qq~<span class="imgwindowbg">AIM</span>~;
-		$skypeimg = qq~<span class="imgwindowbg">Skype/VoIP</span>~;
-		$myspaceimg = qq~<span class="imgwindowbg">MySpace</span>~;
-		$facebookimg = qq~<span class="imgwindowbg">Facebook</span>~;
-		$msnimg = qq~<span class="imgwindowbg" style="cursor: pointer" onclick="window.open('$scripturl?action=setmsn;msnname=$themsnuser','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'); return false">MSN</span>~;
-		$gtalkimg = qq~<span class="imgwindowbg" style="cursor: pointer" onclick="window.open('$scripturl?action=setgtalk;gtalkname=$thegtalkuser','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'); return false">GTalk</span>~;
-		$icqimg   = qq~<span class="imgwindowbg">ICQ</span>~;
-	} else {
-		$yimimg = qq~<img src="$yyhtml_root/Buttons/$language/yim.png" alt="${$uid.$user}{'yim'}" title="${$uid.$user}{'yim'}" border="0" />~;
-		$aimimg = qq~<img src="$yyhtml_root/Buttons/$language/aim.png" alt="${$uid.$user}{'aim'}" title="${$uid.$user}{'aim'}" border="0" />~;
-		$skypeimg = qq~<img src="$yyhtml_root/Buttons/$language/skype.png" alt="${$uid.$user}{'skype'}" title="${$uid.$user}{'skype'}" border="0" />~;
-		$myspaceimg = qq~<img src="$yyhtml_root/Buttons/$language/myspace.png" alt="${$uid.$user}{'myspace'}" title="${$uid.$user}{'myspace'}" border="0" />~;
-		$facebookimg = qq~<img src="$yyhtml_root/Buttons/$language/facebook.png" alt="${$uid.$user}{'facebook'}" title="${$uid.$user}{'facebook'}" border="0" />~;
-		$msnimg = qq~<img src="$yyhtml_root/Buttons/$language/msn.png" style="cursor: pointer" onclick="window.open('$scripturl?action=setmsn;msnname=$themsnuser','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'); return false" alt="$themsnname" title="$themsnname" border="0" />~;
-		$gtalkimg = qq~<img src="$yyhtml_root/Buttons/$language/gtalk.png" style="cursor: pointer" onclick="window.open('$scripturl?action=setgtalk;gtalkname=$thegtalkuser','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'); return false" alt="$thegtalkname" title="$thegtalkname" border="0" />~;
-		$icqimg = qq~<img src="$yyhtml_root/Buttons/$language/icq.png" alt="${$uid.$user}{'icq'}" title="${$uid.$user}{'icq'}" border="0" />~;
-	}
-
-	$icqad{$user} = $icqad{$user} ? qq~<a href="http://web.icq.com/${$uid.$user}{'icq'}" target="_blank"><img src="$imagesdir/icqadd.gif" alt="${$uid.$user}{'icq'}" title="${$uid.$user}{'icq'}" border="0" /></a>~ : '';
-	${$uid.$user}{'icq'} = ${$uid.$user}{'icq'} ? qq~<a href="http://web.icq.com/${$uid.$user}{'icq'}" title="${$uid.$user}{'icq'}" target="_blank">$icqimg</a>~ : '';
-	${$uid.$user}{'aim'} = ${$uid.$user}{'aim'} ? qq~<a href="aim:goim?screenname=${$uid.$user}{'aim'}&#38;message=Hi.+Are+you+there?">$aimimg</a>~ : '';
-	${$uid.$user}{'skype'} = ${$uid.$user}{'skype'} ? qq~<a href="javascript:void(window.open('callto://${$uid.$user}{'skype'}','skype','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'))">$skypeimg</a>~ : '';
-	${$uid.$user}{'myspace'} = ${$uid.$user}{'myspace'} ? qq~<a href="http://www.myspace.com/${$uid.$user}{'myspace'}" target="_blank">$myspaceimg</a>~ : '';
-	${$uid.$user}{'facebook'} = ${$uid.$user}{'facebook'} ? qq~<a href="http://www.facebook.com/~ . (${$uid.$user}{'facebook'} !~ /\D/ ? "profile.php?id=" : "") . qq~${$uid.$user}{'facebook'}" target="_blank">$facebookimg</a>~ : '';
-	${$uid.$user}{'msn'} = ${$uid.$user}{'msn'}   ? $msnimg : '';
-	${$uid.$user}{'gtalk'} = ${$uid.$user}{'gtalk'} ? $gtalkimg : '';
-	$yimon{$user} = $yimon{$user} ? qq~<img src="http://opi.yahoo.com/online?u=${$uid.$user}{'yim'}&#38;m=g&#38;t=0" border="0" alt="" />~ : '';
-	${$uid.$user}{'yim'} = ${$uid.$user}{'yim'} ? qq~<a href="http://edit.yahoo.com/config/send_webmesg?.target=${$uid.$user}{'yim'}" target="_blank">$yimimg</a>~ : '';
+	${$uid.$user}{'aim'} = ${$uid.$user}{'aim'} ? qq~<a href="aim:goim?screenname=${$uid.$user}{'aim'}&#38;message=Hi.+Are+you+there?">$img{'aim'}</a>~ : '';
+	${$uid.$user}{'facebook'} = ${$uid.$user}{'facebook'} ? qq~<a href="http://www.facebook.com/~ . (${$uid.$user}{'facebook'} !~ /\D/ ? "profile.php?id=" : "") . qq~${$uid.$user}{'facebook'}" target="_blank">$img{'facebook'}</a>~ : '';
+	${$uid.$user}{'gtalk'} = ${$uid.$user}{'gtalk'} ? qq~<a href="javascript:void(window.open('$scripturl?action=setgtalk;gtalkname=$useraccount{$user}','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'))">$img{'gtalk'}</a>~ : '';
+	${$uid.$user}{'icq'} = ${$uid.$user}{'icq'} ? qq~<a href="http://web.icq.com/${$uid.$user}{'icq'}" title="${$uid.$user}{'icq'}" target="_blank">$img{'icq'}</a>~ : '';
+	${$uid.$user}{'msn'} = ${$uid.$user}{'msn'} ? qq~<a href="javascript:void(window.open('$scripturl?action=setmsn;msnname=$useraccount{$user}','','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'))">$img{'msn'}</a>~ : '';
+	${$uid.$user}{'myspace'} = ${$uid.$user}{'myspace'} ? qq~<a href="http://www.myspace.com/${$uid.$user}{'myspace'}" target="_blank">$img{'myspace'}</a>~ : '';
+	${$uid.$user}{'skype'} = ${$uid.$user}{'skype'} ? qq~<a href="javascript:void(window.open('callto://${$uid.$user}{'skype'}','skype','height=80,width=340,menubar=no,toolbar=no,scrollbars=no'))">$img{'skype'}</a>~ : '';
+	${$uid.$user}{'yim'} = ${$uid.$user}{'yim'} ? qq~<a href="http://edit.yahoo.com/config/send_webmesg?.target=${$uid.$user}{'yim'}" target="_blank">$img{'yim'}</a>~ : '';
 
 	if ($showgenderimage && ${$uid.$user}{'gender'}) {
 		${$uid.$user}{'gender'} = ${$uid.$user}{'gender'} =~ m~Female~i ? 'female' : 'male';
@@ -353,9 +312,12 @@ sub LoadUserDisplay {
 	}
 
 	# Create the userpic / avatar html
-	if ($showuserpic && $allowpics) {
+	if ($showuserpic && $allowpics && $iamguest) {
 		${$uid.$user}{'userpic'} ||= 'blank.gif';
 		${$uid.$user}{'userpic'} = qq~<img src="~ .(${$uid.$user}{'userpic'} =~ m~\A[\s\n]*https?://~i ? ${$uid.$user}{'userpic'} : "$facesurl/${$uid.$user}{'userpic'}") . qq~" name="avatar_img_resize" alt="" border="0" style="display:none" /><br />~;
+	} elsif ($showuserpic && $allowpics) {
+		${$uid.$user}{'userpic'} ||= 'blank.gif';
+		${$uid.$user}{'userpic'} = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$user}" rel="nofollow"><img src="~ .(${$uid.$user}{'userpic'} =~ m~\A[\s\n]*https?://~i ? ${$uid.$user}{'userpic'} : "$facesurl/${$uid.$user}{'userpic'}") . qq~" name="avatar_img_resize" alt="" border="0" style="display:none" /></a><br />~;
 	} else {
 		${$uid.$user}{'userpic'} = '<br />';
 	}
@@ -363,7 +325,6 @@ sub LoadUserDisplay {
 	&LoadMiniUser($user);
 
 	$yyUDLoaded{$user} = 1;
-	return 1;
 }
 
 sub LoadMiniUser {
@@ -446,11 +407,11 @@ sub LoadMiniUser {
 	else { $memberinfo{$user} = qq~<b>$title</b>~; }
 
 	if ($color ne "") {
-		$link{$user}      = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$user}" style="color:$color;">$userlink</a>~;
+		$link{$user}      = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$user}" rel="nofollow" style="color:$color;">$userlink</a>~;
 		$format{$user}    = qq~<span style="color: $color;">$userlink</span>~;
 		$col_title{$user} = qq~<span style="color: $color;">$memberinfo{$user}</span>~;
 	} else {
-		$link{$user}      = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$user}">$userlink</a>~;
+		$link{$user}      = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$user}" rel="nofollow">$userlink</a>~;
 		$format{$user}    = qq~$userlink~;
 		$col_title{$user} = qq~$memberinfo{$user}~;
 	}
@@ -492,11 +453,9 @@ sub LoadMiniUser {
 		# No need to open the message file so many times.
 		# Opening it once is enough to do the access checks.
 		unless ($topicstarter) {
-			if (-e "$datadir/$viewnum.txt") {
+			if (&checkfor_DBorFILE("$datadir/$viewnum.txt")) {
 				unless (ref($thread_arrayref{$viewnum})) {
-					fopen(TOPSTART, "$datadir/$viewnum.txt");
-					@{$thread_arrayref{$viewnum}} = <TOPSTART>;
-					fclose(TOPSTART);
+					@{$thread_arrayref{$viewnum}} = &read_DBorFILE(1,'',$datadir,$viewnum,'txt');
 				}
 				(undef, undef, undef, undef, $topicstarter, undef) = split(/\|/, ${$thread_arrayref{$viewnum}}[0], 6);
 			}
@@ -553,7 +512,7 @@ sub QuickLinks {
 			<ul id="ql$useraccount{$user}$qlcount" class="QuickLinks" onmouseover="keepLinks('ql$useraccount{$user}$qlcount')" onmouseout="TimeClose('ql$useraccount{$user}$qlcount')">
 				<li>~ . &userOnLineStatus($user) . qq~<a href="javascript:closeLinks('ql$useraccount{$user}$qlcount')" style="position:absolute;right:3px"><b>X</b></a></li>\n~;
 		if ($user ne $username) {
-			$quicklinks .= qq~				<li><a href="$scripturl?action=viewprofile;username=$useraccount{$user}">$maintxt{'2'} ${$uid.$user}{'realname'}$maintxt{'3'}</a></li>\n~;
+			$quicklinks .= qq~				<li><a href="$scripturl?action=viewprofile;username=$useraccount{$user}" rel="nofollow">$maintxt{'2'} ${$uid.$user}{'realname'}$maintxt{'3'}</a></li>\n~;
 			&CheckUserPM_Level($user);
 			if ($PM_level == 1 || ($PM_level == 2 && $UserPM_Level{$user} > 1 && $staff) || ($PM_level == 3 && $UserPM_Level{$user} == 3 && ($iamadmin || $iamgmod))) {
 				if (1) {#links_impopup
@@ -575,7 +534,7 @@ sub QuickLinks {
 			}
 
 		} else {
-			$quicklinks .= qq~				<li><a href="$scripturl?action=viewprofile;username=$useraccount{$user}">$maintxt{'6'}</a></li>\n~;
+			$quicklinks .= qq~				<li><a href="$scripturl?action=viewprofile;username=$useraccount{$user}" rel="nofollow">$maintxt{'6'}</a></li>\n~;
 		}
 		$quicklinks .= qq~			</ul><a href="javascript:quickLinks('ql$useraccount{$user}$qlcount')"$lastonline>~;
 		$quicklinks .= $_[1] ? ${$uid.$user}{'realname'} : $format{$user};
@@ -644,12 +603,12 @@ sub LoadCookie {
 	if ($yyCookies{$cookiepassword}) {
 		$password      = $yyCookies{$cookiepassword};
 		$username      = $yyCookies{$cookieusername} || 'Guest';
-		$cookiesession = $yyCookies{$session_id};
+		$cookiesession = $yyCookies{$cookiesession_name};
 	} else {
 		$password = '';
 		$username = 'Guest';
 	}
-	if ($yyCookies{'guestlanguage'} && !$FORM{'guestlang'} && $enable_guestlanguage) {
+	if ($yyCookies{'guestlanguage'} && $enable_guestlanguage) {
 		$language = $guestLang = $yyCookies{'guestlanguage'};
 	}
 }
@@ -659,38 +618,30 @@ sub UpdateCookie {
 	my ($valid, $expiration);
 	if ($what eq "delete") {
 		$expiration = "Thursday, 01-Jan-1970 00:00:00 GMT";
-		if ($pathval eq "") { $pathval = qq~/~; }
-		if ($iamguest && $FORM{'guestlang'} && $enable_guestlanguage) {
-			if($FORM{'guestlang'} && !$guestLang) { $guestLang = qq~$FORM{'guestlang'}~; }
-			$language = qq~$guestLang~;
-			$cookiepassword = "guestlanguage";
-			$passw = qq~$language~;
-			$expire = "persistent";
-		}
 		$valid = 1;
 	} elsif ($what eq "write") {
 		$expiration = $expire;
-		if ($pathval eq "") { $pathval = qq~/~; }
 		$valid = 1;
 	}
 
 	if ($valid) {
+		if ($pathval eq "") { $pathval = '/'; }
 		if ($expire eq "persistent") { $expiration = "Sunday, 17-Jan-2038 00:00:00 GMT"; }
 		$yySetCookies1 = &write_cookie(
-			-name    => "$cookieusername",
-			-value   => "$user",
-			-path    => "$pathval",
-			-expires => "$expiration");
+			-name    => $cookieusername,
+			-value   => $user,
+			-path    => $pathval,
+			-expires => $expiration);
 		$yySetCookies2 = &write_cookie(
-			-name    => "$cookiepassword",
-			-value   => "$passw",
-			-path    => "$pathval",
-			-expires => "$expiration");
+			-name    => $cookiepassword,
+			-value   => $passw,
+			-path    => $pathval,
+			-expires => $expiration);
 		$yySetCookies3 = &write_cookie(
-			-name    => "$cookiesession_name",
-			-value   => "$sessionval",
-			-path    => "$pathval",
-			-expires => "$expiration");
+			-name    => $cookiesession_name,
+			-value   => $sessionval,
+			-path    => $pathval,
+			-expires => $expiration);
 		my ($catid, $boardlist, @bdlist, $curboard);
 		foreach $catid (@categoryorder) {
 		unless( $catid ) { next; }
@@ -776,11 +727,11 @@ sub WhatTemplate {
 sub WhatLanguage {
 	if (${$uid.$username}{'language'} ne '') {
 		$language = ${$uid.$username}{'language'};
-	} elsif($FORM{'guestlang'} && $enable_guestlanguage) {
+	} elsif ($FORM{'guestlang'} && $enable_guestlanguage) {
 		$language = $FORM{'guestlang'};
-	} elsif($guestLang && $enable_guestlanguage) {
+	} elsif ($guestLang && $enable_guestlanguage) {
 		$language = $guestLang;
-	} else	{
+	} else {
 		$language = $lang;
 	}
 
@@ -813,7 +764,7 @@ sub WhatLanguage {
 #6	@folders  (name1|name2|name3);
 
 # new .ims file format
-#	### UserIMS YaBB 2.2 Version ###
+#	### YaBB UserIMS ###
 #	'${$username}{'PMmnum'}',"value"
 #	'${$username}{'PMimnewcount'}',"value"
 #	'${$username}{'PMmoutnum'}',"value"
@@ -839,10 +790,8 @@ sub buildIMS {
 	}
 
 	## inbox if it exists, either load and count totals or parse and update format.
-	if (-e "$memberdir/$builduser.msg") {
-		fopen(USERMSG, "$memberdir/$builduser.msg") || &fatal_error('cannot_open', "$memberdir/$builduser.msg", 1); # open inbox
-		my @messages = <USERMSG>;
-		fclose(USERMSG);
+	if (&checkfor_DBorFILE("$memberdir/$builduser.msg")) {
+		my @messages = &read_DBorFILE(0,'',$memberdir,$builduser,'msg');
 
 		# test the data for version. 16 elements in new format, no more than 8 in old.
 		if (split(/\|/, $messages[0]) > 8) { # new format, so just need to check the flags
@@ -852,44 +801,37 @@ sub buildIMS {
 			}
 			$incurr = @messages;
 
-		} else { # old format, needs rearranging
+		} elsif (length($messages[0]) > 7) { # old format, needs rearranging
 			($inunr,$incurr) = &convert_MSG($builduser);
 		}
 	}
 
 	## do the outbox
-	if (-e "$memberdir/$builduser.outbox") {
-		fopen("OUTMESS", "$memberdir/$builduser.outbox") || &fatal_error('cannot_open', "$memberdir/$builduser.outbox", 1);
-		my @outmessages = <OUTMESS>;
-		fclose("OUTMESS");
+	if (&checkfor_DBorFILE("$memberdir/$builduser.outbox")) {
+		my @outmessages = &read_DBorFILE(0,'',$memberdir,$builduser,'outbox');
 		if (split(/\|/, $outmessages[0]) > 8) { # > 10 elements in new format, no more than 8 in old
 			$outcurr = @outmessages;
-		} else {
+		} elsif (length($outmessages[0]) > 7) {
 			$outcurr = &convert_OUTBOX($builduser);
 		}
 	}
 
 	## do the draft store - slightly easier - only exists in y22
-	if (-e "$memberdir/$builduser.imdraft") {
-		fopen("DRAFTMESS", "$memberdir/$builduser.imdraft") || &fatal_error('cannot_open', "$memberdir/$builduser.imdraft", 1);
-		my @d = <DRAFTMESS>;
-		fclose("DRAFTMESS");
-		$draftcount = @d;
+	if (&checkfor_DBorFILE("$memberdir/$builduser.imdraft")) {
+		$draftcount = scalar &read_DBorFILE(0,'',$memberdir,$builduser,'imdraft');
 	}
 
 	## grab the current list of store folders
 	## else, create an entry for the two 'default ones' for the in/out status stuff
 	my $storefolders = ${$builduser}{'PMfolders'} || "in|out";
 	my @currStoreFolders = split(/\|/, $storefolders);
-	if (-e "$memberdir/$builduser.imstore") {
-		fopen(STOREMESS, "$memberdir/$builduser.imstore") || &fatal_error('cannot_open', "$memberdir/$builduser.imstore", 1);
-		@imstore = <STOREMESS>;
-		fclose (STOREMESS);
+	if (&checkfor_DBorFILE("$memberdir/$builduser.imstore")) {
+		@imstore = &read_DBorFILE(0,'',$memberdir,$builduser,'imstore');
 		if (@imstore) {
 			# > 10 elements in new format, no more than 8 in old
 			#messageid0|[blank]1|touser(s)2|(ccuser(s))3|(bccuser(s))4|
 			#        subject5|date6|message7|(parentmid)8|(reply#)9|ip10|messagestatus11|flags12|storefolder13|attachment14
-			if (split(/\|/, $imstore[0]) <= 8) { @imstore = &convert_IMSTORE($builduser); }
+			if (split(/\|/, $imstore[0]) <= 8 && length($imstore[0]) > 7) { @imstore = &convert_IMSTORE($builduser); }
 
 			my ($storeUpdated,$storeMessLine) = (0,0);
 			foreach my $message (@imstore) {
@@ -911,15 +853,13 @@ sub buildIMS {
 				$storeMessLine++;
 			}
 			if ($storeUpdated == 1) {
-				fopen(STRMESS, "+>$memberdir/$builduser.imstore") || &fatal_error('cannot_open', "$memberdir/$builduser.imstore", 1);
-				print STRMESS @imstore;
-				fclose(STRMESS);
+				&write_DBorFILE(${$uid.$builduser}{'mysql'},'',$memberdir,$builduser,'imstore',@imstore);
 			}
 			$storetotal = @imstore;
 			$storefolders = join('|', @currStoreFolders);
 
-		} else {
-			unlink "$memberdir/$builduser.imstore";
+		} elsif (!$use_MySQL) {
+			&delete_DBorFILE("$memberdir/$builduser.imstore");
 		}
 	}
 	## run through the messages and count against the folder name
@@ -949,22 +889,17 @@ sub update_IMS {
 	my $builduser = shift;
 	my @tag = qw(PMmnum PMimnewcount PMmoutnum PMstorenum PMdraftnum PMfolders PMfoldersCount PMbcRead);
 
-	fopen(UPDATE_IMS, ">$memberdir/$builduser.ims",1) || &fatal_error('cannot_open', "$memberdir/$builduser.ims", 1);
-	print UPDATE_IMS qq~### UserIMS YaBB 2.2 Version ###\n\n~;
+	my @PM = (qq~### YaBB UserIMS ###\n\n~);
 	for (my $cnt = 0; $cnt < @tag; $cnt++) {
-		print UPDATE_IMS qq~'$tag[$cnt]',"${$builduser}{$tag[$cnt]}"\n~;
+		push(@PM, qq~'$tag[$cnt]',"${$builduser}{$tag[$cnt]}"\n~);
 	}
-	fclose(UPDATE_IMS);
+	&write_DBorFILE(${$uid.$builduser}{'mysql'},'',$memberdir,$builduser,'ims',@PM);
 }
 
 sub load_IMS {
 	my $builduser = shift;
 	my @ims;
-	if (-e "$memberdir/$builduser.ims") {
-		fopen ("IMSFILE", "$memberdir/$builduser.ims") || &fatal_error('cannot_open', "$memberdir/$builduser.ims", 1);
-		@ims = <IMSFILE>;
-		fclose("IMSFILE");
-	}
+	if (&checkfor_DBorFILE("$memberdir/$builduser.ims")) { @ims = &read_DBorFILE(0,'',$memberdir,$builduser,'ims'); }
 
 	if ($ims[0] =~ /###/) {
 		foreach (@ims) { if ($_ =~ /'(.*?)',"(.*?)"/) { ${$builduser}{$1} = $2; } }
@@ -974,19 +909,16 @@ sub load_IMS {
 }
 
 sub LoadBroadcastMessages { #check broadcast messages
-	return if ($iamguest || $PM_level == 0 || ($maintenance && !$iamadmin) || ($PM_level == 2 && (!$iamadmin && !$iamgmod && !$iammod)) || ($PM_level == 3 && (!$iamadmin && !$iamgmod)));
+	return if ($iamguest || $PM_level == 0 || ($maintenance && !$iamadmin) || ($PM_level == 2 && !$staff) || ($PM_level == 3 && (!$iamadmin && !$iamgmod)));
 
 	my $builduser = shift;
 	$BCnewMessage = 0;
 	$BCCount = 0;
-	if (-e "$memberdir/broadcast.messages") {
+	if (&checkfor_DBorFILE("$memberdir/broadcast.messages")) {
 		my %PMbcRead;
 		map { $PMbcRead{$_} = 0; } split(/,/, ${$builduser}{'PMbcRead'});
 
-		fopen(BCMESS, "<$memberdir/broadcast.messages") || &fatal_error('cannot_open', "$memberdir/broadcast.messages", 1);
-		my @bcmessages = <BCMESS>;
-		fclose(BCMESS);
-		foreach (@bcmessages) {
+		foreach (&read_DBorFILE(0,'',$memberdir,'broadcast','messages')) {
 			my ($mnum, $mfrom, $mto, undef) = split (/\|/, $_, 4);
 			if ($mfrom eq $username) { $BCCount++; $PMbcRead{$mnum} = 1; }
 			elsif (&BroadMessageView($mto)) {
@@ -1009,17 +941,14 @@ sub LoadBroadcastMessages { #check broadcast messages
 
 sub convert_MSG {
 	my $builduser = shift;
-	my $inunr;
+	my ($inunr,@newmess);
 	# clean out msg file and rebuild in new format
 	# new format:
 	# messageid(0)|from(1)|touser(2)|ccuser(3)|bccuser(4)|subject(5)|date(6)|message(7)|parentmid(8)|reply#(9)|ip(10)|messagestatus(11)|flags(12)|storefolder(13)|attachment(14)
 	# old format:
 	# from(0)|subject(1)|date(2)|message(3)|messageid(4)|ip(5)|read/replied(6)
-	fopen(OLDMESS, "+<$memberdir/$builduser.msg") || &fatal_error('cannot_open', "$memberdir/$builduser.msg", 1);
-	my @oldmessages = <OLDMESS>;
+	my @oldmessages = &read_DBorFILE(0,OLDMESS,$memberdir,$builduser,'msg');
 	chomp @oldmessages;
-	seek OLDMESS , 0, 0;
-	truncate OLDMESS, 0;
 	foreach my $oldmessage (@oldmessages) { # parse messages for flags
 		my @oldformat = split(/\|/,$oldmessage);
 		# under old format, unread,and replied are exclusive, so no need to go mixing them
@@ -1028,25 +957,23 @@ sub convert_MSG {
 		# if any old style message ids still there, or odd blank ones, correct them to = date value
 		if ($oldformat[4] < 101) { $oldformat[4] = $oldformat[2]; }
 		# reassemble to new format and print back to file
-		print OLDMESS "$oldformat[4]|$oldformat[0]|$builduser|||$oldformat[1]|$oldformat[2]|$oldformat[3]|$oldformat[4]|0|$oldformat[5]|s|$oldformat[6]||\n";
+		push(@newmess, "$oldformat[4]|$oldformat[0]|$builduser|||$oldformat[1]|$oldformat[2]|$oldformat[3]|$oldformat[4]|0|$oldformat[5]|s|$oldformat[6]||\n");
 	}
-	fclose(OLDMESS);
-	($inunr,scalar @oldmessages);
+	&write_DBorFILE(${$uid.$builduser}{'mysql'},OLDMESS,$memberdir,$builduser,'msg',@newmess);
+	($inunr,scalar @newmess);
 }
 
 sub convert_OUTBOX {
 	my $builduser = shift;
 	## clean out msg file and rebuild in new format
-	fopen(OLDOUTBOX, "+<$memberdir/$builduser.outbox") || &fatal_error('cannot_open', "$memberdir/$builduser.outbox", 1);
-	my @oldoutmessages = <OLDOUTBOX>;
+	my @oldoutmessages = &read_DBorFILE(0,OLDOUTBOX,$memberdir,$builduser,'outbox');
 	chomp @oldoutmessages;
-	seek OLDOUTBOX, 0, 0;
-	truncate OLDOUTBOX, 0;
 	# clean out msg file and rebuild in new format
 	# new format:
 	# messageid(0)|from(1)|touser(2)|ccuser(3)|bccuser(4)|subject(5)|date(6)|message(7)|parentmid(8)|reply#(9)|ip(10)|messagestatus(11)|flags(12)|storefolder(13)|attachment(14)
 	# old format:
 	# from(0)|subject(1)|date(2)|message(3)|messageid(4)|ip(5)|read/replied(6)
+	my @newout;
 	foreach my $oldmessage (@oldoutmessages) {
 		my @oldformat = split(/\|/, $oldmessage);
 		## if any old style message ids still there, or odd blank ones, correct them to = date value
@@ -1054,20 +981,17 @@ sub convert_OUTBOX {
 		## outbox can't be replied to ;) and forwarding doesn't exist in old format
 		if (!$oldformat[6]) { $oldformat[6] = 'u'; }
 		elsif ($oldformat[6] == 1) { $oldformat[6] = ''; }
-		print OLDOUTBOX "$oldformat[4]|$builduser|$oldformat[0]|||$oldformat[1]|$oldformat[2]|$oldformat[3]|$oldformat[4]|0|$oldformat[5]|s|$oldformat[6]||\n";
+		push(@newout, "$oldformat[4]|$builduser|$oldformat[0]|||$oldformat[1]|$oldformat[2]|$oldformat[3]|$oldformat[4]|0|$oldformat[5]|s|$oldformat[6]||\n");
 	}
-	fclose(OLDOUTBOX);
-	return scalar @oldoutmessages;
+	&write_DBorFILE(${$uid.$builduser}{'mysql'},OLDOUTBOX,$memberdir,$builduser,'outbox',@newout);
+	return scalar @newout;
 }
 
 sub convert_IMSTORE {
 	my $builduser = shift;
 	my @imstore;
-	fopen(OLDIMSTORE, "+<$memberdir/$builduser.imstore") || &fatal_error('cannot_open', "$memberdir/$builduser.imstore", 1);
-	my @oldstoremessages = <OLDIMSTORE>;
+	my @oldstoremessages = &read_DBorFILE(0,OLDIMSTORE,$memberdir,$builduser,'imstore');
 	chomp @oldstoremessages;
-	seek OLDIMSTORE, 0, 0;
-	truncate OLDIMSTORE, 0;
 	# new format:
 	# messageid(0)|from(1)|touser(2)|ccuser(3)|bccuser(4)|subject(5)|date(6)|message(7)|parentmid(8)|reply#(9)|ip(10)|messagestatus(11)|flags(12)|storefolder(13)|attachment(14)
 	# old format:
@@ -1090,8 +1014,7 @@ sub convert_IMSTORE {
 		} 
 		push (@imstore, "$oldformat[4]|$fromuser|$touser|||$oldformat[1]|$oldformat[2]|$oldformat[3]|$oldformat[4]|0|$oldformat[5]|s|$oldformat[6]|$oldformat[7]|\n");
 	}
-	print OLDIMSTORE @imstore;
-	fclose(OLDIMSTORE);
+	&write_DBorFILE(${$uid.$builduser}{'mysql'},OLDIMSTORE,$memberdir,$builduser,'imstore',@imstore);
 	@imstore;
 }
 

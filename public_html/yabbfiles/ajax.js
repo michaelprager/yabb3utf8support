@@ -58,6 +58,7 @@ function Collapse_All (url,action,imgdir,lng) {
 		document.getElementById("col"+catNames[i]).style.display = noboards;
 		document.getElementById("img"+catNames[i]).src = imgdir + imgsrc;
 		document.getElementById("img"+catNames[i]).title = lng;
+		document.getElementById("img"+catNames[i]).alt = lng;
 	}
 }
 
@@ -79,12 +80,14 @@ function SendRequest (url,cat,imgdir,lng_collapse,lng_expand) {
 		document.getElementById("col"+cat).style.display = "none";
 		document.getElementById("img"+cat).src = imgdir+"/cat_collapse.gif";
 		document.getElementById("img"+cat).title = lng_collapse;
+		document.getElementById("img"+cat).alt = lng_collapse;
 		document.getElementById("collapseall").style.display = "";
 	} else {
 		document.getElementById(cat).style.display = "none";
 		document.getElementById("col"+cat).style.display = "";
 		document.getElementById("img"+cat).src = imgdir+"/cat_expand.gif";
 		document.getElementById("img"+cat).title = lng_expand;
+		document.getElementById("img"+cat).alt = lng_expand;
 		document.getElementById("expandall").style.display = "";
 	}
 	for (i = 0; i < catNames.length; i++) {
@@ -356,7 +359,7 @@ function IMComplete() {
 
 // Drop down message index for board index
 
-function MessageList(url,includejs,board,loadnew) {
+function MessageList(url,board,loadnew) {
 	// close previously opened board
 	if(boardOpen != "" && !loadnew) {
 		document.getElementById("droprow_"+boardOpen).style.display = "none";
@@ -376,25 +379,16 @@ function MessageList(url,includejs,board,loadnew) {
 	
 	boardOpen = board;
 	
+	MessageListInsert('<img src="'+loadimg+'" border="0" />');
 	document.getElementById("dropbutton_"+board).src = closebutton;
 	
 	if (cachedBoards[board] == null || loadnew) {	
-		MessageListInsert('<img src="'+loadimg+'" border="0" />');
 		xmlHttp.onreadystatechange=MessageListFinished;
-		xmlHttp.open("GET",url+";r="+Math.random(),true);
+		xmlHttp.open("GET",url,true);
 		xmlHttp.send(null);
 	} else {
-		if (document.getElementById("drop_"+boardOpen).innerHTML == "") {
-			MessageListInsert(cachedBoards[board]);
-		} else {
-			document.getElementById("droprow_"+boardOpen).style.display = "table-row";
-		}
+		MessageListInsert(cachedBoards[board]);
 	}
-	
-	var MIscript = document.createElement('script');
-	MIscript.setAttribute("type","text/javascript");
-	MIscript.setAttribute("src", includejs+'/MessageIndex.js');
-	document.getElementsByTagName("head")[0].appendChild(MIscript);
 }
 
 function MessageListFinished() {
@@ -438,7 +432,7 @@ function SubBoardList(url,board,cat,subcount,index) {
 				i--;
 			}
 		}
-		document.getElementById("subdropbutton_"+subboardOpen).src = opensubbutton;
+		document.getElementById("subdropbutton_"+subboardOpen).src = openbutton;
 		if (subboardOpen == board) {
 			subboardOpen = "";
 			return;
@@ -450,14 +444,14 @@ function SubBoardList(url,board,cat,subcount,index) {
 	insertcat = cat;
 	prev_subcount = subcount;
 	
-	document.getElementById("subdropbutton_"+board).src = closesubbutton;
+	document.getElementById("subdropbutton_"+board).src = closebutton;
 	
 	if (cachedSubBoards[board] == null) {
 		document.getElementById("dropsub_" + subboardOpen).innerHTML = '<img src="'+loadimg+'" border="0" />';
 		document.getElementById("dropsubrow_" + subboardOpen).style.display = "table-row";
 		
 		xmlHttp.onreadystatechange=SubBoardListFinished;
-		xmlHttp.open("GET",url + ";a=1;r="+Math.random(),true);
+		xmlHttp.open("GET",url + ";a=1",true);
 		xmlHttp.send(null);
 	} else {
 		document.getElementById("dropsub_" + subboardOpen).innerHTML = cachedSubBoards[board];
@@ -515,7 +509,7 @@ function MakeCollapseBars(table, index) {
 	cell.innerHTML = arrowup;
 	cell.style.cursor = "pointer";
 	cell.onclick = function () {
-		var elem = document.getElementById("subdropa_"+subboardOpen);
+		var elem = document.getElementById("subdropbutton_"+subboardOpen);
 		if (typeof elem.onclick == "function") {
    			elem.onclick.apply(elem);
 		}
@@ -532,9 +526,9 @@ function SwitchPageList(oldurl, sendurl, closelist, openlist) {
 	}
 	
 	document.getElementById(closelist).style.display = "none";
-	document.getElementById('2'+closelist).style.display = "none";
+	document.getElementById(closelist + '2').style.display = "none";
 	document.getElementById(openlist).style.display = "inline-block";
-	document.getElementById('2'+openlist).style.display = "inline-block";
+	document.getElementById(openlist + '2').style.display = "inline-block";
 	
 	xmlHttp.open("GET",sendurl,true);
 	xmlHttp.send(null);
@@ -690,10 +684,11 @@ function checkAvail(scripturl,val,type,namenotid) {
 }
 
 function returnAvail() {
-     if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete") {
- 	    var avail = xmlHttp.responseText;
- 	    var type = avail.split("|");
- 	    document.getElementById(type[0] + "availability").innerHTML = type[1]; }
+	if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete") {
+		var avail = xmlHttp.responseText;
+		var type = avail.split("|");
+		document.getElementById(type[0] + "availability").innerHTML = type[1];
+	}
 }
 
 function HideAlert() {

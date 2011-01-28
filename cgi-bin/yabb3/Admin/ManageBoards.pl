@@ -337,7 +337,7 @@ sub BoardScreen {
 		&Write_ForumMaster;
 
 	} else {
-		&admin_fatal_error("no_action","$FORM{'baction'}");
+		&fatal_error("no_action","$FORM{'baction'}");
 	}
 
 	$action_area = "manageboards";
@@ -347,21 +347,17 @@ sub BoardScreen {
 sub DeleteBoards {
 	&is_admin_or_gmod;
 
-	fopen(FORUMCONTROL, "+<$boardsdir/forum.control") || &fatal_error("cannot_open","$boardsdir/forum.control", 1);
-	seek FORUMCONTROL, 0, 0;
-	my @oldcontrols = <FORUMCONTROL>;
+	my @oldcontrols = &read_DBorFILE(0,FORUMCONTROL,$boardsdir,'forum','control');
 	foreach $board (@_) {
-		fopen(BOARDDATA, "$boardsdir/$board.txt");
-		@messages = <BOARDDATA>;
-		fclose(BOARDDATA);
+		@messages = &read_DBorFILE(0,'',$boardsdir,$board,'txt');
 		foreach $curmessage (@messages) {
 			my ($id, undef) = split(/\|/, $curmessage, 2);
-			unlink("$datadir/$id\.txt");
-			unlink("$datadir/$id\.mail");
-			unlink("$datadir/$id\.ctb");
-			unlink("$datadir/$id\.data");
-			unlink("$datadir/$id\.poll");
-			unlink("$datadir/$id\.polled");
+			&delete_DBorFILE("$datadir/$id.txt");
+			&delete_DBorFILE("$datadir/$id.mail");
+			&delete_DBorFILE("$datadir/$id.ctb");
+			&delete_DBorFILE("$datadir/$id.data");
+			&delete_DBorFILE("$datadir/$id.poll");
+			&delete_DBorFILE("$datadir/$id.polled");
 		}
 		for (my $cnt = 0; $cnt < @oldcontrols; $cnt++) {
 			my $oldboard;
@@ -374,26 +370,21 @@ sub DeleteBoards {
 				last;
 			}
 		}
-		unlink("$boardsdir/$board.txt");
-		unlink("$boardsdir/$board.ttl");
-		unlink("$boardsdir/$board.poster");
-		unlink("$boardsdir/$board.mail");
+		&delete_DBorFILE("$boardsdir/$board.txt");
+		&delete_DBorFILE("$boardsdir/$board.ttl");
+		&delete_DBorFILE("$boardsdir/$board.poster");
+		&delete_DBorFILE("$boardsdir/$board.mail");
 
-		fopen(ATM, "+<$vardir/attachments.txt", 1);
-		seek ATM, 0, 0;
-		my @buffer = <ATM>;
+		my @buffer = &read_DBorFILE(0,ATM,$vardir,'attachments','txt');
 		my ($amcurrentboard,$amfn);
 		for (my $a = 0; $a < @buffer; $a++) {
 			(undef, undef, undef, undef, $amcurrentboard, undef, undef, $amfn, undef) = split(/\|/, $buffer[$a]);
 			if ($amcurrentboard eq $board) {
 				$buffer[$a] = '';
-				unlink("$upload_dir/$amfn");
+				&delete_DBorFILE("$upload_dir/$amfn");
 			}
 		}
-		truncate ATM, 0;
-		seek ATM, 0, 0;
-		print ATM @buffer;
-		fclose(ATM);
+		&write_DBorFILE(0,ATM,$vardir,'attachments','txt',@buffer);
 
 		&BoardTotals("delete", $board);
 	}
@@ -411,17 +402,10 @@ sub DeleteBoards {
 			}
 		}
 	}
+	
+	&write_DBorFILE(0,FORUMCONTROL,$boardsdir,'forum','control',sort(grep { $_; } @oldcontrols));
 
-	my @boardcontrol = grep { $_; } @oldcontrols;
-
-	truncate FORUMCONTROL, 0;
-	seek FORUMCONTROL, 0, 0;
-	print FORUMCONTROL sort(@boardcontrol);
-	fclose(FORUMCONTROL);
-
-	fopen(FORUMCONTROL, "$boardsdir/forum.control");
-	@forum_control = <FORUMCONTROL>;
-	fclose(FORUMCONTROL);
+	@forum_control = &read_DBorFILE(0,'',$boardsdir,'forum','control');
 }
 
 sub AddBoards {
@@ -1014,20 +998,20 @@ sub AddBoards2 {
 	&LoadBoardControl;
 	
 	for (my $i = 1; $i != $FORM{'amount'} + 1; $i++) {
-		if ($FORM{"pic$i"} ne '' && $FORM{"pic$i"} !~ m~^[0-9a-zA-Z_\.\#\%\-\:\+\?\$\&\~\.\,\@/]+\.(gif|png|bmp|jpg)$~) { &admin_fatal_error("invalid_picture"); }
+		if ($FORM{"pic$i"} ne '' && $FORM{"pic$i"} !~ m~^[0-9a-zA-Z_\.\#\%\-\:\+\?\$\&\~\.\,\@/]+\.(gif|png|bmp|jpg)$~) { &fatal_error("invalid_picture"); }
 		##### Dealing with Required Info here #####
 		if ($FORM{"id$i"} eq '') { next; }
 		$id = $FORM{"id$i"};
 		if ($FORM{"ann$i"})  { $anncount++; }
 		if ($FORM{"rbin$i"}) { $rbincount++; }
-		&admin_fatal_error('announcement_defined') if ($anncount > 1);
-		&admin_fatal_error('recycle_bin_defined') if ($rbincount > 1);
-		&admin_fatal_error('invalid_character',"$admin_txt{'61'} $admin_txt{'241'}") if ($id !~ /\A[0-9A-Za-z#%+-\.@^_]+\Z/);
+		&fatal_error('announcement_defined') if ($anncount > 1);
+		&fatal_error('recycle_bin_defined') if ($rbincount > 1);
+		&fatal_error('invalid_character',"$admin_txt{'61'} $admin_txt{'241'}") if ($id !~ /\A[0-9A-Za-z#%+-\.@^_]+\Z/);
 
 		if ($FORM{'screenornot'} ne "boardscreen") {
 			# adding a board
 			# make sure no board already exists with that id
-			&admin_fatal_error("board_defined","$id") if (exists $board{"$id"});
+			&fatal_error("board_defined","$id") if (exists $board{"$id"});
 
 			# add to category if it's not a sub board, otherwise add it to subboard list for its parent
 			if(!$FORM{"parent$i"}) {
@@ -1041,9 +1025,7 @@ sub AddBoards2 {
 					$subboard{$FORM{"parent$i"}} = $id;
 				}
 			}
-			fopen(BOARDINFO, ">$boardsdir/$id.txt");
-			print BOARDINFO '';
-			fclose(BOARDINFO);
+			&write_DBorFILE(0,'',$boardsdir,$id,'txt',(''));
 		}
 		if ($FORM{'screenornot'} eq "boardscreen") {
 			# editing a board
@@ -1132,10 +1114,8 @@ sub AddBoards2 {
 				}
 			}
 
-			if (-e "$boardsdir/$id.txt") { # fix a(nnboard) in the boardid.txt
-				fopen(BOARDINFO, "$boardsdir/$id.txt") || &fatal_error('cannot_open', "$openboard/$id.txt", 1);
-				my @boardtomodify = <BOARDINFO>;
-				fclose(BOARDINFO);
+			if (&checkfor_DBorFILE("$boardsdir/$id.txt")) { # fix a(nnboard) in the boardid.txt
+				my @boardtomodify = &read_DBorFILE(0,'',$boardsdir,$id,'txt');
 				my $x;
 				if ($FORM{"ann$i"} && (split /\|/, $boardtomodify[0])[8] !~ /a/i) {
 					for ($x = 0; $x < @boardtomodify; $x++) {
@@ -1148,9 +1128,7 @@ sub AddBoards2 {
 					sub take_a_off { my $y = shift; $y =~ s/a//g; $y; }
 				}
 				if ($x) {
-					fopen(BOARDINFO, ">$boardsdir/$id.txt") || &fatal_error('cannot_open', "$openboard/$id.txt", 1);
-					print BOARDINFO @boardtomodify;
-					fclose(BOARDINFO);
+					&write_DBorFILE(0,'',$boardsdir,$id,'txt',@boardtomodify);
 				}
 			}
 		}
@@ -1189,13 +1167,11 @@ sub AddBoards2 {
 		$yymain .= qq~<i>'$FORM{"name$i"}'</i> $admin_txt{'48'} <br />~;
 	}
 
-	# do the saving here, after all new boards passed the tests (admin_fatal_error)
+	# do the saving here, after all new boards passed the tests (fatal_error)
 	if ($FORM{'screenornot'} ne "boardscreen") { &BoardTotals("add", @changes); }
 
 	&Write_ForumMaster;
-	fopen(FORUMCONTROL, "+<$boardsdir/forum.control");
-	seek FORUMCONTROL, 0, 0;
-	my @oldcontrols = <FORUMCONTROL>;
+	my @oldcontrols = &read_DBorFILE(0,FORUMCONTROL,$boardsdir,'forum','control');
 	my $oldboard;
 	
 	# Update categories for subboards that got changed.
@@ -1217,12 +1193,7 @@ sub AddBoards2 {
 		}
 	}
 	push(@oldcontrols, @boardcontrol);
-	@boardcontrol = grep { $_; } @oldcontrols;
-
-	truncate FORUMCONTROL, 0;
-	seek FORUMCONTROL, 0, 0;
-	print FORUMCONTROL sort(@boardcontrol);
-	fclose(FORUMCONTROL);
+	&write_DBorFILE(0,FORUMCONTROL,$boardsdir,'forum','control',sort(grep { $_; } @oldcontrols));
 
 	$action_area = "manageboards";
 	&AdminTemplate;
@@ -1550,9 +1521,7 @@ sub ReorderBoards2 {
 		&Write_ForumMaster;
 
 
-		fopen(FORUMCONTROL, "+<$boardsdir/forum.control");
-		seek FORUMCONTROL, 0, 0;
-		my @oldcontrols = <FORUMCONTROL>;
+		my @oldcontrols = &read_DBorFILE(0,FORUMCONTROL,$boardsdir,'forum','control');
 		my $oldboard;
 		for (my $cnt = 0; $cnt < @oldcontrols; $cnt++) {
 			my (undef, $oldboard,$pic,$bdescription,$moderators,$moderatorgroups,$topicperms,$replyperms,$pollperms,$zero,$membergroups,$ann,$rbin,$att,$minage,$maxage,$gender,$canpost,$parent) = split(/\|/, $oldcontrols[$cnt]);
@@ -1565,13 +1534,7 @@ sub ReorderBoards2 {
 				}
 			}
 		}
-
-		my @boardcontrol = grep { $_; } @oldcontrols;
-
-		truncate FORUMCONTROL, 0;
-		seek FORUMCONTROL, 0, 0;
-		print FORUMCONTROL sort(@boardcontrol);
-		fclose(FORUMCONTROL);
+		&write_DBorFILE(0,FORUMCONTROL,$boardsdir,'forum','control',sort(grep { $_; } @oldcontrols));
 
 	}
 	if(!$INFO{'subboards'}) {

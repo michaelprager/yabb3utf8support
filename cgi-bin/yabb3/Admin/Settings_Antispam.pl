@@ -16,14 +16,10 @@ $settings_antispamplver = 'YaBB 3.0 Beta $Revision: 100 $';
 if ($action eq 'detailedversion') { return 1; }
 
 # TSC
-if (-e "$vardir/spamrules.txt" ) {
-	fopen(SPAM, "$vardir/spamrules.txt") || &fatal_error("cannot_open","spamrules.txt", 1);
-	$spamlist = join('', <SPAM>);
-	fclose(SPAM);
-}
+$spamlist = join('', &read_DBorFILE(1,'',$vardir,'spamrules','txt'));
 
 # Email Domain Filter
-if (-e "$vardir/email_domain_filter.txt" ) {
+if (-e "$vardir/email_domain_filter.txt") {
 	require "$vardir/email_domain_filter.txt";
 }
 $adomains =~ s~,~\n~g;
@@ -121,12 +117,10 @@ $bdomains =~ s~,~\n~g;
 # Routine to save them
 sub SaveSettings {
 	my %settings = @_;
-	
+
 	# TSC
 	$settings{'spamrules'} =~ s/\r(?=\n*)//g;
-	fopen(SPAM, ">$vardir/spamrules.txt");
-	print SPAM delete($settings{'spamrules'});
-	fclose(SPAM);
+	&write_DBorFILE(0,'',$vardir,'spamrules','txt',(delete($settings{'spamrules'})));
 
 	# email domain filter
 	my @domains = (delete $settings{'adomains'}, delete $settings{'bdomains'});
@@ -137,11 +131,7 @@ sub SaveSettings {
 		s~,+~,~g;
 		s~\@~\\@~g;
 	}
-	fopen(FILE, ">$vardir/email_domain_filter.txt");
-	print FILE qq~\$adomains = "$domains[0]";\n~;
-	print FILE qq~\$bdomains = "$domains[1]";\n~;
-	print FILE qq~1;~;
-	fclose(FILE);
+	&write_DBorFILE(0,'',$vardir,'email_domain_filter','txt',(qq~\$adomains = "$domains[0]";\n~,qq~\$bdomains = "$domains[1]";\n~,qq~1;~));
 
 	# Settings.pl
 	&SaveSettingsTo('Settings.pl', %settings);

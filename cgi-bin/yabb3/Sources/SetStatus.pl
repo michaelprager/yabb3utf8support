@@ -16,7 +16,7 @@ $setstatusplver = 'YaBB 3.0 Beta $Revision: 100 $';
 if ($action eq 'detailedversion') { return 1; }
 
 sub SetStatus {
-	&fatal_error('no_access') unless ($iammod || $iamadmin || $iamgmod);
+	&fatal_error('no_access') unless $staff;
 
 	my $start      = $INFO{'start'} || 0;
 	my $status     = substr($INFO{'action'}, 0, 1) || substr($FORM{'action'}, 0, 1);
@@ -28,8 +28,7 @@ sub SetStatus {
 		$currentboard = ${$threadid}{'board'};
 	}
 
-	fopen(BOARDFILE, "+<$boardsdir/$currentboard.txt") || &fatal_error("cannot_open","$boardsdir/$currentboard.txt", 1);
-	my @boardfile = <BOARDFILE>;
+	my @boardfile = &read_DBorFILE(0,BOARDFILE,$boardsdir,$currentboard,'txt');
 	for (my $line = 0; $line < @boardfile; $line++) {
 		if ($boardfile[$line] =~ m~\A$threadid\|~) {
 			my ($mnum, $msub, $mname, $memail, $mdate, $mreplies, $musername, $micon, $mstate) = split(/\|/, $boardfile[$line]);
@@ -56,10 +55,7 @@ sub SetStatus {
 
 		}
 	}
-	truncate BOARDFILE, 0;
-	seek BOARDFILE, 0, 0;
-	print BOARDFILE @boardfile;
-	fclose(BOARDFILE);
+	&write_DBorFILE(0,BOARDFILE,$boardsdir,$currentboard,'txt',@boardfile);
 
 	&MessageTotals("load",$threadid);
 	${$threadid}{'threadstatus'} = $thisstatus;

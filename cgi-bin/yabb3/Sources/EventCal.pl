@@ -1,4 +1,4 @@
-﻿###############################################################################
+###############################################################################
 # EventCal.pl                                                                 #
 ###############################################################################
 # YaBB: Yet another Bulletin Board                                            #
@@ -16,8 +16,6 @@ $eventcalplver = 'YaBB 3.0 Beta $Revision: 100 $';
 if ($action eq 'detailedversion') { return 1; }
 
 &LoadLanguage('EventCal');
-
-eval { require "$vardir/eventcalset.txt"; };
 
 use Time::Local 'timelocal';
 
@@ -677,109 +675,6 @@ sub get_cal {
 				var oldheight = parseInt(document.getElementById('message').style.height) - $jsdraghpos;
 				var olddragheight = parseInt(document.getElementById('dragbgw').style.height) - $jsdraghpos;
 				var orgsize = $textsize;
-
-				var skydobject = {
-					x: 0, y: 0, temp2 : null, temp3 : null, targetobj : null, skydNu : 0, delEnh : 0,
-
-					initialize:function() {
-						document.onmousedown = this.skydeKnap
-						document.onmouseup = function(){
-							this.skydNu = 0;
-							document.getElementById('messagewidth').value = parseInt(document.getElementById('message').style.width);
-							document.getElementById('messageheight').value = parseInt(document.getElementById('message').style.height);
-						}
-					},
-					changeSize:function(deleEnh, knapId) {
-						if (knapId == "dragImg1") {
-							newwidth = oldwidth+parseInt(deleEnh);
-							newdragwidth = olddragwidth+parseInt(deleEnh);
-							document.getElementById('message').style.width = newwidth+'px';
-							document.getElementById('dragbgh').style.width = newdragwidth+'px';
-							document.getElementById('dragImg2').style.width = newdragwidth+'px';
-						}
-						if (knapId == "dragImg2") {
-							newheight = oldheight+parseInt(deleEnh);
-							newdragheight = olddragheight+parseInt(deleEnh);
-							document.getElementById('message').style.height = newheight+'px';
-							document.getElementById('dragbgw').style.height = newdragheight+'px';
-							document.getElementById('dragImg1').style.height = newdragheight+'px';
-							document.getElementById('dragcanvas').style.height = newdragheight+'px';
-						}
-					},
-
-					flytKnap:function(e) {
-						var evtobj = window.event ? window.event : e;
-						if (this.skydNu == 1) {
-							sizestop = f_clientWidth()
-							maxstop = parseInt(((sizestop*66)/100)-427);
-							if (maxstop > 413) maxstop = 413;
-							if (maxstop < 60) maxstop = 60;
-
-							glX = parseInt(this.targetobj.style.left);
-							this.targetobj.style.left = this.temp2 + evtobj.clientX - this.x + "px";
-							nyX = parseInt(this.temp2 + evtobj.clientX - this.x);
-							if (nyX > glX) retning = "vn"; else retning = "hj";
-							if (nyX < 1 && retning == "hj") { this.targetobj.style.left = 0 + "px"; nyX = 0; retning = "vn"; }
-							if (nyX > maxstop && retning == "vn") { this.targetobj.style.left = maxstop + "px"; nyX = maxstop; retning = "hj"; }
-							delEnh = parseInt(nyX);
-							var knapObj = this.targetobj.id;
-							skydobject.changeSize(delEnh, knapObj);
-							return false;
-						}
-						if (this.skydNu == 2) {
-							glY = parseInt(this.targetobj.style.top);
-							this.targetobj.style.top = this.temp3 + evtobj.clientY - this.y + "px";
-							nyY = parseInt(this.temp3 + evtobj.clientY - this.y);
-							if (nyY > glY) retning = "vn"; else retning = "hj";
-							if (nyY < 1 && retning == "hj") { this.targetobj.style.top = 0 + "px"; nyY = 0; retning = "vn"; }
-							if (nyY > 270 && retning == "vn") { this.targetobj.style.top = 270 + "px"; nyY = 270; retning = "hj"; }
-							delEnh = parseInt(nyY);
-							var knapObj = this.targetobj.id;
-							skydobject.changeSize(delEnh, knapObj);
-							return false;
-						}
-					},
-					skydeKnap:function(e) {
-						var evtobj = window.event ? window.event : e;
-						this.targetobj = window.event ? event.srcElement : e.target;
-						if (this.targetobj.className == "drag") {
-							if (this.targetobj.id == "dragImg1") this.skydNu = 1;
-							if (this.targetobj.id == "dragImg2") this.skydNu = 2;
-							this.knapObj = this.targetobj;
-							if (isNaN(parseInt(this.targetobj.style.left))) this.targetobj.style.left = 0;
-							if (isNaN(parseInt(this.targetobj.style.top))) this.targetobj.style.top = 0;
-							this.temp2 = parseInt(this.targetobj.style.left);
-							this.temp3 = parseInt(this.targetobj.style.top);
-							this.x = evtobj.clientX;
-							this.y = evtobj.clientY;
-							if (evtobj.preventDefault) evtobj.preventDefault();
-							document.onmousemove = skydobject.flytKnap;
-						}
-					}
-				} // End of: var skydobject={
-
-				function f_clientWidth() {
-					return f_filterResults (
-						window.innerWidth ? window.innerWidth : 0,
-						document.documentElement ? document.documentElement.clientWidth : 0,
-						document.body ? document.body.clientWidth : 0
-					);
-				}
-
-				function f_filterResults(n_win, n_docel, n_body) {
-					var n_result = n_win ? n_win : 0;
-					if (n_docel && (!n_result || n_result > n_docel)) n_result = n_docel;
-					return n_body && (!n_result || n_result > n_body) ? n_body : n_result;
-				}
-
-				function sizetext(sizefact) {
-					orgsize = orgsize + sizefact;
-					if(orgsize < 6) orgsize = 6;
-					if(orgsize > 16) orgsize = 16;
-					document.getElementById('message').style.fontSize = orgsize+'pt';
-					document.getElementById('txtsize').value = orgsize;
-				}
-
 				skydobject.initialize();
 				// Size of message box, characters in message box END
 
@@ -864,9 +759,7 @@ sub get_cal {
 	my @caldata;
 	## Get Birthdays ##
 	if (($Show_EventBirthdays == 1 && !$iamguest) || $Show_EventBirthdays == 2) {
-		fopen(EVENTBIRTH, "$vardir/eventcalbday.db");
-		my @birthmembers = <EVENTBIRTH>;
-		fclose(EVENTBIRTH);
+		my @birthmembers = &read_DBorFILE(1,'',$vardir,'eventcalbday','db');
 
 		foreach $user_bdname (@birthmembers) {
 			chomp $user_bdname;
@@ -900,10 +793,7 @@ sub get_cal {
 	}
 
 	## Get Events ##
-	fopen(EVENTFILE,"$vardir/eventcal.db");
-	my @calinput = <EVENTFILE>;
-	fclose(EVENTFILE);
-	foreach my $eventline (sort @calinput) {
+	foreach my $eventline (sort &read_DBorFILE(1,'',$vardir,'eventcal','db')) {
 		chomp $eventline;
 		my ($cal_date,$cal_type,$cal_name,$cal_time,$cal_event,$cal_icon,$cal_noname,$cal_type2) = split(/\|/,$eventline);
 		$cal_date =~ /(\d{4})(\d{2})(\d{2})/;
@@ -1038,7 +928,7 @@ sub get_cal {
 			foreach $cal_events (sort @caldata) {
 				my ($cdat,$ctyp,$cnam,$ctim,$ceve,$cico,$cnonam,$ctyp2) = split(/\|/, $cal_events);
 				if (!$Show_ColorLinks) {
-					$memrealname = (split(/\|/, $memberinf{$cnam}, 2))[0];
+					$memrealname = (split(/\|/, $memberinf{$cnam}, 3))[1];
 				}
 				$cdat =~ /(\d{4})(\d{2})(\d{2})/;
 				my ($dd_year,$dd_mon,$dd_day) = ($1,$2,$3);
@@ -1187,7 +1077,7 @@ sub get_cal {
 			foreach $cal_events (sort @caldata) {
 				my ($cdat,$ctyp,$cnam,$ctim,$ceve,$cico,$cnonam,$ctyp2) = split(/\|/, $cal_events);
 				if (!$Show_ColorLinks) {
-					$memrealname = (split(/\|/, $memberinf{$cnam}, 2))[0];
+					$memrealname = (split(/\|/, $memberinf{$cnam}, 3))[1];
 				}
 				if ($cico eq "") { $cico = "eventinfo"; }
 				$cdat =~ /(\d{4})(\d{2})(\d{2})/;
@@ -1404,7 +1294,7 @@ $YaBBC_calout
 	foreach $cal_events (sort @caldata) {
 		my ($cdate,$ctype,$cname,$ctime,$cevent,$cicon,$cnoname,$ctype2) = split(/\|/, $cal_events);
 		if (!$Show_ColorLinks) {
-			$memrealname = (split(/\|/, $memberinf{$cname}, 2))[0];
+			$memrealname = (split(/\|/, $memberinf{$cname}, 3))[1];
 		}
 		$cdate =~ /(\d{4})(\d{2})(\d{2})/;
 		my ($cyear,$cmon,$cday) = ($1,$2,$3);
@@ -1754,14 +1644,8 @@ $YaBBC_calout
 sub del_cal {
 	if ($iamguest) { &fatal_error('not_allowed'); }
 	if ($INFO{'caldel'} == 1) {
-		if (-e "$vardir/eventcal.db") {
-			fopen(FILE,"<$vardir/eventcal.db");
-			my @caldata = <FILE>;
-			fclose(FILE);
-
-			fopen(FILE,">$vardir/eventcal.db");
-			print FILE grep (!/$INFO{'calid'}/, @caldata);
-			fclose(FILE);
+		if (&checkfor_DBorFILE("$vardir/eventcal.db")) {
+			&write_DBorFILE(0,'',$vardir,'eventcal','db',grep(!/$INFO{'calid'}/, &read_DBorFILE(1,'',$vardir,'eventcal','db')));
 		}
 	}
 
@@ -1792,9 +1676,7 @@ sub add_cal {
 		$calmessage =~ s~\n~<br />~g;
 		$calmessage =~ s/([\000-\x09\x0b\x0c\x0e-\x1f\x7f])/\x0d/g;
 
-		fopen(EVENTFILE,"$vardir/eventcal.db");
-		my @calinput = <EVENTFILE>;
-		fclose(EVENTFILE);
+		my @calinput = &read_DBorFILE(1,'',$vardir,'eventcal','db');
 		if ($FORM{'editid'}) {
 			for (my $i = 0; $i < @calinput; $i++) {
 				($c_date,$c_type,$c_name,$c_time,$c_event,$c_icon,$c_noname,$c_type2) = split(/\|/, $calinput[$i]);
@@ -1808,9 +1690,7 @@ sub add_cal {
 		} else {
 			push(@calinput, "$FORM{'selyear'}$FORM{'selmon'}$FORM{'selday'}|$FORM{'caltype'}|$username|$date|$calmessage|$FORM{'calicon'}|$FORM{'calnoname'}|$FORM{'caltype2'}\n");
 		}
-		fopen(EVENTFILE,">$vardir/eventcal.db");
-		print EVENTFILE @calinput;
-		fclose(EVENTFILE);
+		&write_DBorFILE(0,'',$vardir,'eventcal','db',@calinput);
 
 		if (!$iamguest && ${$uid.$username}{'postlayout'} ne qq~$FORM{'messageheight'}|$FORM{'messagewidth'}|$FORM{'txtsize'}|$FORM{'col_row'}~) {
 			${$uid.$username}{'postlayout'} = qq~$FORM{'messageheight'}|$FORM{'messagewidth'}|$FORM{'txtsize'}|$FORM{'col_row'}~;
@@ -1839,17 +1719,13 @@ sub del_old_events {
 		$caltoday = $year . sprintf("%02d", $mon) . sprintf("%02d", $mday);
 	}
 
-	fopen(EVENTFILE,"$vardir/eventcal.db");
-	my @calinput = <EVENTFILE>;
-	fclose(EVENTFILE);
+	my @calinput = &read_DBorFILE(1,'',$vardir,'eventcal','db');
 	for (my $i = 0; $i < @calinput; $i++) {
 		($c_date,undef,undef,undef,undef,undef,undef,$c_type2) = split(/\|/, $calinput[$i]);
 		chop $c_type2;
 		if ($c_date < $caltoday && $c_type2 < 2) { $calinput[$i] = ''; }
 	}
-	fopen(EVENTFILE,">$vardir/eventcal.db");
-	print EVENTFILE @calinput;
-	fclose(EVENTFILE);
+	&write_DBorFILE(0,'',$vardir,'eventcal','db',@calinput);
 }
 
 ## Event Icon ##

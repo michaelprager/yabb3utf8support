@@ -37,7 +37,7 @@ my %dirs = (
 	    'html' => "yabbfiles",
 	    'upld' => "yabbfiles/Attachments $backup_txt{'and'} yabbfiles/avatars/UserAvatars",
 	    );
-	    
+
 &is_admin_or_gmod;
 
 sub backupsettings {
@@ -290,7 +290,7 @@ sub backupsettings {
 	if ($newcommand) {
 		if (&ak_system("tar -cf $vardir/backuptest.$curtime.tar ./$yyexec.$yyext")) {
 			($style,$disabledtext) = ('','');
-			unlink("$vardir/backuptest.$curtime.tar");
+			&delete_DBorFILE("$vardir/backuptest.$curtime.tar");
 		} else {
 			$input = qq~disabled="disabled"~;
 			$style = qq~style="font-style:italic; color:grey"~;
@@ -313,7 +313,7 @@ sub backupsettings {
 	if ($newcommand) {
 		if (&ak_system("zip -gq $vardir/backuptest.$curtime.zip ./$yyexec.$yyext")) {
 			($style,$disabledtext) = ('','');
-			unlink("$vardir/backuptest.$curtime.zip");
+			&delete_DBorFILE("$vardir/backuptest.$curtime.zip");
 		} else {
 			$input = qq~disabled="disabled"~;
 			$style = qq~style="font-style:italic; color:grey"~;
@@ -515,7 +515,7 @@ sub backupsettings2 {
 	&check_backup_settings;
 
 	# Set $backupdir
-	if (!-w $FORM{'backupdir'}) { &admin_fatal_error("","$backup_txt{42} '$FORM{'backupdir'}'. $backup_txt{43}"); }
+	if (!-w $FORM{'backupdir'}) { &fatal_error("","$backup_txt{42} '$FORM{'backupdir'}'. $backup_txt{43}"); }
 
 	$backupdir = $FORM{'backupdir'};
 	$lastbackup = 0; # reset when saving settings new
@@ -524,9 +524,7 @@ sub backupsettings2 {
 	# Set $rememberbackup for alert into Settings.pl
 	if ($rememberbackup != $FORM{'rememberbackup'}) {
 		$rememberbackup = $FORM{'rememberbackup'};
-		fopen(SETTINGS, "$vardir/Settings.pl");
-		@settings = <SETTINGS>;
-		fclose(SETTINGS);
+		my @settings = &read_DBorFILE(0,'',$vardir,'Settings','pl');
 		for ($i = 0; $i < @settings; $i++) {
 			if ($settings[$i] =~ /\$rememberbackup = \d+;/) {
 				$rememberbackup = 0 if !$rememberbackup;
@@ -539,9 +537,7 @@ sub backupsettings2 {
 			$rememberbackup *= 86400; # days in seconds
 			unshift(@settings, "\$rememberbackup = $rememberbackup;\n");
 		}
-		fopen(SETTINGS, ">$vardir/Settings.pl");
-		print SETTINGS @settings;
-		fclose(SETTINGS);
+		&write_DBorFILE(0,'',$vardir,'Settings','pl',@settings);
 	}
 
 	$yySetLocation = qq~$adminurl?action=backupsettings~;
@@ -549,27 +545,27 @@ sub backupsettings2 {
 }
 
 sub check_backup_settings {
-	if (!@backup_paths) { &admin_fatal_error("","$backup_txt{3}"); }
+	if (!@backup_paths) { &fatal_error("","$backup_txt{3}"); }
 
-	if (!$backupmethod) { &admin_fatal_error("","$backup_txt{29} ''"); }
+	if (!$backupmethod) { &fatal_error("","$backup_txt{29} ''"); }
 
 	if ($backupmethod =~ /::/) { # It's a module, test-require it
 		eval "use $backupmethod();";
-		if ($@) { &admin_fatal_error("","$backup_txt{39} $backupmethod $backup_txt{41}"); }
+		if ($@) { &fatal_error("","$backup_txt{39} $backupmethod $backup_txt{41}"); }
 	} else {
 		my $newcommand = &CheckPath($backupmethod);
-		if (!$newcommand) { &admin_fatal_error("","$backup_txt{40} $backupmethod $backup_txt{41}"); }
+		if (!$newcommand) { &fatal_error("","$backup_txt{40} $backupmethod $backup_txt{41}"); }
 	}
 
 	# If we're using /usr/bin/tar, check for the compression method.
 	if ($backupmethod eq '/usr/bin/tar' && $compressmethod ne 'none') {
 		my $newcommand = &CheckPath($compressmethod);
-		if (!$newcommand) { &admin_fatal_error("","$backup_txt{40} $compressmethod $backup_txt{41}"); }
+		if (!$newcommand) { &fatal_error("","$backup_txt{40} $compressmethod $backup_txt{41}"); }
 	}
 	# If we're using Archive::Tar, check for the compression method.
 	elsif ($backupmethod eq 'Archive::Tar' && $compressmethod ne 'none') {
 		eval "use $compressmethod();";
-		if ($@) { &admin_fatal_error("","$backup_txt{39} $compressmethod $backup_txt{41}"); }
+		if ($@) { &fatal_error("","$backup_txt{39} $compressmethod $backup_txt{41}"); }
 	} else {
 		$compressmethod = 'none';
 	}
@@ -591,10 +587,10 @@ sub print_BackupSettings {
 
 # This routine actually does the backup.
 sub runbackup {
-	my(@settings, $prevmainsetting, $prevmaintext, $newmaintext, %pathconvert);
+	my($prevmainsetting, $prevmaintext, $newmaintext, %pathconvert);
 
 	if ($INFO{'runbackup_again'}) {
-		&admin_fatal_error("","$backup_txt{32} \$INFO{'runbackup_again'}=$INFO{'runbackup_again'}") if $INFO{'runbackup_again'} !~ /^backup/;
+		&fatal_error("","$backup_txt{32} \$INFO{'runbackup_again'}=$INFO{'runbackup_again'}") if $INFO{'runbackup_again'} !~ /^backup/;
 
 		my @again = split(/\./, $INFO{'runbackup_again'});
 		$FORM{'backupnewest'} = $again[1];
@@ -699,14 +695,14 @@ sub BackupMethodInit {
 	# Check module types and load them at runtime (not compilation)
 	if($backupmethod eq 'Archive::Tar') {
 		eval 'use Archive::Tar;'; # Everything is exported at once
-		if ($@) { &admin_fatal_error("","$backup_txt{28} Archive::Tar: $@"); }
+		if ($@) { &fatal_error("","$backup_txt{28} Archive::Tar: $@"); }
 		if ($compressmethod eq 'Compress::Zlib') { # Also using Zlib
 			eval 'use Compress::Zlib;'; # Zlib exports everything at once
-			if ($@) { &admin_fatal_error("","$backup_txt{28} Compres::Zlib: $@"); }
+			if ($@) { &fatal_error("","$backup_txt{28} Compres::Zlib: $@"); }
 
 		} elsif ($compressmethod eq 'Compress::Bzip2') {
 			eval 'use Compress::Bzip2 qw(:utilities);'; # Finally, something I can export just some code with
-			if ($@) { &admin_fatal_error("","$backup_txt{28} Compress::Bzip2: $@"); }
+			if ($@) { &fatal_error("","$backup_txt{28} Compress::Bzip2: $@"); }
 
 		} else { $compressmethod = 'none'; }
 
@@ -715,12 +711,12 @@ sub BackupMethodInit {
 		# We need this for the loops, when preventing to run into browser/server timeout.
 		if (-e "$backupdir/backup$backuptype.$curtime.$filedirs.a.tar") {
 			$tarball->read("$backupdir/backup$backuptype.$curtime.$filedirs.a.tar", 0);
-			unlink("$backupdir/backup$backuptype.$curtime.$filedirs.a.tar");
+			&delete_DBorFILE("$backupdir/backup$backuptype.$curtime.$filedirs.a.tar");
 		}
 
 	} elsif ($backupmethod eq 'Archive::Zip') {
 		eval 'use Archive::Zip;'; # Everything's exported by default here too
-		if ($@) { &admin_fatal_error("","$backup_txt{28} Archive::Zip: $@"); }
+		if ($@) { &fatal_error("","$backup_txt{28} Archive::Zip: $@"); }
 		$zipfile = Archive::Zip->new;
 
 		# We need this for the loops, when preventing to run into browser/server timeout.
@@ -729,9 +725,9 @@ sub BackupMethodInit {
 		}
 
 	} else {
-		unless (&CheckPath($backupmethod)) { &admin_fatal_error("","$backup_txt{29} $backupmethod."); }
+		unless (&CheckPath($backupmethod)) { &fatal_error("","$backup_txt{29} $backupmethod."); }
 		if ($compressmethod ne 'none' && !&CheckPath($compressmethod)) {
-			&admin_fatal_error("","$backup_txt{30} $compressmethod.");
+			&fatal_error("","$backup_txt{30} $compressmethod.");
 		}
 	}
 }
@@ -749,14 +745,14 @@ sub BackupDirectory {
 		if (!$recursemode) { $dir .= '/*.*'; }
 		if ($FORM{'backupnewest'}) { $Nt = "-N \@$FORM{'backupnewest'}"; }
 		$dir =~ s|^/||; # needet not to get server log messages like "Removing leading `/' from ..."
-		&ak_system("tar $cr -C / -f $backupdir/backup$backuptype.$curtime.$filedirs.tar $Nt $dir") || &admin_fatal_error("","'tar $cr -C / -f $backupdir/backup$backuptype.$curtime.$filedirs.tar $Nt $dir' $backup_txt{31}: $!. $backup_txt{32} " . ($? >> 8));
+		&ak_system("tar $cr -C / -f $backupdir/backup$backuptype.$curtime.$filedirs.tar $Nt $dir") || &fatal_error("","'tar $cr -C / -f $backupdir/backup$backuptype.$curtime.$filedirs.tar $Nt $dir' $backup_txt{31}: $!. $backup_txt{32} " . ($? >> 8));
 
 	} elsif ($backupmethod eq '/usr/bin/zip') {
 		my $recurseoption;
 		if (!$recursemode) { $dir .= '/*.*'; }
 		else { $recurseoption = 'r'; }
 		if ($FORM{'backupnewest'}) { $Nt = "-t $FORM{'backupnewest'}"; }
-		&ak_system("zip -gq$recurseoption $Nt $backupdir/backup$backuptype.$curtime.$filedirs.zip $dir") || &admin_fatal_error("","'zip -gq$recurseoption $Nt $backupdir/backup$backuptype.$curtime.$filedirs.zip $dir' $backup_txt{31}: $!. $backup_txt{32} " . ($? >> 8));
+		&ak_system("zip -gq$recurseoption $Nt $backupdir/backup$backuptype.$curtime.$filedirs.zip $dir") || &fatal_error("","'zip -gq$recurseoption $Nt $backupdir/backup$backuptype.$curtime.$filedirs.zip $dir' $backup_txt{31}: $!. $backup_txt{32} " . ($? >> 8));
 
 	} elsif ($backupmethod eq 'Archive::Tar') {
 		$tarball->add_files(&RecurseDirectory($dir, $recursemode));
@@ -789,10 +785,10 @@ sub BackupMethodFinalize {
 	my ($filedirs,$loop) = @_;
 	if (!$loop && $backupmethod eq '/usr/bin/tar') {
 		if ($compressmethod eq '/bin/bzip2') {
-			&ak_system("bzip2 -z $backupdir/backup$backuptype.$curtime.$filedirs.tar") || &admin_fatal_error("","'bzip2 -z $backupdir/backup$backuptype.$curtime.$filedirs.tar.bz2' $backup_txt{31}: $!. $backup_txt{32} " . ($? >> 8));
+			&ak_system("bzip2 -z $backupdir/backup$backuptype.$curtime.$filedirs.tar") || &fatal_error("","'bzip2 -z $backupdir/backup$backuptype.$curtime.$filedirs.tar.bz2' $backup_txt{31}: $!. $backup_txt{32} " . ($? >> 8));
 
 		} elsif ($compressmethod eq '/bin/gzip') {
-			&ak_system("gzip $backupdir/backup$backuptype.$curtime.$filedirs.tar") || &admin_fatal_error("","'gzip $backupdir/backup$backuptype.$curtime.$filedirs.tar.gz' $backup_txt{31}: $!. $backup_txt{32} " . ($? >> 8));
+			&ak_system("gzip $backupdir/backup$backuptype.$curtime.$filedirs.tar") || &fatal_error("","'gzip $backupdir/backup$backuptype.$curtime.$filedirs.tar.gz' $backup_txt{31}: $!. $backup_txt{32} " . ($? >> 8));
 		}
 
 	} elsif ($backupmethod eq 'Archive::Tar') {
@@ -803,13 +799,13 @@ sub BackupMethodFinalize {
 			my ($gzip) = gzopen("$backupdir/backup$backuptype.$curtime.$filedirs.a.tar.gz", 'wb');
 			$gzip->gzwrite($tarball->write);
 			$gzip->gzclose();
-			unlink("$backupdir/backup$backuptype.$curtime.$filedirs.tar");
+			&delete_DBorFILE("$backupdir/backup$backuptype.$curtime.$filedirs.tar");
 
 		} elsif ($compressmethod eq 'Compress::Bzip2') { # Bzip2 as a module
 			my ($bzip2) = bzopen("$backupdir/backup$backuptype.$curtime.$filedirs.a.tar.bz2", 'wb');
 			$bzip2->bzwrite($tarball->write);
 			$bzip2->bzclose();
-			unlink("$backupdir/backup$backuptype.$curtime.$filedirs.tar");
+			&delete_DBorFILE("$backupdir/backup$backuptype.$curtime.$filedirs.tar");
 		}
 
 	} elsif ($backupmethod eq 'Archive::Zip') {
@@ -872,9 +868,9 @@ sub CheckPath {
 
 # Thanks to BBQ at PerlMonks for the basis of this routine: http://www.perlmonks.org/?node_id=9277
 sub downloadbackup {
-	chdir($backupdir) || &admin_fatal_error("","$backup_txt{44} $backupdir",1);
+	chdir($backupdir) || &fatal_error("","$backup_txt{44} $backupdir",1);
 	my $filename = $INFO{'backupid'};
-	if ($filename !~ /\Abackup/ || $filename !~ /\d{9,10}/) { &admin_fatal_error("",$backup_txt{'45'}); }
+	if ($filename !~ /\Abackup/ || $filename !~ /\d{9,10}/) { &fatal_error("",$backup_txt{'45'}); }
 	my $filesize = -s $filename;
 
 	# print full header
@@ -883,7 +879,7 @@ sub downloadbackup {
 	print "Content-Type: application/octet-stream\n\n";
 
 	# open in binmode
-	fopen(READ, $filename) || &admin_fatal_error("","$backup_txt{46} $filename",1);
+	fopen(READ, $filename) || &fatal_error("","$backup_txt{46} $filename",1);
 	binmode READ;
 
 	# stream it out
@@ -894,7 +890,7 @@ sub downloadbackup {
 
 sub deletebackup {
 	my $filename = $INFO{'backupid'};
-	if ($filename !~ /\Abackup/ || $filename !~ /\d{9,10}/) { &admin_fatal_error("",$backup_txt{'45'}); }
+	if ($filename !~ /\Abackup/ || $filename !~ /\d{9,10}/) { &fatal_error("",$backup_txt{'45'}); }
 
 	$yymain = qq~
 $backup_txt{47} $filename $backup_txt{48}
@@ -907,10 +903,10 @@ $backup_txt{47} $filename $backup_txt{48}
 
 sub deletebackup2 {
 	my $filename = $INFO{'backupid'};
-	if ($filename !~ /\Abackup/ || $filename !~ /\d{9,10}/) { &admin_fatal_error("",$backup_txt{'45'}); }
+	if ($filename !~ /\Abackup/ || $filename !~ /\d{9,10}/) { &fatal_error("",$backup_txt{'45'}); }
 
 	# Just remove it!
-	unlink("$backupdir/$filename") || &admin_fatal_error("","$backup_txt{51} $backupdir/$filename",1);
+	&delete_DBorFILE("$backupdir/$filename") || &fatal_error("","$backup_txt{51} $backupdir/$filename",1);
 
 	$yySetLocation = "$adminurl?action=backupsettings";
 	&redirectexit();
@@ -923,7 +919,7 @@ sub emailbackup {
 	my ($mainmessage, $filename);
 
 	$filename = $INFO{'backupid'};
-	if ($filename !~ /\Abackup/ || $filename !~ /\d{9,10}/) { &admin_fatal_error("",$backup_txt{'45'}); }
+	if ($filename !~ /\Abackup/ || $filename !~ /\d{9,10}/) { &fatal_error("",$backup_txt{'45'}); }
 
 	# Try to safely load MIME::Lite
 	eval 'use MIME::Lite;';
@@ -1100,7 +1096,7 @@ sub recoverbackup2 {
 	if ($FORM{'originalrestore'}) {
 		$restore_root = "/";
 	} else {
-		$restore_root = "$backupdir/$date/";
+		$restore_root = "$backupdir/recovered_$date/";
 		mkdir($restore_root,oct("0$FORM{'u-newdir'}$FORM{'g-newdir'}$FORM{'a-newdir'}"));
 		chmod(oct("0$FORM{'u-newdir'}$FORM{'g-newdir'}$FORM{'a-newdir'}"), $restore_root); # mkdir somtimes does not set the CHMOD as expected
 	}
@@ -1117,7 +1113,7 @@ sub recoverbackup2 {
 		$path = "";
 		foreach (split(/\//, $1)) {
 			$path .= "$_/";
-			if (!$checkdirexists{$path}) { $checkdirexists{$path} = -d ($FORM{'originalrestore'} ? "/$path" : "$backupdir/$date/$path") ? 1 : -1; }
+			if (!$checkdirexists{$path}) { $checkdirexists{$path} = -d "$restore_root/$path" ? 1 : -1; }
 		}
 	}
 
@@ -1163,14 +1159,14 @@ sub recoverbackup2 {
 			if (!$checkdir{$path}) {
 				$checkdir{$path} = 1;
 				if ($checkdirexists{$path} == -1) { # set directories CHMOD
-					my $od = $FORM{'originalrestore'} ? "/$path" : "$backupdir/$date/$path";
+					my $od = "$restore_root/$path";
 					$yymain .= chmod(oct("0$FORM{'u-newdir'}$FORM{'g-newdir'}$FORM{'a-newdir'}"), $od) . " - CHMOD 0$FORM{'u-newdir'}$FORM{'g-newdir'}$FORM{'a-newdir'} - $od\n";
 				}
 			}
 		}
 
 		if ($CHMOD) {
-			$o = $FORM{'originalrestore'} ? "/$o" : "$backupdir/$date/$o";
+			$o = "$restore_root/$o";
 			$yymain .= chmod(oct("0$CHMOD"), $o) . " - CHMOD 0$CHMOD - $o\n";
 		}
 	}

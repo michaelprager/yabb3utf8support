@@ -28,9 +28,7 @@ sub GmodSettings {
 
 	if ($gmod_newfile eq '') { &GmodSettings2; }
 
-	fopen(MODACCESS, "$vardir/gmodsettings.txt");
-	@scriptlines = <MODACCESS>;
-	fclose(MODACCESS);
+	@scriptlines = &read_DBorFILE(0,'',$vardir,'gmodsettings','txt');
 
 	$startread = 0;
 	$counter   = 0;
@@ -137,9 +135,7 @@ sub EditBots {
      <tr valign="middle">
        <td align="center" class="windowbg2"><br />
 	<textarea cols="70" rows="35" name="bots" style="width:98%">~;
-	fopen(BOTS, "$vardir/bots.hosts");
-	while ($line = <BOTS>) { chomp $line; $yymain .= qq~$line\n~; }
-	fclose(BOTS);
+	foreach (&read_DBorFILE(0,'',$vardir,'bots','hosts')) { $yymain .= $_; }
 	$yymain .= qq~</textarea>
 	<br /><br />
        </td>
@@ -159,9 +155,7 @@ sub EditBots {
 sub EditBots2 {
 	&is_admin_or_gmod;
 
-	fopen(BOTS, ">$vardir/bots.hosts", 1);
-	print BOTS map { "$_\n"; } sort { (split(/\|/, $a))[1] cmp (split(/\|/, $b))[1] } split(/[\n\r]+/, $FORM{'bots'});
-	fclose(BOTS);
+	&write_DBorFILE(0,'',$vardir,'bots','hosts',(map { "$_\n"; } sort { (split(/\|/, $a))[1] cmp (split(/\|/, $b))[1] } split(/[\n\r]+/, $FORM{'bots'})));
 
 	$yySetLocation = qq~$adminurl?action=editbots~;
 	&redirectexit;
@@ -185,14 +179,6 @@ sub SetCensor {
 		}
 	}
 
-	my (@censored, $i);
-	fopen(CENSOR, "$langdir/$censorlanguage/censor.txt");
-	@censored = <CENSOR>;
-	fclose(CENSOR);
-	foreach $i (@censored) {
-		$i =~ tr/\r//d;
-		$i =~ tr/\n//d;
-	}
 	my $dispcenlang = $censorlanguage;
 	$dispcenlang =~ s~(.+?)\_(.+?)$~$1 ($2)~gi;
 	$yymain .= qq~
@@ -230,9 +216,8 @@ sub SetCensor {
        <td align="center" class="windowbg2"><br />
 	<input type="hidden" name="censorlanguage" value="$censorlanguage" />
 	<textarea rows="35" cols="15" name="censored" id="censored" style="width:90%">~;
-	foreach $i (@censored) {
-		unless ($i && $i =~ m/.+[\=~].+/) { next; }
-		$yymain .= "$i\n";
+	foreach (&read_DBorFILE(0,'',"$langdir/$censorlanguage",'censor','txt')) {
+		$yymain .= $_;
 	}
 	$yymain .= qq~</textarea>
         <br /><br />
@@ -260,28 +245,20 @@ sub SetCensor2 { # don't use &FromChars() here!!!
 	$FORM{'censored'} =~ s~\n\s*\n~\n~g;
 	if ($FORM{'censorlanguage'}) { $censorlanguage = $FORM{'censorlanguage'}; }
 	else { $censorlanguage = $lang; }
-	my @lines = split(/\n/, $FORM{'censored'});
-	fopen(CENSOR, ">$langdir/$censorlanguage/censor.txt", 1);
+	my @lines = split(/\n+/, $FORM{'censored'});
 
-	foreach my $i (@lines) {
-		$i =~ tr/\n//d;
-		unless ($i && $i =~ m/.+[\=~].+/) { next; }
-		print CENSOR "$i\n";
-	}
-	fclose(CENSOR);
-	$yySetLocation = qq~$adminurl~;
+	&write_DBorFILE(0,'',"$langdir/$censorlanguage",'censor','txt',(map { "$_\n" } grep { /.+[=~].+/ } @lines));
+
+	$yySetLocation = qq~$adminurl?action=setcensor~;
+	$action_area = "setcensor";
 	&redirectexit;
 }
 
 sub SetReserve {
 	my (@reserved, @reservecfg, $i);
 	&is_admin_or_gmod;
-	fopen(RESERVE, "$vardir/reserve.txt");
-	@reserved = <RESERVE>;
-	fclose(RESERVE);
-	fopen(RESERVECFG, "$vardir/reservecfg.txt");
-	@reservecfg = <RESERVECFG>;
-	fclose(RESERVECFG);
+	@reserved = &read_DBorFILE(0,'',$vardir,'reserve','txt');
+	@reservecfg = &read_DBorFILE(0,'',$vardir,'reservecfg','txt');
 	for (my $i = 0; $i < @reservecfg; $i++) {
 		chomp $reservecfg[$i];
 		if($reservecfg[$i]) { $reservecheck[$i] = qq~ checked="checked"~; }
@@ -339,19 +316,12 @@ sub SetReserve2 {
 	$FORM{'reserved'} =~ s~\A[\s\n]+~~;
 	$FORM{'reserved'} =~ s~[\s\n]+\Z~~;
 	$FORM{'reserved'} =~ s~\n\s*\n~\n~g;
-	fopen(RESERVE, ">$vardir/reserve.txt", 1);
+	&write_DBorFILE(0,'',$vardir,'reserve','txt',($FORM{'reserved'}));
 	my $matchword = $FORM{'matchword'} eq 'checked' ? 'checked' : '';
 	my $matchcase = $FORM{'matchcase'} eq 'checked' ? 'checked' : '';
 	my $matchuser = $FORM{'matchuser'} eq 'checked' ? 'checked' : '';
 	my $matchname = $FORM{'matchname'} eq 'checked' ? 'checked' : '';
-	print RESERVE $FORM{'reserved'};
-	fclose(RESERVE);
-	fopen(RESERVECFG, "+>$vardir/reservecfg.txt");
-	print RESERVECFG "$matchword\n";
-	print RESERVECFG "$matchcase\n";
-	print RESERVECFG "$matchuser\n";
-	print RESERVECFG "$matchname\n";
-	fclose(RESERVECFG);
+	&write_DBorFILE(0,'',$vardir,'reservecfg','txt',("$matchword\n","$matchcase\n","$matchuser\n","$matchname\n"));
 	$yySetLocation = qq~$adminurl~;
 	&redirectexit;
 }
@@ -366,23 +336,21 @@ sub ModifyAgreement {
 	my $agreementlanguage = $FORM{'agreementlanguage'} || $INFO{'agreementlanguage'} || $lang;
 	foreach my $fld (sort {lc($a) cmp lc($b)} @lfilesanddirs) {
 		if (-d "$langdir/$fld" && $fld =~ m^\A[0-9a-zA-Z_\#\%\-\:\+\?\$\&\~\,\@/]+\Z^ && -e "$langdir/$fld/Main.lng") {
-            my $displang = $fld;
-            $displang =~ s~(.+?)\_(.+?)$~$1 ($2)~gi;
-            if ($agreementlanguage eq $fld) { $drawnldirs .= qq~<option value="$fld" selected="selected">$displang</option>~; }
-            else { $drawnldirs .= qq~<option value="$fld">$displang</option>~; }
+			my $displang = $fld;
+			$displang =~ s~(.+?)\_(.+?)$~$1 ($2)~gi;
+			if ($agreementlanguage eq $fld) { $drawnldirs .= qq~<option value="$fld" selected="selected">$displang</option>~; }
+			else { $drawnldirs .= qq~<option value="$fld">$displang</option>~; }
 		}
 	}
 
-	my ($fullagreement, $line);
-	fopen(AGREE, "$langdir/$agreementlanguage/agreement.txt");
-	while ($line = <AGREE>) {
+	my ($line,$fullagreement);
+	foreach $line (&read_DBorFILE(0,'',"$langdir/$agreementlanguage",'agreement','txt')) {
 		$line =~ tr/[\r\n]//d;
 		&FromHTML($line);
 		$fullagreement .= qq~$line\n~;
 	}
-	fclose(AGREE);
-    my $dispagrlang = $agreementlanguage;
-    $dispagrlang =~ s~(.+?)\_(.+?)$~$1 ($2)~gi;
+	my $dispagrlang = $agreementlanguage;
+	$dispagrlang =~ s~(.+?)\_(.+?)$~$1 ($2)~gi;
 	$yymain .= qq~
 
  <div class="bordercolor" style="padding: 0px; width: 99%; margin-left: 0px; margin-right: auto;">
@@ -434,13 +402,10 @@ sub ModifyAgreement2 {
 	$FORM{'agreement'} =~ tr/\r//d;
 	$FORM{'agreement'} =~ s~\A\n+~~;
 	$FORM{'agreement'} =~ s~\n+\Z~~;
-	fopen(AGREE, ">$langdir/$agreementlanguage/agreement.txt");
-	print AGREE $FORM{'agreement'};
-	fclose(AGREE);
+	&write_DBorFILE(0,'',"$langdir/$agreementlanguage",'agreement','txt',($FORM{'agreement'}));
 
 	$FORM{'agreement'} =~ s/\n/<br \/>\n/g;
-	fopen(HELPAGREE, ">$helpfile/$agreementlanguage/User/user00_agreement.help");
-	print HELPAGREE qq^\$SectionName = "$register_txt{'764a'}";
+	&write_DBorFILE(0,'',"$helpfile/$agreementlanguage/User/",'user00_agreement','help',(qq^\$SectionName = "$register_txt{'764a'}";
 
 ### Section 1
 #############################################
@@ -449,8 +414,7 @@ sub ModifyAgreement2 {
 #############################################
 
 
-1;^;
-	fclose(HELPAGREE);
+1;^));
 
 	$yySetLocation = $FORM{'destination'} ? qq~$adminurl?action=$FORM{'destination'}~ : qq~$adminurl?action=modagreement;agreementlanguage=$FORM{'agreementlanguage'}~;
 	&redirectexit;
@@ -512,7 +476,6 @@ sub GmodSettings2 {
 'clean_log',"$FORM{'clean_log'}",
 'boardrecount',"$FORM{'boardrecount'}",
 'rebuildmesindex',"$FORM{'rebuildmesindex'}",
-'membershiprecount',"$FORM{'membershiprecount'}",
 'rebuildmemlist',"$FORM{'rebuildmemlist'}",
 'rebuildmemhist',"$FORM{'rebuildmemhist'}",
 'rebuildnotifications',"$FORM{'rebuildnotifications'}",
@@ -533,8 +496,9 @@ sub GmodSettings2 {
 admin => "$FORM{'allow_gmod_admin'}",
 
 newsettings => "$mynewsettings",
-'eventcal_set',"$FORM{'eventcal_set'}",
 newsettings2 => "$mynewsettings",
+
+eventcal_set => "$FORM{'eventcal_set'}",
 eventcal_set2 => "$FORM{'eventcal_set'}",
 eventcal_set3 => "$FORM{'eventcal_set'}",
 
@@ -640,9 +604,7 @@ EOF
 	$setfile =~ s~(.{64,}\;)\s+(\#.+$)~$1 . "\n   " . $2~gem;
 	$setfile =~ s~^\s\s\s+(\#.+$)~substr( $filler, 0, 70 ) . $1~gem;
 
-	fopen(MODACCESS, ">$vardir/gmodsettings.txt");
-	print MODACCESS $setfile;
-	fclose(MODACCESS);
+	&write_DBorFILE(0,'',$vardir,'gmodsettings','txt',($setfile));
 
 	$yySetLocation = qq~$adminurl~;
 	&redirectexit;
@@ -907,7 +869,7 @@ sub EditPaths {
 sub EditPaths2 {
 	&LoadCookie;          # Load the user's cookie (or set to guest)
 	&LoadUserSettings;
-	if (!$iamadmin) { &admin_fatal_error("no_access"); }
+	if (!$iamadmin) { &fatal_error("no_access"); }
 
 	$lastsaved      = $FORM{'lastsaved'};
 	$lastdate       = $FORM{'lastdate'};
@@ -944,8 +906,8 @@ sub EditPaths2 {
 ###############################################################################
 # YaBB: Yet another Bulletin Board                                            #
 # Open-Source Community Software for Webmasters                               #
-# Version:        YaBB 2.5 Anniversary Edition                                #
-# Packaged:       July 04, 2010                                               #
+# Version:        YaBB 3.0 Beta                                               #
+# Packaged:       October 05, 2010                                            #
 # Distributed by: http://www.yabbforum.com                                    #
 # =========================================================================== #
 # Copyright (c) 2000-2010 YaBB (www.yabbforum.com) - All Rights Reserved.     #
@@ -1002,9 +964,7 @@ EOF
 	$setfile =~ s~(.{64,}\;)\s+(\#.+$)~$1 . "\n   " . $2~gem;
 	$setfile =~ s~^\s\s\s+(\#.+$)~substr( $filler, 0, 70 ) . $1~gem;
 
-	fopen(FILE, ">Paths.pl");
-	print FILE $setfile;
-	fclose(FILE);
+	&write_DBorFILE(0,'','./','Paths','pl',($setfile));
 
 	$yySetLocation = qq~$adminurl~;
 	&redirectexit;

@@ -22,9 +22,8 @@ sub spamcheck {
 	$rawcontent =~ s/\<(.*?){1,2}\>//g;			# rip out all make up html tags if it is a html message which can be uses to break and obscure words
 	my $testcontent = lc(" $rawcontent");			#add a leading space to trace start of the very first word and make it lowercase
 	my ($spamline,$spamcnt,$searchtype);
-	if (-e "$vardir/spamrules.txt" ) {
-		fopen(SPAM, "$vardir/spamrules.txt") || &fatal_error("cannot_open","spamrules.txt", 1);
-		while ($buffer = <SPAM>) {
+	if (&checkfor_DBorFILE("$vardir/spamrules.txt")) {
+		foreach my $buffer (&read_DBorFILE(0,'',$vardir,'spamrules','txt')) {
 			chomp $buffer;
 			$spamline = "";
 			if ($buffer =~ m/\~\;/) {
@@ -43,7 +42,6 @@ sub spamcheck {
 			if(!$spamcnt){ $spamcnt = 0;}
 			if($spamline ne ""){ push(@spamlines, [$spamline, $spamcnt, $searchtype]); }
 		}
-		fclose(SPAM);
 	}
 
 	for $spamrule (@spamlines) {

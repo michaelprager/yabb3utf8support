@@ -3,29 +3,28 @@
 //##############################################################################
 //# YaBB: Yet another Bulletin Board                                           #
 //# Open-Source Community Software for Webmasters                              #
-//# Version:        YaBB 2.5 Anniversary Edition                               #
-//# Packaged:       July 04, 2010                                              #
+//# Version:        YaBB 3.0 Beta                                              #
+//# Packaged:       October 05, 2010                                           #
 //# Distributed by: http://www.yabbforum.com                                   #
 //# ===========================================================================#
 //# Copyright (c) 2000-2010 YaBB (www.yabbforum.com) - All Rights Reserved.    #
 //# Software by:  The YaBB Development Team                                    #
 //#               with assistance from the YaBB community.                     #
-//# Sponsored by: Xnull Internet Media, Inc. - http://www.ximinc.com           #
-//#               Your source for web hosting, web design, and domains.        #
 //##############################################################################
 
-//YaBB 2.5 AE $Revision: 1.6.2.6 $
+
+//YaBB 3.0 Beta $Revision: 100 $
 
 var LivePrevDisplayNames = new Object();
 
 function jsDoTohtml(tohtmlstr) {
 	tohtmlstr=tohtmlstr.replace(/\&/g, "&amp;");
 	tohtmlstr=tohtmlstr.replace(/\"/g, "&quot;");
-	tohtmlstr=tohtmlstr.replace(/  /g, "&nbsp;");
+	tohtmlstr=tohtmlstr.replace(/  /g, " &nbsp;");
 	tohtmlstr=tohtmlstr.replace(/\|/g, "&#124;");
 	tohtmlstr=tohtmlstr.replace(/\</g, "&lt;");
 	tohtmlstr=tohtmlstr.replace(/\>/g, "&gt;");
-	return tohtmlstr
+	return tohtmlstr;
 }
 
 function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,imagesdir,smilieurl,parsflash,fontmax,fontmin,autolinkurls,month,timeselect,splittxt,dontusetoday,todaytext,yesterdaytext,timetxt1,timetxt2,timetxt3,timetxt4,jssmilieurl,jssmiliecode,showimagequote) {
@@ -46,7 +45,21 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 
 	ubbcstr=ubbcstr.replace(/\n/g, "<br />");
 
+	if (document.postmodify.ns.checked) {
+		return ubbcstr;
+	}
+
+
 	ubbcstr=ubbcstr.replace(/\[ch(\d{3,}?)\]/ig, "&#$1;");
+	
+	while( a=ubbcstr.match(/\[noparse\]\n*(.*?)\n*\[\/noparse\]/i) ) {
+		var npmessage=a[1];
+		npmessage=npmessage.replace(/\./g, "&#46;");
+		npmessage=npmessage.replace(/\//g, "&#47;");
+		npmessage=npmessage.replace(/\[/g, "&#91;");
+		npmessage=npmessage.replace(/\]/g, "&#93;");
+		ubbcstr=ubbcstr.replace(/\[noparse\]\n*(.*?)\n*\[\/noparse\]/i, npmessage);
+	}
 
 	ubbcstr=ubbcstr.replace(/\[code(.*?)\]/ig, " [code$1]");
 	ubbcstr=ubbcstr.replace(/\[\/code\]/ig, " [/code]");
@@ -55,11 +68,11 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 	ubbcstr=ubbcstr.replace(/\[img\]/ig, " [img]");
 	ubbcstr=ubbcstr.replace(/\[\/img\]/ig, " [/img]");
 
-		function codeConvStr() {
-			comessage='$1';
-			codestrg=codestrg.replace(/CODE/g, comessage);
-			return codestrg;
-		}
+	function codeConvStr() {
+		comessage='$1';
+		codestrg=codestrg.replace(/CODE/g, comessage);
+		return codestrg;
+	}
 
 	ubbcstr=ubbcstr.replace(/(\[code\s*([a-z|\+]{0,})\]\n*(.+?)\n*\[\/code\])/ig, codeConvStr());
 
@@ -89,8 +102,9 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 		} else {
 			theight = " ";
 		}
-		if(! cmessage.match(/\&\S*\;/g)) {
-		cmessage=cmessage.replace(/\;/g, "&#059;"); }
+		if (! cmessage.match(/\&\S*\;/g)) {
+			cmessage=cmessage.replace(/\;/g, "&#059;");
+		}
 		cmessage=cmessage.replace(/\!/g, "&#33;");
 		cmessage=cmessage.replace(/\(/g, "&#40;");
 		cmessage=cmessage.replace(/\)/g, "&#41;");
@@ -106,49 +120,47 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 		cmessage=cmessage.replace(/\&\#91\;highlight\&\#93\;(.*?)\&\#91\;\&\#47\;highlight\&\#93\;/ig, "<span class='highlight'>$1</span>");
 		cmessage=cmessage.replace(/\&nbsp; \&nbsp; \&nbsp;/ig, "\t");
 		cmessage=cmessage.replace(/\&nbsp;/ig, " ");
-		cmessage=cmessage.replace(/\n/ig, "[code_br]");
+		cmessage=cmessage.replace(/\n/g, "[code_br]");
 		cmessage = "<pre class='" + cclass + "' style='margin: 0px; width: 90%;"+theight+"overflow: auto;'>"+cmessage+"[code_br][code_br]</pre>";
 
 		ubbcstr=ubbcstr.replace(/\[code\s*([a-z|\+]{0,})\]\n*(.+?)\n*\[\/code\]/i, cmessage);
 	}
 
-	if (!document.postmodify.ns.checked) {
-		ubbcstr=ubbcstr.replace(/\[smilie=(\S+\.)(gif|jpg|png|bmp)\]/g, "<img src='"+smilieurl+"/$1$2' border='0' alt='$1' />");
-		ubbcstr=ubbcstr.replace(/\[smiley=(\S+\.)(gif|jpg|png|bmp)\]/g, "<img src='"+smilieurl+"/$1$2' border='0' alt='$1' />");
-		ubbcstr=ubbcstr.replace(/(\W|^)\;\)/g, "$1<img border='0' src='"+imagesdir+"/wink.gif' alt='Wink' />");
-		ubbcstr=ubbcstr.replace(/(\W|^)\;\-\)/g, "$1<img border='0' src='"+imagesdir+"/wink.gif' alt='Wink' />");
-		ubbcstr=ubbcstr.replace(/(\W|^)\;D/g, "$1<img border='0' src='"+imagesdir+"/grin.gif' alt='Grin' />");
-		ubbcstr=ubbcstr.replace(/\:\'\(/g, "<img border='0' src='"+imagesdir+"/cry.gif' alt='Cry' />");
-		ubbcstr=ubbcstr.replace(/\:\-\//g, "<img border='0' src='"+imagesdir+"/undecided.gif' alt='Undecided' />");
-		ubbcstr=ubbcstr.replace(/\:\-X/g, "<img border='0' src='"+imagesdir+"/lipsrsealed.gif' alt='Lips Sealed' />");
-		ubbcstr=ubbcstr.replace(/\:\-\[/g, "<img border='0' src='"+imagesdir+"/embarassed.gif' alt='Embarassed' />");
-		ubbcstr=ubbcstr.replace(/\:\-\*/g, "<img border='0' src='"+imagesdir+"/kiss.gif' alt='Kiss' />");
-		ubbcstr=ubbcstr.replace(/\&gt\;\:\(/g, "<img border='0' src='"+imagesdir+"/angry.gif' alt='Angry' />");
-		ubbcstr=ubbcstr.replace(/\:\:\)/g, "<img border='0' src='"+imagesdir+"/rolleyes.gif' alt='Roll Eyes' />");
-		ubbcstr=ubbcstr.replace(/\:P/g, "<img border='0' src='"+imagesdir+"/tongue.gif' alt='Tongue' />");
-		ubbcstr=ubbcstr.replace(/\:\)/g, "<img border='0' src='"+imagesdir+"/smiley.gif' alt='Smiley' />");
-		ubbcstr=ubbcstr.replace(/\:\-\)/g, "<img border='0' src='"+imagesdir+"/smiley.gif' alt='Smiley' />");
-		ubbcstr=ubbcstr.replace(/\:D/g, "<img border='0' src='"+imagesdir+"/cheesy.gif' alt='Cheesy' />");
-		ubbcstr=ubbcstr.replace(/\:\-\(/g, "<img border='0' src='"+imagesdir+"/sad.gif' alt='Sad' />");
-		ubbcstr=ubbcstr.replace(/\:\(/g, "<img border='0' src='"+imagesdir+"/sad.gif' alt='Sad' />");
-		ubbcstr=ubbcstr.replace(/\:o/g, "<img border='0' src='"+imagesdir+"/shocked.gif' alt='Shocked' />");
-		ubbcstr=ubbcstr.replace(/8\-\)/g, "<img border='0' src='"+imagesdir+"/cool.gif' alt='Cool' />");
-		ubbcstr=ubbcstr.replace(/\:\-\?/g, "<img border='0' src='"+imagesdir+"/huh.gif' alt='Huh' />");
-		ubbcstr=ubbcstr.replace(/\^_\^/g, "<img border='0' src='"+imagesdir+"/happy.gif' alt='Happy' />");
-		ubbcstr=ubbcstr.replace(/\:thumb\:/g, "<img border='0' src='"+imagesdir+"/thumbsup.gif' alt='Thumbsup' />");
-		ubbcstr=ubbcstr.replace(/\&gt\;\:\-D/g, "<img border='0' src='"+imagesdir+"/evil.gif' alt='Evil' />");
+	ubbcstr=ubbcstr.replace(/\[smilie=(\S+\.)(gif|jpg|png|bmp)\]/g, "<img src='"+smilieurl+"/$1$2' border='0' alt='$1' />");
+	ubbcstr=ubbcstr.replace(/\[smiley=(\S+\.)(gif|jpg|png|bmp)\]/g, "<img src='"+smilieurl+"/$1$2' border='0' alt='$1' />");
+	ubbcstr=ubbcstr.replace(/(\W|^)\;\)/g, "$1<img border='0' src='"+imagesdir+"/wink.gif' alt='Wink' />");
+	ubbcstr=ubbcstr.replace(/(\W|^)\;\-\)/g, "$1<img border='0' src='"+imagesdir+"/wink.gif' alt='Wink' />");
+	ubbcstr=ubbcstr.replace(/(\W|^)\;D/g, "$1<img border='0' src='"+imagesdir+"/grin.gif' alt='Grin' />");
+	ubbcstr=ubbcstr.replace(/\:\'\(/g, "<img border='0' src='"+imagesdir+"/cry.gif' alt='Cry' />");
+	ubbcstr=ubbcstr.replace(/\:\-\//g, "<img border='0' src='"+imagesdir+"/undecided.gif' alt='Undecided' />");
+	ubbcstr=ubbcstr.replace(/\:\-X/g, "<img border='0' src='"+imagesdir+"/lipsrsealed.gif' alt='Lips Sealed' />");
+	ubbcstr=ubbcstr.replace(/\:\-\[/g, "<img border='0' src='"+imagesdir+"/embarassed.gif' alt='Embarassed' />");
+	ubbcstr=ubbcstr.replace(/\:\-\*/g, "<img border='0' src='"+imagesdir+"/kiss.gif' alt='Kiss' />");
+	ubbcstr=ubbcstr.replace(/\&gt\;\:\(/g, "<img border='0' src='"+imagesdir+"/angry.gif' alt='Angry' />");
+	ubbcstr=ubbcstr.replace(/\:\:\)/g, "<img border='0' src='"+imagesdir+"/rolleyes.gif' alt='Roll Eyes' />");
+	ubbcstr=ubbcstr.replace(/\:P/g, "<img border='0' src='"+imagesdir+"/tongue.gif' alt='Tongue' />");
+	ubbcstr=ubbcstr.replace(/\:\)/g, "<img border='0' src='"+imagesdir+"/smiley.gif' alt='Smiley' />");
+	ubbcstr=ubbcstr.replace(/\:\-\)/g, "<img border='0' src='"+imagesdir+"/smiley.gif' alt='Smiley' />");
+	ubbcstr=ubbcstr.replace(/\:D/g, "<img border='0' src='"+imagesdir+"/cheesy.gif' alt='Cheesy' />");
+	ubbcstr=ubbcstr.replace(/\:\-\(/g, "<img border='0' src='"+imagesdir+"/sad.gif' alt='Sad' />");
+	ubbcstr=ubbcstr.replace(/\:\(/g, "<img border='0' src='"+imagesdir+"/sad.gif' alt='Sad' />");
+	ubbcstr=ubbcstr.replace(/\:o/g, "<img border='0' src='"+imagesdir+"/shocked.gif' alt='Shocked' />");
+	ubbcstr=ubbcstr.replace(/8\-\)/g, "<img border='0' src='"+imagesdir+"/cool.gif' alt='Cool' />");
+	ubbcstr=ubbcstr.replace(/\:\-\?/g, "<img border='0' src='"+imagesdir+"/huh.gif' alt='Huh' />");
+	ubbcstr=ubbcstr.replace(/\^_\^/g, "<img border='0' src='"+imagesdir+"/happy.gif' alt='Happy' />");
+	ubbcstr=ubbcstr.replace(/\:thumb\:/g, "<img border='0' src='"+imagesdir+"/thumbsup.gif' alt='Thumbsup' />");
+	ubbcstr=ubbcstr.replace(/\&gt\;\:\-D/g, "<img border='0' src='"+imagesdir+"/evil.gif' alt='Evil' />");
 
-		for(var i=0; i<jssmiliecode.length-1; i++) {
-			if (jssmilieurl[i].match(/\//)) tmpurl = jssmilieurl[i];
-			else tmpurl = imagesdir+'/'+jssmilieurl[i];
-			var tmpcode = jssmiliecode[i];
-			tmpcode=tmpcode.replace(/\&#36\;/g, "$");
-			tmpcode=tmpcode.replace(/\&#64\;/g, "@");
-			tmpcode=tmpcode.replace(/ /g, "");
-			tmpcode=tmpcode.replace(/([\\\^\$\@*+[\]?{}.=!:(|)])/g,"\\$1");
-			retmpcode = new RegExp(tmpcode, 'g');
-			ubbcstr=ubbcstr.replace(retmpcode, "<img border='0' src='"+tmpurl+"' alt='' />");
-		}
+	for(var i=0; i<jssmiliecode.length-1; i++) {
+		if (jssmilieurl[i].match(/\//)) tmpurl = jssmilieurl[i];
+		else tmpurl = imagesdir+'/'+jssmilieurl[i];
+		var tmpcode = jssmiliecode[i];
+		tmpcode=tmpcode.replace(/\&#36\;/g, "$");
+		tmpcode=tmpcode.replace(/\&#64\;/g, "@");
+		tmpcode=tmpcode.replace(/ /g, "");
+		tmpcode=tmpcode.replace(/([\\\^\$\@*+[\]?{}.=!:(|)])/g,"\\$1");
+		retmpcode = new RegExp(tmpcode, 'g');
+		ubbcstr=ubbcstr.replace(retmpcode, "<img border='0' src='"+tmpurl+"' alt='' />");
 	}
 
 	ubbcstr=ubbcstr.replace(/\[([^\]]{0,30})\n([^\]]{0,30})\]/g, '[$1$2]');
@@ -320,20 +332,20 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 	ubbcstr=ubbcstr.replace(/\[img\][\s*\t*\n*(\&nbsp\;)*(\&#160\;)*]*(https\:\/\/)(.+?)[\s*\t*\n*(\&nbsp\;)*(\&#160\;)*]*\[\/img\]/ig, '<img src="https://$2" alt="" border="0">');
 	ubbcstr=ubbcstr.replace(/\[img\][\s*\t*\n*(\&nbsp\;)*(\&#160\;)*]*(http\:\/\/)*(.+?)[\s*\t*\n*(\&nbsp\;)*(\&#160\;)*]*\[\/img\]/ig, '<img src="http://$2" alt="" border="0">');
 
-		function restrictimage(p,s) {
-			w = '';
-			h = '';
-			a = '';
-			c=p.split(/ /);
-			for(i = 0; i < c.length; i++) {
-				params = c[i].split(/=/);
-				if(params[0] == 'width') w = "width='" + new Number(params[1]) + "' ";
-				if(params[0] == 'height') h = "height='" + new Number(params[1]) + "' ";
-				if(params[0] == 'align') a = "align='" + params[1] + "' ";
-			}
-			var imgrest = "<img src='http://" + s + "' " + w + h + a + "alt='' border='0' />";
-			ubbcstr=ubbcstr.replace(/\[img (.+?)\][\s*\t*\n*(\&nbsp\;)*(\&#160\;)*]*(http\:\/\/)*(.+?)[\s*\t*\n*(\&nbsp\;)*(\&#160\;)*]*\[\/img\]/i, imgrest);
+	function restrictimage(p,s) {
+		w = '';
+		h = '';
+		a = '';
+		c=p.split(/ /);
+		for(i = 0; i < c.length; i++) {
+			params = c[i].split(/=/);
+			if(params[0] == 'width') w = "width='" + new Number(params[1]) + "' ";
+			if(params[0] == 'height') h = "height='" + new Number(params[1]) + "' ";
+			if(params[0] == 'align') a = "align='" + params[1] + "' ";
 		}
+		var imgrest = "<img src='http://" + s + "' " + w + h + a + "alt='' border='0' />";
+		ubbcstr=ubbcstr.replace(/\[img (.+?)\][\s*\t*\n*(\&nbsp\;)*(\&#160\;)*]*(http\:\/\/)*(.+?)[\s*\t*\n*(\&nbsp\;)*(\&#160\;)*]*\[\/img\]/i, imgrest);
+	}
 
 	while(picr=ubbcstr.match(/\[img (.+?)\][\s*\t*\n*(\&nbsp\;)*(\&#160\;)*]*(http\:\/\/)*(.+?)[\s*\t*\n*(\&nbsp\;)*(\&#160\;)*]*\[\/img\]/i)) { restrictimage(picr[1],'$3') }
 
@@ -354,7 +366,7 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 	ubbcstr=ubbcstr.replace(/\[url=\s*(\S\w+\:\/\/\S+?)\s*\](.+?)\[\/url\]/ig, "<a href='$1' target='_blank'>$2</a>");
 	ubbcstr=ubbcstr.replace(/\[url=\s*(\S+?)\](.+?)\s*\[\/url\]/ig, "<a href='http://$1' target='_blank'>$2</a>");
 	ubbcstr=ubbcstr.replace(/\[url\]\s*(\S+?)\s*\[\/url\]/ig, "<a href='$1' target='_blank'>$1</a>");
-	ubbcstr=ubbcstr.replace(/\[url\]|\[\/url\]/ig, "");
+	ubbcstr=ubbcstr.replace(/\[url\]|\[\/url\]/ig, ""); 
 
 	ubbcstr=ubbcstr.replace(/\[link\]\s*www\.(\S+?)\s*\[\/link\]/ig, "<a href='http://www.$1'>www.$1</a>");
 	ubbcstr=ubbcstr.replace(/\[link=\s*(\S\w+\:\/\/\S+?)\s*\](.+?)\[\/link\]/ig, "<a href='$1'>$2</a>");
@@ -370,11 +382,10 @@ function jsDoUbbc(ubbcstr,codestrg,quotstrg,squotstrg,editxt,dspname,scriptul,im
 
 	ubbcstr=ubbcstr.replace(/\/me /ig, "<i>" + dspname + "</i> ");
 
-		function wrapstr(wraptext) {
-			wraptext=wraptext.replace(/([\S]{80})/g, "$1\n");
-			ubbcstr=ubbcstr.replace(/\[edit\]\n*(.+?)\n*\[\/edit\]/i, "<b>" + editxt + ": </b><br /><div class='editbg'>" + wraptext + "</div>");
-
-		}
+	function wrapstr(wraptext) {
+		wraptext=wraptext.replace(/([\S]{80})/g, "$1\n");
+		ubbcstr=ubbcstr.replace(/\[edit\]\n*(.+?)\n*\[\/edit\]/i, "<b>" + editxt + ": </b><br /><div class='editbg'>" + wraptext + "</div>");
+	}
 
 	while(longstrg=ubbcstr.match(/\[edit\](.+?)\[\/edit\]/i)) { wrapstr(longstrg[1]); }
 

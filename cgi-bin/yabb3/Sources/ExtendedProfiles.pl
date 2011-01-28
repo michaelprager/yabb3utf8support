@@ -35,7 +35,7 @@ if ($action eq 'detailedversion') { return 1; }
 #
 #  extended_profiles_fields.txt - defines the new profile fields. Uses line number as field-id
 #  ----------------------------
-#  ("name|type|options|active|comment|required_on_reg|visible_in_viewprofile|v_users|v_groups|visible_in_posts|p_users|p_groups|p_displayfieldname|visible_in_memberlist|m_users|m_groups|editable_by_user|visible_in_posts_popup|pp_users|pp_groups|pp_displayfieldname","name|type|options|active|comment|required_on_reg|visible_in_viewprofile|v_users|v_groups|visible_in_posts|p_users|p_groups|p_displayfieldname|visible_in_memberlist|m_users|m_groups|editable_by_user|visible_in_posts_popup|pp_users|pp_groups|pp_displayfieldname","name|type|options|active|comment|required_on_reg|visible_in_viewprofile|v_users|v_groups|visible_in_posts|p_users|p_groups|p_displayfieldname|visible_in_memberlist|m_users|m_groups|editable_by_user|visible_in_posts_popup|pp_users|pp_groups|pp_displayfieldname",....)
+#  ("name|type|options|active|comment|required_on_reg|visible_in_viewprofile|v_users|v_groups|visible_in_posts|p_users|p_groups|p_displayfieldname|visible_in_memberlist|m_users|m_groups|editable_by_user|visible_in_posts_popup|pp_users|pp_groups|pp_displayfieldname","name|type|options|active|comment|required_on_reg|visible_in_viewprofile|v_users|v_groups|visible_in_posts|p_users|p_groups|p_displayfieldname|visible_in_memberlist|m_users|m_groups|editable_by_user|visible_in_posts_popup|pp_users|pp_groups|pp_displayfieldname","name|type|options|active|comment|required_on_reg|visible_in_viewprofile|v_users|v_groups|visible_in_posts|p_users|p_groups|p_displayfieldname|visible_in_memberlist|m_users|m_groups|editable_by_user|visible_in_posts_popup|pp_users|pp_groups|pp_displayfieldname|radiounselect",....)
 #
 #  Here are all types with their possible type-specific options. If options contain multiple entries, seperated by ^
 #  - text		limit_len^width^is_numberic^default_value^allow_ubbc
@@ -222,8 +222,7 @@ sub ext_timeformat {
 			qq~$newday.$newmonth.$newyear~;
 
 		} elsif ($mytimeselected == 4) {
-			$newmonth--;
-			$newmonth2 = $months[$newmonth];
+			$newmonth2 = $months[$newmonth - 1];
 			if( $newday > 10 && $newday < 20 ) { $newday2 = "<sup>$timetxt{'4'}</sup>"; }
 			elsif( $newday % 10 == 1 ) { $newday2 = "<sup>$timetxt{'1'}</sup>"; }
 			elsif( $newday % 10 == 2 ) { $newday2 = "<sup>$timetxt{'2'}</sup>"; }
@@ -235,7 +234,7 @@ sub ext_timeformat {
 			qq~$newmonth/$newday/$newshortyear~;
 
 		} elsif ($mytimeselected == 6) {
-			$newmonth2 = $months[$newmonth-1];
+			$newmonth2 = $months[$newmonth - 1];
 			qq~$newday. $newmonth2 $newyear~;
 
 		} elsif ($mytimeselected == 7) {
@@ -265,7 +264,7 @@ sub ext_timeformat {
 			$mytimeformat =~ s/D/$newday/g;
 			$mytimeformat =~ s/\+/$dayext/g;
 			if ($usefullmonth == 1){
-				$mytimeformat =~ s/MM/$months[$newmonth-1]/g;
+				$mytimeformat =~ s/MM/$months[$newmonth - 1]/g;
 			} else {
 				$mytimeformat =~ s/M/$newmonth/g;
 			}
@@ -1458,20 +1457,16 @@ $ext_template_blockstop
 		require "$admindir/NewSettings.pl";
 		&SaveSettingsTo('Settings.pl');
 
-		opendir(EXT_DIR, "$memberdir");
-		@contents = grep {/\.vars$/} readdir(EXT_DIR);
-		closedir(EXT_DIR);
+		if ($use_MySQL) {
+			@contents = &get_members_array();
+		} else {
+			opendir(EXT_DIR, "$memberdir");
+			@contents = map { s/\.vars$//; $_; } grep { /\.vars$/ } readdir(EXT_DIR);
+			closedir(EXT_DIR);
+		}
 
 		foreach (@contents) {
-			fopen(EXT_FILE, "+<$memberdir/$_") || &admin_fatal_error('cannot_open', "$memberdir/$_");
-			seek EXT_FILE,0,0;
-			@old_content = <EXT_FILE>;
-			$new_content = join("",@old_content);
-			$new_content =~ s~\n'ext_$FORM{'id'}',"(?:.*?)"\n~\n~ig;
-			seek EXT_FILE,0,0;
-			truncate EXT_FILE,0;
-			print EXT_FILE $new_content;
-			fclose(EXT_FILE);
+			&write_DBorFILE(0,EXT_FILE,$memberdir,$_,'vars',(map { $_ =~ s~'ext_$FORM{'id'}',"(?:.*?)"\n+~~ig; $_; } &read_DBorFILE(0,EXT_FILE,$memberdir,$_,'vars')));
 		}
 
 		$yySetLocation = qq~$adminurl?action=ext_admin~;
@@ -1572,10 +1567,10 @@ sub ext_user_convert {
 	&is_admin_or_gmod;
 
 	if (-e "$old_membersdir/$pusername.ext") {
-		if (-e "$memberdir/$pusername.vars") {
+		if (&checkfor_DBorFILE("$memberdir/$pusername.vars")) {
 			&ext_get_profile($pusername);
 
-			fopen(EXT_FILE, "$old_membersdir/$pusername.ext") || &admin_fatal_error('cannot_open', "$old_membersdir/$pusername.ext");
+			fopen(EXT_FILE, "$old_membersdir/$pusername.ext") || &fatal_error('cannot_open', "$old_membersdir/$pusername.ext");
 			@ext_profile = <EXT_FILE>;
 			fclose(EXT_FILE);
 			chomp @ext_profile;
@@ -1587,7 +1582,7 @@ sub ext_user_convert {
 			}
 			&UserAccount($pusername,"update");
 			# don't delete old .ext files anymore, user can do that himself now.
-			#unlink "$old_membersdir/$pusername.ext";
+			#&delete_DBorFILE("$old_membersdir/$pusername.ext");
 		}
 	}
 }
@@ -1649,26 +1644,28 @@ sub ext_admin_convert {
 	my (@contents, $filename, $old_membersdir, $old_vardir, $i);
 	&is_admin_or_gmod;
 
+	&fatal_error("", $lang_ext{'converter_no_sql'}) if $use_MySQL;
+
 	$old_membersdir = $FORM{'members'};
 	$old_vardir = $FORM{'vars'};
 
 	if (!-e $old_vardir) {
-		&admin_fatal_error("extended_profiles_convert", $lang_ext{'converter_missing_vars'});
+		&fatal_error("", $lang_ext{'converter_missing_vars'});
 	}
 	if (!-e "$old_vardir/extended_profiles_order.txt") {
-		&admin_fatal_error("extended_profiles_convert", $lang_ext{'converter_missing_order'});
+		&fatal_error("", $lang_ext{'converter_missing_order'});
 	}
 	if (!-e "$old_vardir/extended_profiles_fields.txt") {
-		&admin_fatal_error("extended_profiles_convert", $lang_ext{'converter_missing_fields'});
+		&fatal_error("", $lang_ext{'converter_missing_fields'});
 	}
 
-	fopen(CONVERTER,"$old_vardir/extended_profiles_order.txt") || &admin_fatal_error('cannot_open', "$old_vardir/extended_profiles_order.txt");
+	fopen(CONVERTER,"$old_vardir/extended_profiles_order.txt") || &fatal_error('cannot_open', "$old_vardir/extended_profiles_order.txt");
 	@ext_prof_order = <CONVERTER>;
 	fclose(CONVERTER);
 	chomp(@ext_prof_order);
 
 	# copy old extended_profiles_fields and extended_profiles_order files
-	fopen(CONVERTER,"$old_vardir/extended_profiles_fields.txt") || &admin_fatal_error('cannot_open', "$old_vardir/extended_profiles_fields.txt");
+	fopen(CONVERTER,"$old_vardir/extended_profiles_fields.txt") || &fatal_error('cannot_open', "$old_vardir/extended_profiles_fields.txt");
 	@ext_prof_fields = <CONVERTER>;
 	fclose(CONVERTER);
 	chomp(@ext_prof_fields);

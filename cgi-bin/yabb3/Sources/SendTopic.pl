@@ -27,9 +27,7 @@ sub SendTopic {
 	&fatal_error("no_topic_send") unless ($topic ne '' && $topic ne '_' && $topic ne ' ');
 
 	unless (ref($thread_arrayref{$topic})) {
-		fopen(FILE, "$datadir/$topic.txt") || &fatal_error("cannot_open","$datadir/$topic.txt", 1);
-		@{$thread_arrayref{$topic}} = <FILE>;
-		fclose(FILE);
+		@{$thread_arrayref{$topic}} = &read_DBorFILE(0,'',$datadir,$topic,'txt');
 	}
 	$subject = (split(/\|/, ${$thread_arrayref{$topic}}[0], 2))[0];
 
@@ -140,9 +138,7 @@ sub SendTopic2 {
 	&fatal_error("invalid_email","$sendtopic_txt{'718'}")                                            if (($remail =~ /(@.*@)|(\.\.)|(@\.)|(\.@)|(^\.)|(\.$)/) || ($remail !~ /^.+@\[?(\w|[-.])+\.[a-zA-Z]{2,4}|[0-9]{1,4}\]?$/));
 
 	unless (ref($thread_arrayref{$topic})) {
-		fopen(FILE, "$datadir/$topic.txt") || &fatal_error("cannot_open","$datadir/$topic.txt", 1);
-		@{$thread_arrayref{$topic}} = <FILE>;
-		fclose(FILE);
+		@{$thread_arrayref{$topic}} = &read_DBorFILE(0,'',$datadir,$topic,'txt');
 	}
 	$subject = (split(/\|/, ${$thread_arrayref{$topic}}[0], 2))[0];
 	&FromHTML($subject);

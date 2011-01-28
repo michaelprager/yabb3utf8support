@@ -47,24 +47,24 @@ function hexQuot(i) {
 }
 
 function itohex(i) {
- 	if( i == 0) { aa = '0' }
-	else { if( i == 1 ) { aa = '1' }
-	else { if( i == 2 ) { aa = '2' }
-	else { if( i == 3 ) { aa = '3' }
-	else { if( i == 4 ) { aa = '4' }
-	else { if( i == 5 ) { aa = '5' }
-	else { if( i == 6 ) { aa = '6' }
-	else { if( i == 7 ) { aa = '7' }
-	else { if( i == 8 ) { aa = '8' }
-	else { if( i == 9 ) { aa = '9' }
-	else { if( i == 10) { aa = 'a' }
-	else { if( i == 11) { aa = 'b' }
-	else { if( i == 12) { aa = 'c' }
-	else { if( i == 13) { aa = 'd' }
-	else { if( i == 14) { aa = 'e' }
- 	else { if( i == 15) { aa = 'f' }
-	}}}}}}}}}}}}}}}
-	return aa
+ 	if      (i == 0)  { aa = '0'; }
+	else if (i == 1)  { aa = '1'; }
+	else if (i == 2)  { aa = '2'; }
+	else if (i == 3)  { aa = '3'; }
+	else if (i == 4)  { aa = '4'; }
+	else if (i == 5)  { aa = '5'; }
+	else if (i == 6)  { aa = '6'; }
+	else if (i == 7)  { aa = '7'; }
+	else if (i == 8)  { aa = '8'; }
+	else if (i == 9)  { aa = '9'; }
+	else if (i == 10) { aa = 'a'; }
+	else if (i == 11) { aa = 'b'; }
+	else if (i == 12) { aa = 'c'; }
+	else if (i == 13) { aa = 'd'; }
+	else if (i == 14) { aa = 'e'; }
+	else if (i == 15) { aa = 'f'; }
+
+	return aa;
 }
 
 
@@ -105,14 +105,14 @@ function skydeKnap(e){
 	if (ns6) flytobj = e.target; else flytobj = event.srcElement;
 	if (ns6) topelement = "HTML"; else topelement = "BODY";
 	while (flytobj.tagName != topelement && flytobj.className != "skyd"){
-		if(ns6) flytobj = flytobj.parentNode; else flytobj = flytobj.parentElement;
+		if (ns6) flytobj = flytobj.parentNode; else flytobj = flytobj.parentElement;
 	}
 	if (flytobj.className == "skyd"){
 		skydNu = true;
 		knapObj = flytobj;
 		knappos = knapObj.style.left;
 		temp2 = parseInt(knappos);
-		if(ns6) x = e.clientX; else x = event.clientX;
+		if (ns6) x = e.clientX; else x = event.clientX;
 		document.onmousemove = flytKnap;
 		return false;
 	}

@@ -17,8 +17,6 @@ if ($action eq 'detailedversion') { return 1; }
 
 &LoadLanguage('EventCal');
 
-eval {require "$vardir/eventcalset.txt"; };
-
 sub cal_birthdaylist {
 	if (!$Show_BirthdaysList || ($iamguest && $Show_BirthdaysList != 2)) { &fatal_error('not_allowed'); }
 
@@ -124,16 +122,14 @@ sub cal_birthdaylist {
 
 	&ManageMemberinfo("load");
 
-	fopen(EVENTBIRTH, "$vardir/eventcalbday.db");
-	my @birthmembers = <EVENTBIRTH>;
-	fclose(EVENTBIRTH);
+	my @birthmembers = &read_DBorFILE(1,'',$vardir,'eventcalbday','db');
 
 	my @birthmembers1 = ();
 	foreach $user_name (@birthmembers) {
 		chomp $user_name;
 		($user_bdyear, $user_bdmon, $user_bdday, $user_bdname) = split(/\|/,$user_name);
 
-		$memrealname = (split(/\|/, $memberinf{$user_bdname}, 2))[0];
+		$memrealname = (split(/\|/, $memberinf{$user_bdname}, 3))[1];
 
  		if (($user_bdmon < $actualmon) || (($user_bdmon == $actualmon) && ($user_bdday <= $actualday))) {
 			$age = $year-$user_bdyear;

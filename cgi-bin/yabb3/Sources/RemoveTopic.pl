@@ -21,7 +21,7 @@ sub RemoveThread {
 	$thread = $INFO{'thread'};
 	&fatal_error ('only_numbers_allowed') if ($thread =~ /\D/);
 
-	if (!$iammod && !$iamadmin && !$iamgmod && !$iamposter) {
+	if (!$staff && !$iamposter) {
 		&fatal_error("delete_not_allowed");
 	}
 	if (!$currentboard) {
@@ -29,8 +29,7 @@ sub RemoveThread {
 		$currentboard = ${$thread}{'board'};
 	}
 	$threadline = '';
-	fopen(BOARDFILE, "+<$boardsdir/$currentboard.txt", 1) || &fatal_error("cannot_open","$boardsdir/$currentboard.txt", 1);
-	my @buffer = <BOARDFILE>;
+	my @buffer = &read_DBorFILE(0,BOARDFILE,$boardsdir,$currentboard,'txt');
 	for ($a = 0; $a < @buffer; $a++) {
 		if ($buffer[$a] =~ m~\A$thread\|~) {
 			$threadline = $buffer[$a];
@@ -38,31 +37,26 @@ sub RemoveThread {
 			last;
 		}
 	}
-	truncate BOARDFILE, 0;
-	seek BOARDFILE, 0, 0;
-	print BOARDFILE @buffer;
-	fclose(BOARDFILE);
+	&write_DBorFILE(0,BOARDFILE,$boardsdir,$currentboard,'txt',@buffer);
 
 	if ($threadline) {
 		unless (ref($thread_arrayref{$thread})) {
-			fopen(FILE, "$datadir/$thread.txt") || &fatal_error("cannot_open","$datadir/$thread.txt", 1);
-			@{$thread_arrayref{$thread}} = <FILE>;
-			fclose(FILE);
+			@{$thread_arrayref{$thread}} = &read_DBorFILE(0,'',$datadir,$thread,'txt');
 		}
 
 		&BoardTotals("load", $currentboard);
 		unless ((split(/\|/, $threadline))[8] =~ /m/) {
 			${$uid.$currentboard}{'threadcount'}--;
 			${$uid.$currentboard}{'messagecount'} -= @{$thread_arrayref{$thread}};
-			 # &BoardTotals("update", ...) is done in &BoardSetLastInfo
+			# &BoardTotals("update", ...) is done in &BoardSetLastInfo
 		}
 		&BoardSetLastInfo($currentboard,\@buffer);
 		# remove thread files
-		unlink("$datadir/$thread.txt");
-		unlink("$datadir/$thread.ctb");
-		unlink("$datadir/$thread.mail");
-		unlink("$datadir/$thread.poll");
-		unlink("$datadir/$thread.polled");
+		&delete_DBorFILE("$datadir/$thread.txt");
+		&delete_DBorFILE("$datadir/$thread.ctb");
+		&delete_DBorFILE("$datadir/$thread.mail");
+		&delete_DBorFILE("$datadir/$thread.poll");
+		&delete_DBorFILE("$datadir/$thread.polled");
 		# remove attachments
 		require "$admindir/Attachments.pl";
 		my %remattach;
@@ -80,7 +74,7 @@ sub RemoveThread {
 		sub moved_loop {
 			my $th = shift;
 			foreach (keys %moved_file) {
-				if (exists $moved_file{$_} && $moved_file{$_} == $th && !-e "$datadir/$th.txt") {
+				if (exists $moved_file{$_} && $moved_file{$_} == $th && !&checkfor_DBorFILE("$datadir/$th.txt")) {
 					delete $moved_file{$_};
 					$save_moved = 1;
 					&moved_loop($_);
@@ -91,7 +85,7 @@ sub RemoveThread {
 	}
 
 	if ($INFO{'moveit'} != 1) {
-		$yySetLocation = qq~$scripturl?board=$currentboard~;
+		$yySetLocation = $INFO{'recent'} ? qq~$scripturl?action=recent~ : qq~$scripturl?board=$currentboard~;
 		&redirectexit;
 	}
 }
@@ -124,12 +118,12 @@ sub DeleteThread {
 		$INFO{'thread'} = $delete;
 		&RemoveThread;
 	}
-	$yySetLocation = qq~$scripturl?board=$currentboard~;
+	$yySetLocation = $INFO{'recent'} ? qq~$scripturl?action=recenttopics~ : qq~$scripturl?board=$currentboard~;
 	&redirectexit;
 }
 
 sub Multi {
-	if (!$iammod && !$iamadmin && !$iamgmod) { &fatal_error("not_allowed"); }
+	if (!$staff) { &fatal_error("not_allowed"); }
 
 	require "$sourcedir/SetStatus.pl";
 	require "$sourcedir/MoveSplitSplice.pl";

@@ -145,14 +145,14 @@ sub AddCats2 {
 
 	for ($i = 0; $i < $FORM{'amount'}; $i++) {
 		if ($FORM{"catimage$i"} ne "") {
-			&admin_fatal_error("invalid_character",$FORM{"catimage$i"}) if $FORM{"catimage$i"} =~ /[^0-9a-zA-Z_\.#\%\-:\+\?\$&~,\@\/]/;
-			&admin_fatal_error("",$admintxt{'44'}) if $FORM{"catimage$i"} !~ /\.(gif|png|jpe?g)$/;
+			&fatal_error("invalid_character",$FORM{"catimage$i"}) if $FORM{"catimage$i"} =~ /[^0-9a-zA-Z_\.#\%\-:\+\?\$&~,\@\/]/;
+			&fatal_error("",$admintxt{'44'}) if $FORM{"catimage$i"} !~ /\.(gif|png|jpe?g)$/;
 		}
 		if ($FORM{"theid$i"} eq "") { next; }
 		$id = $FORM{"theid$i"};
-		&admin_fatal_error("invalid_character","$admin_txt{'44'} $admin_txt{'241'}") if ($id !~ /^[0-9A-Za-z#%+-\.@^_]+$/);
+		&fatal_error("invalid_character","$admin_txt{'44'} $admin_txt{'241'}") if ($id !~ /^[0-9A-Za-z#%+-\.@^_]+$/);
 		if ($FORM{'screenornot'} ne "catscreen") {
-			if ($catinfo{"$id"}) { &admin_fatal_error("cat_defined"); }
+			if ($catinfo{"$id"}) { &fatal_error("cat_defined"); }
 			else { $cat{"$id"} = ""; }
 			push(@categoryorder, $id);
 		}

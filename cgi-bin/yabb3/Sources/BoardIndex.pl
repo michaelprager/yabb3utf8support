@@ -19,8 +19,6 @@ if ($action eq 'detailedversion') { return 1; }
 
 sub BoardIndex {
 	my ($users, $lspostid, $lspostbd, $lssub, $lsposttime, $lsposter, $lsreply, $lsdatetime, $lastthreadtime, @goodboards, @loadboards, $guestlist);
-	my ($memcount, $latestmember) = &MembershipGet;
-	chomp $latestmember;
 	$totalm = 0;
 	$totalt = 0;
 	$lastposttime   = 0;
@@ -82,7 +80,7 @@ sub BoardIndex {
 					$guestlist =~ s|<i>$last_ip</i>, ||o;
 				}
 			}
-		} elsif ($iamguest && !$guest_in_log) {
+		} elsif ($iamguest && !$iambot && !$guest_in_log) {
 			$guests++;
 		}
 
@@ -195,14 +193,12 @@ sub BoardIndex {
 	{
 		# showcase poll start
 		my $polltemp;
-		if (-e "$datadir/showcase.poll") {
-			fopen (SCPOLLFILE, "$datadir/showcase.poll");
-			my $scthreadnum = <SCPOLLFILE>;
-			fclose (SCPOLLFILE);
+		if (&checkfor_DBorFILE("$datadir/poll.showcase")) {
+			my $scthreadnum = (&read_DBorFILE(0,'',$datadir,'poll','showcase'))[0];
 
 			# Look for a valid poll file.
 			my $pollthread;
-			if (-e "$datadir/$scthreadnum.poll") {
+			if (&checkfor_DBorFILE("$datadir/$scthreadnum.poll")) {
 				&MessageTotals("load",$scthreadnum);
 				if ($iamadmin || $iamgmod) {
 					$pollthread = 1;
@@ -218,11 +214,11 @@ sub BoardIndex {
 			if ($pollthread) {
 				my $tempcurrentboard = $currentboard;
 				$currentboard = ${$scthreadnum}{'board'};
-				my $tempmod = $iammod;
-				$iammod = 0;
+				my $tempstaff = $staff;
+				$staff = 0 unless $iamadmin || $iamgmod;
 				require "$sourcedir/Poll.pl";
 				&display_poll($scthreadnum,1);
-				$iammod = $tempmod;
+				$staff = $tempstaff;
 				$polltemp = qq~<script language="JavaScript1.2" src="$yyhtml_root/ubbc.js" type="text/javascript"></script>~ . $pollmain . '<br />';
 				$currentboard = $tempcurrentboard;
 			 }
@@ -245,7 +241,7 @@ sub BoardIndex {
 			foreach (split(/,/, ${$uid.$username}{'addgroups'})) {
 				if ($_ eq $curgroup) { $iammodhere = 1; last; }
 			}
-		}		
+		}
 		
 		# if this is a parent board and it can't be posted in, set lastposttime to 0 so subboards will show latest data
 		if($subboard{$curboard} && !${$uid.$curboard}{'canpost'}) {
@@ -262,16 +258,11 @@ sub BoardIndex {
 			${$uid.$curboard}{'lastposter'} = $boardindex_txt{'470'};
 			${$uid.$curboard}{'lastposttime'} = '';
 			$lastposttime{$curboard} = $boardindex_txt{'470'};
-			fopen(MNUM, "$boardsdir/$curboard.txt");
-			my @threadlist = <MNUM>;
-			fclose(MNUM);
 			my ($messageid, $messagestate);
-			foreach (@threadlist) {
+			foreach (&read_DBorFILE(0,'',$boardsdir,$curboard,'txt')) {
 				($messageid, undef, undef, undef, undef, undef, undef, undef, $messagestate) = split(/\|/, $_);
 				if ($messagestate !~ /h/i) {
-					fopen(FILE, "$datadir/$messageid.txt") || next;
-					my @lastthreadmessages = <FILE>;
-					fclose(FILE);
+					next if !(@lastthreadmessages = &read_DBorFILE(0,'',$datadir,$messageid,'txt'));
 					my @lastmessage = split(/\|/, $lastthreadmessages[$#lastthreadmessages], 6);
 					${$uid.$curboard}{'lastpostid'} = $messageid;
 					${$uid.$curboard}{'lastsubject'} = $lastmessage[0];
@@ -405,7 +396,6 @@ sub BoardIndex {
 			} else {
 				$collapse_link = ''; $hash{$catname} = '';
 				$template_boardtable = qq~id="$catid"~;
-				$template_colboardtable = qq~id="col$catid" style="display:none;"~;
 			}
 
 			$catlink = qq~$collapse_link $hash{$catname} <a href="$scripturl?catselect=$catid" title="$boardindex_txt{'797'} $catname">$catname</a>~;
@@ -584,7 +574,7 @@ sub BoardIndex {
 				unless ($lastposterguest{$curboard} || ${$uid.$curboard}{'lastposter'} eq $boardindex_txt{'470'}) {
 					&LoadUser($lastposter);
 					if ((${$uid.$lastposter}{'regdate'} && ${$uid.$curboard}{'lastposttime'} > ${$uid.$lastposter}{'regtime'}) || ${$uid.$lastposter}{'position'} eq "Administrator" || ${$uid.$lastposter}{'position'} eq "Global Moderator") {
-						$lastposter = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$lastposter}">${$uid.$lastposter}{'realname'}</a>~;
+						$lastposter = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$lastposter}" rel="nofollow">${$uid.$lastposter}{'realname'}</a>~;
 					} else {
 						# Need to load thread to see lastposters DISPLAYname if is Ex-Member
 						fopen(EXMEMBERTHREAD, "$datadir/${$uid.$curboard}{'lastpostid'}.txt") || &fatal_error('cannot_open', "$datadir/${$uid.$curboard}{'lastpostid'}.txt", 1);
@@ -622,7 +612,7 @@ sub BoardIndex {
 				$fulltopictext = &Censor($fulltopictext);
 
 				if (${$uid.$curboard}{'lastreply'} ne "") {
-					$lastpostlink = qq~<a href="$scripturl?num=${$uid.$curboard}{'lastpostid'}/${$uid.$curboard}{'lastreply'}#${$uid.$curboard}{'lastreply'}">$img{'lastpost'}</a> $lastposttime{$curboard}~;
+					$lastpostlink = qq~<a href="$scripturl?num=${$uid.$curboard}{'lastpostid'}/${$uid.$curboard}{'lastreply'}#${$uid.$curboard}{'lastreply'}" title="$boardindex_txt{'22'}">$img{'lastpost'}</a> $lastposttime{$curboard}~;
 				} else {
 					$lastpostlink = qq~$img{'lastpost'} $boardindex_txt{'470'}~;
 				}
@@ -671,26 +661,13 @@ sub BoardIndex {
 						$template_subboards .= qq~$tmp_sublinks, ~;
 					}
 					$template_subboards =~ s/, $//g;
-					
-					my $sub_txt = $boardindex_txt{'64'};
-									
-					if($sub_count == 1) { $sub_txt = $boardindex_txt{'66'}; }
-					elsif($sub_count == 0) { $sub_txt = ''; $tmp_sublist = '';}
-					
-					# drop down arrow for expanding sub boards
-					# only do this if 1 or more sub boards and if this is an ajax call we dont want infinite levels of subboards
-					my $subdropdown;
-					if ($sub_count > 0) {
-						# don't make an ajax dropdown if we are calling from ajax. All those dropdowns would get confusing.
-						if ($INFO{'a'}) {
-							$subdropdown = qq~$sub_txt~;
-						} else {
-							$subdropdown = qq~<a href="javascript://" id="subdropa_$curboard" style="font-weight:bold" onclick="SubBoardList('$scripturl?board=$curboard','$curboard','$catid',$sub_count,$alternateboardcolor)"><img id="subdropbutton_$curboard" style="position: relative; top: 2px;" src="$imagesdir/sub_arrow.png" style="cursor: pointer;" border="0" />&nbsp;$sub_txt</a>~;
-						}
-					}
 					$tmp_sublist =~ s/({|<)yabb subboardlinks(}|>)/$template_subboards/g;
-					$tmp_sublist =~ s/({|<)yabb subdropdown(}|>)/$subdropdown/g;
 				}
+				
+				my $sub_txt = $boardindex_txt{'64'};
+				
+				if($sub_count == 1) { $sub_txt = $boardindex_txt{'66'}; }
+				elsif($sub_count == 0) { $sub_txt = ''; $tmp_sublist = '';}
 
 				my $altbrdcolor = (($alternateboardcolor % 2) == 1) ? "windowbg" : "windowbg2";
 				my $boardanchor = $curboard;
@@ -719,11 +696,11 @@ sub BoardIndex {
 					<table cellpadding="0" cellspacing="0" border="0" width="100%">
 						<tr>
 							<td width="20" valign="bottom" style="background-image:url($imagesdir/fadeleftdropdown.gif)">
-								<img onclick="MessageList('$scripturl\?board\=$curboard;messagelist=1','$yyhtml_root','$curboard', 0)" style="position: absolute; cursor: pointer; bottom: -12px; left: -12px" src="$imagesdir/closebutton.png" border="0" />
+								<img onclick="MessageList('$scripturl\?board\=$curboard;messagelist=1','$curboard', 0)" style="position: absolute; cursor: pointer; bottom: -12px; left: -12px" src="$imagesdir/closebutton.png" border="0" />
 							</td>
 							<td id="drop_$curboard" style="padding: 0px; padding-bottom: 8px"></td>
 							<td width="20" valign="top" style="background-image:url($imagesdir/faderightdropdown.gif)">
-								<img onclick="MessageList('$scripturl\?board\=$curboard;messagelist=1','$yyhtml_root','$curboard', 0)" style="position: absolute; cursor: pointer; top: -12px; right: -12px" src="$imagesdir/closebutton.png" border="0" />
+								<img onclick="MessageList('$scripturl\?board\=$curboard;messagelist=1','$curboard', 0)" style="position: absolute; cursor: pointer; top: -12px; right: -12px" src="$imagesdir/closebutton.png" border="0" />
 							</td>
 						</tr>
 					</table>
@@ -732,11 +709,19 @@ sub BoardIndex {
 				</tr>
 				~;
 				$messagedropdown = qq~
-				<img onclick="MessageList('$scripturl\?board\=$curboard;messagelist=1','$yyhtml_root','$curboard', 0)" id="dropbutton_$curboard" style="cursor: pointer" src="$imagesdir/dropdown.png" border="0" />
+				<img onclick="MessageList('$scripturl\?board\=$curboard;messagelist=1','$curboard', 0)" id="dropbutton_$curboard" style="cursor: pointer" src="$imagesdir/dropdown.png" border="0" />
 				~;
+				
+				# drop down arrow for expanding sub boards
+				# only do this if 1 or more sub boards and if this is an ajax call we dont want infinite levels of subboards
+				my $subdropdown;
+				if ($sub_count > 0 && !$INFO{'a'}) {
+					$subdropdown = qq~<img id="subdropbutton_$curboard" src="$imagesdir/dropdown.png" onclick="SubBoardList('$scripturl?board=$curboard','$curboard','$catid',$sub_count,$alternateboardcolor)" style="cursor: pointer; float: left" border="0" />&nbsp;~;
+				}
 				
 				$templateblock =~ s/({|<)yabb expandmessages(}|>)/$expandmessages/g;
 				$templateblock =~ s/({|<)yabb messagedropdown(}|>)/$messagedropdown/g;
+				$templateblock =~ s/({|<)yabb subdropdown(}|>)/$subdropdown/g;
 				
 				$templateblock =~ s/({|<)yabb boardanchor(}|>)/$boardanchor/g;
 				$templateblock =~ s/({|<)yabb new(}|>)/$new/g;
@@ -752,6 +737,7 @@ sub BoardIndex {
 				$templateblock =~ s/({|<)yabb altbrdcolor(}|>)/$altbrdcolor/g;
 				$templateblock =~ s/({|<)yabb altbrdcolor(}|>)/$altbrdcolor/g;
 				$templateblock =~ s/({|<)yabb subboardlist(}|>)/$tmp_sublist/g;
+				$templateblock =~ s/({|<)yabb subboardtxt(}|>)/$sub_txt/g;
 				$tmptemplateblock .= $templateblock;
 				
 				$alternateboardcolor++;
@@ -816,7 +802,7 @@ if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMstorenum'} $boardindex_imtx
 		}
 
 		$ims = '';
-		if ($PM_level == 1 || ($PM_level == 2 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && ($iamadmin || $iamgmod))){
+		if ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod))){
 			$ims = qq~$boardindex_txt{'795'} <a href="$scripturl?action=im"><b>${$username}{'PMmnum'}</b></a> $boardindex_txt{'796'}~;
 			if (${$username}{'PMmnum'} > 0) {
 				if (${$username}{'PMimnewcount'} == 1) {
@@ -854,30 +840,6 @@ if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMstorenum'} $boardindex_imtx
 	# Template some stuff for sub boards before the rest
 	$boardindex_template =~ s/({|<)yabb catsblock(}|>)/$tmptemplateblock/g;
 	
-	# no matter if this is ajax subboards, subboards at top of messageindex, or regular boardindex we need these vars now
-	$yymain .= qq~\n
-	<script language="JavaScript1.2" type="text/javascript">
-	<!--
-		var catNames = [$template_catnames];
-		var boardNames = [$template_boardnames];
-		var boardOpen = "";
-		var subboardOpen = "";
-		var arrowup = '<img style="margin: 2px" src="$imagesdir/arrowup.gif" />';
-		var openbutton = "$imagesdir/dropdown.png";
-		var closebutton = "$imagesdir/dropup.png";
-		var opensubbutton = "$imagesdir/sub_arrow.png";
-		var closesubbutton = "$imagesdir/sub_arrow_up.png";
-		var loadimg = "$imagesdir/loadbar.gif";
-		var cachedBoards = new Object();
-		var cachedSubBoards = new Object();
-		var curboard = "";
-		var insertindex;
-		var insertcat;
-		var prev_subcount;
-	//-->
-	</script>
-	~;
-	
 	# don't show info center, login, etc. if we're calling from sub boards
 	if(!$subboard_sel) {
 		$guestson = qq~<span class="small">$boardindex_txt{'141'}: <b>$guests</b></span>~;
@@ -886,33 +848,22 @@ if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMstorenum'} $boardindex_imtx
 
 		$totalusers = $numusers + $guests;
 
-		if (!-e ("$vardir/mostlog.txt")) {
-			fopen(MOSTUSERS, ">$vardir/mostlog.txt");
-			print MOSTUSERS "$numusers|$date\n";
-			print MOSTUSERS "$guests|$date\n";
-			print MOSTUSERS "$totalusers|$date\n";
-			print MOSTUSERS "$numbots|$date\n";
-			fclose(MOSTUSERS);
+		if (!&checkfor_DBorFILE("$vardir/mostlog.txt")) {
+			&write_DBorFILE(0,'',$vardir,'mostlog','txt',("$numusers|$date\n","$guests|$date\n","$totalusers|$date\n","$numbots|$date\n"));
 		}
-		fopen(MOSTUSERS, "$vardir/mostlog.txt");
-		@mostentries = <MOSTUSERS>;
-		fclose(MOSTUSERS);
+	@mostentries = &read_DBorFILE(1,'',$vardir,'mostlog','txt');
 		($mostmemb, $datememb) = split(/\|/, $mostentries[0]);
 		($mostguest, $dateguest) = split(/\|/, $mostentries[1]);
 		($mostusers, $dateusers) = split(/\|/, $mostentries[2]);
 		($mostbots, $datebots) = split(/\|/, $mostentries[3]);
 		chomp ($datememb, $dateguest, $dateusers, $datebots);
 		if ($numusers > $mostmemb || $guests > $mostguest || $numbots > $mostbots || $totalusers > $mostusers) {
-			fopen(MOSTUSERS, ">$vardir/mostlog.txt");
 			if ($numusers > $mostmemb) { $mostmemb = $numusers; $datememb = $date; }
 			if ($guests > $mostguest) { $mostguest = $guests; $dateguest = $date; }
 			if ($totalusers > $mostusers) { $mostusers = $totalusers; $dateusers = $date; }
 			if ($numbots > $mostbots) { $mostbots  = $numbots; $datebots = $date; }
-			print MOSTUSERS "$mostmemb|$datememb\n";
-			print MOSTUSERS "$mostguest|$dateguest\n";
-			print MOSTUSERS "$mostusers|$dateusers\n";
-			print MOSTUSERS "$mostbots|$datebots\n";
-			fclose(MOSTUSERS);
+
+			&write_DBorFILE(0,'',$vardir,'mostlog','txt',("$mostmemb|$datememb\n","$mostguest|$dateguest\n","$mostusers|$dateusers\n","$mostbots|$datebots\n"));
 		}
 		$themostmembdate = &timeformat($datememb);
 		$themostguestdate = &timeformat($dateguest);
@@ -1020,12 +971,12 @@ if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMstorenum'} $boardindex_imtx
 			$boardindex_template =~ s/({|<)yabb recentposts(}|>)//g;
 			$boardindex_template =~ s/({|<)yabb lastpostdate(}|>)//g;
 		}
-		$memcount = &NumberFormat($memcount);
+		my $memcount = &NumberFormat($members_total);
 		$membercountlink = qq~<a href="$scripturl?action=ml"><b>$memcount</b></a>~;
 		$boardindex_template =~ s/({|<)yabb membercount(}|>)/$membercountlink/g;
 		if ($showlatestmember) {
-			&LoadUser($latestmember);
-			$latestmemberlink = qq~$boardindex_txt{'201'} ~ . &QuickLinks($latestmember) . qq~.<br />~;
+			&LoadUser($last_member);
+			$latestmemberlink = qq~$boardindex_txt{'201'} ~ . &QuickLinks($last_member) . qq~.<br />~;
 			$boardindex_template =~ s/({|<)yabb latestmember(}|>)/$latestmemberlink/g;
 		} else {
 			$boardindex_template =~ s/({|<)yabb latestmember(}|>)//g;
@@ -1046,9 +997,8 @@ if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMstorenum'} $boardindex_imtx
 		$boardindex_template =~ s/({|<)yabb mostbotsdate(}|>)/$themostbotsdate/g;
 		$boardindex_template =~ s/({|<)yabb mostusersdate(}|>)/$themostuserdate/g;
 		$boardindex_template =~ s/({|<)yabb groupcolors(}|>)/$grpcolors/g;
-		$boardindex_template =~ s/({|<)yabb sharedlogin(}|>)/$shared_login/g;		
+		$boardindex_template =~ s/({|<)yabb sharedlogin(}|>)/$shared_login/g;
 	# EventCal START
-		if(-e "$vardir/eventcalset.txt") { require "$vardir/eventcalset.txt"; }
 		my $cal_display;
 		if ($Show_EventCal == 2 || (!$iamguest && $Show_EventCal == 1)) {
 			require "$sourcedir/EventCal.pl";
@@ -1060,7 +1010,27 @@ if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMstorenum'} $boardindex_imtx
 		chop($template_catnames);
 		chop($template_boardnames);
 		$yyjavascript .= qq~\nvar markallreadlang = '$boardindex_txt{'500'}';\nvar markfinishedlang = '$boardindex_txt{'500a'}';~;
-		$yymain .= qq~\n$boardindex_template~;
+		$yymain .= qq~\n
+	<script language="JavaScript1.2" src="$yyhtml_root/ajax.js" type="text/javascript"></script>
+	<script language="JavaScript1.2" type="text/javascript">
+	<!--
+		var catNames = [$template_catnames];
+		var boardNames = [$template_boardnames];
+		var boardOpen = "";
+		var subboardOpen = "";
+		var arrowup = '<img style="margin: 2px" src="$imagesdir/arrowup.gif" />';
+		var openbutton = "$imagesdir/dropdown.png";
+		var closebutton = "$imagesdir/dropup.png";
+		var loadimg = "$imagesdir/loadbar.gif";
+		var cachedBoards = new Object();
+		var cachedSubBoards = new Object();
+		var curboard = "";
+		var insertindex;
+		var insertcat;
+		var prev_subcount;
+	//-->
+	</script>
+	$boardindex_template~;
 
 		if (${$username}{'PMimnewcount'} > 0) {
 			if (${$username}{'PMimnewcount'} > 1) { $en = 's'; $en2 = $boardindex_imtxt{'47'}; }
@@ -1162,7 +1132,7 @@ if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMstorenum'} $boardindex_imtx
 			}
 		}
 	} else {
-		print "Content-type: text/html; charset=ISO-8859-1\n\n";
+		print "Content-type: text/plain\n\n";
 		print qq~
 		<table id="subloaded_$INFO{'board'}" style="display:none">
 		$boardindex_template
@@ -1202,7 +1172,7 @@ sub Collapse_Write {
 	}
 	${$uid.$username}{'cathide'} = join(",", @userhide);
 	&UserAccount($username, "update");
-	if (-e "$memberdir/$username.cat") { unlink "$memberdir/$username.cat"; }
+	if (&checkfor_DBorFILE("$memberdir/$username.cat")) { &delete_DBorFILE("$memberdir/$username.cat"); }
 }
 
 sub Collapse_Cat {
@@ -1316,16 +1286,9 @@ sub gostRemove {
 
 sub Del_Max_IM {
 	my ($ext,$max) = @_;
-	fopen(DELMAXIM, "+<$memberdir/$username.$ext");
-	seek DELMAXIM, 0, 0;
-	my @IMmessages = <DELMAXIM>;
-	seek DELMAXIM, 0, 0;
-	truncate DELMAXIM, 0;
-
+	my @IMmessages = &read_DBorFILE(0,DELMAXIM,$memberdir,$username,$ext);
 	splice(@IMmessages,$max);
-
-	print DELMAXIM @IMmessages;
-	fclose(DELMAXIM);
+	&write_DBorFILE(0,DELMAXIM,$memberdir,$username,$ext,@IMmessages);
 }
 
 1;

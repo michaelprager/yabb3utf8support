@@ -117,7 +117,7 @@ $boardindex_template .= qq~
 	</td>
 	<td class="windowbg2" valign="top" align="center">
 		<div class="small" style="float: left; width: 59%; text-align: left;">
-			$boardindex_txt{'489'} <b><yabb totalmessages> $boardindex_txt{'21'}</b> $boardindex_txt{'490'} <b><yabb totaltopics> $boardindex_txt{'330'}</b>.<br />
+			$boardindex_txt{'489'} <b><yabb totalmessages> $boardindex_txt{'21l'}</b> $boardindex_txt{'490'} <b><yabb totaltopics> $boardindex_txt{'330l'}</b>.<br />
 			<yabb lastpostlink> <yabb lastpostdate>
 			<yabb recentposts>
 		</div>

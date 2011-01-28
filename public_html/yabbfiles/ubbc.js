@@ -36,14 +36,14 @@ function AddSelText(bbopen, bbclose) {
 	else if (document.postmodify.message.setSelectionRange) {
 		var selectionStart = document.postmodify.message.selectionStart;
 		var selectionEnd = document.postmodify.message.selectionEnd;
-		var currentTop = document.postmodify.message.scrollTop;		
+		var currentTop = document.postmodify.message.scrollTop;
 		var replaceString = bbopen + document.postmodify.message.value.substring(selectionStart, selectionEnd) + bbclose;
 		document.postmodify.message.value = document.postmodify.message.value.substring(0, selectionStart) + replaceString + document.postmodify.message.value.substring(selectionEnd);
 		document.postmodify.message.setSelectionRange(selectionStart + bbopen.length, selectionEnd + bbopen.length);
-		document.postmodify.message.scrollTop = currentTop;		
+		document.postmodify.message.scrollTop = currentTop;
 	}
 	else document.postmodify.message.value += bbopen + bbclose;
-	document.postmodify.message.focus()
+	document.postmodify.message.focus();
 }
 
 function AddText(text) {
@@ -53,7 +53,7 @@ function AddText(text) {
 function AddSelTextUrl(bbopen, bbclose) {
 	var thetext = '';
 	var theurl = '';
-	blopen = bbopen.substring(0, bbopen.length - 1)
+	blopen = bbopen.substring(0, bbopen.length - 1);
 	if (document.postmodify.message.caretPos) {
 		tmpString=document.postmodify.message.caretPos.text.replace(/\s*(.+?)\s*$/i, "$1");
 		var old_length = tmpString.length;
@@ -85,16 +85,15 @@ function AddSelTextUrl(bbopen, bbclose) {
 		else replaceString = bbopen + tmpString + bbclose;
 		document.postmodify.message.value = document.postmodify.message.value.substring(0, selectionStart) + replaceString + document.postmodify.message.value.substring(selectionEnd);
 		document.postmodify.message.setSelectionRange(selectionStart + markString.length, selectionEnd + bbopen.length);
-		document.postmodify.message.scrollTop = currentTop;		
+		document.postmodify.message.scrollTop = currentTop;
 	}
 	else document.postmodify.message.value += bbopen + bbclose;
-	document.postmodify.message.focus()
+	document.postmodify.message.focus();
 }
 
 function emai1() {
 	AddSelTextUrl("[email]","[/email]");
 }
-
 
 function hyperlink() {
 	AddSelTextUrl("[url]","[/url]");

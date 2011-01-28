@@ -63,9 +63,7 @@ sub DownloadView {
 
 	my $thread = $INFO{'thread'};
 	unless (ref($thread_arrayref{$thread})) {
-		fopen(MSGTXT, "$datadir/$thread.txt") || &fatal_error("cannot_open","$datadir/$thread.txt", 1);
-		@{$thread_arrayref{$thread}} = <MSGTXT>;
-		fclose(MSGTXT);
+		@{$thread_arrayref{$thread}} = &read_DBorFILE(0,'',$datadir,$thread,'txt');
 	}
 	my $threadname = (split(/\|/, ${$thread_arrayref{$thread}}[0], 2))[0];
 	my @attachinput = map { split(/,/, (split(/\|/, $_))[12]) } @{$thread_arrayref{$thread}};
@@ -74,9 +72,7 @@ sub DownloadView {
 	my (%attachinput,$viewattachments);
 	map { $attachinput{$_} = 1; } @attachinput;
 
-	fopen(AML, "$vardir/attachments.txt") || &fatal_error("cannot_open","$vardir/attachments.txt", 1);
-	@attachinput = grep { $_ =~ /$thread\|.+\|(.+)\|\d+\s+/ && exists $attachinput{$1} } <AML>;
-	fclose(AML);
+	@attachinput = grep { $_ =~ /$thread\|.+\|(.+)\|\d+\s+/ && exists $attachinput{$1} } &read_DBorFILE(0,'',$vardir,'attachments','txt');
 
 	my $max = @attachinput;
 
@@ -281,18 +277,13 @@ sub DownloadFileCouter {
 
 	if ($guest_media_disallowed && $iamguest) { &fatal_error("",$maintxt{'40'}); }
 
-	if (!-e "$uploaddir/$dfile") { &fatal_error("","$dfile $maintxt{'23'}"); }
+	if (!&checkfor_DBorFILE("$uploaddir/$dfile")) { &fatal_error("","$dfile $maintxt{'23'}"); }
 
-	fopen(ATM, "+<$vardir/attachments.txt", 1) || &fatal_error("cannot_open","$vardir/attachments.txt", 1);
-	seek ATM, 0, 0;
-	my @attachments = <ATM>;
-	truncate ATM, 0;
-	seek ATM, 0, 0;
+	my @attachments = &read_DBorFILE(0,ATM,$vardir,'attachments','txt');
 	for (my $a = 0; $a < @attachments; $a++) {
 		$attachments[$a] =~ s/(.+\|)(.+)\|(\d+)(\s+)$/ $1 . ($dfile eq $2 ? "$2|" . ($3 + 1) : "$2|$3") . $4 /e;
 	}
-	print ATM @attachments;
-	fclose(ATM);
+	&write_DBorFILE(0,ATM,$vardir,'attachments','txt',@attachments);
 
 	print "Location: $uploadurl/$dfile\n\r\n\r";
 

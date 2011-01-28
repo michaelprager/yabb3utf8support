@@ -254,14 +254,15 @@ sub CallBack {
 sub CallBackRec {
 	my ($receiver,$rid,$do_it) = @_;
 
-	fopen(RECMSG, "$memberdir/$receiver.msg");
-	my @rims = <RECMSG>;
-	fclose(RECMSG);
+	if (!&checkfor_DBorFILE("$memberdir/$receiver.vars")) {
+		return 0 ;
+	} else {
+		${$uid.$receiver}{'mysql'} = 1 if $use_MySQL;
+	}
 
-	my ($nodel,$rmessageid,$fromuser,$flags);
-	fopen(REVMSG, ">$memberdir/$receiver.msg") if $do_it;
+	my ($nodel,$rmessageid,$fromuser,$flags,@rmsg);
 	## run through and drop the message line
-	foreach (@rims) {
+	foreach (($do_it ? &read_DBorFILE(0,CALLBACK,$memberdir,$receiver,'msg') : &read_DBorFILE(0,'',$memberdir,$receiver,'msg'))) {
 		($rmessageid,$fromuser, undef, undef, undef, undef, undef, undef, undef, undef, undef, undef, $flags, undef) = split(/\|/, $_, 14);
 		if (!$do_it) {
 			if ($rmessageid == $rid && $fromuser eq $username) {
@@ -269,11 +270,11 @@ sub CallBackRec {
 				last;
 			}
 		} else {
-			if ($rmessageid != $rid || $fromuser ne $username) { print REVMSG $_; }
-			elsif ($flags !~ /u/i) { print REVMSG $_; $nodel = 1;}
+			if ($rmessageid != $rid || $fromuser ne $username) { push(@rmsg, $_); }
+			elsif ($flags !~ /u/i) { push(@rmsg, $_); $nodel = 1;}
 		}
 	}
-	fclose(REVMSG) if $do_it;
+	&write_DBorFILE(${$uid.$receiver}{'mysql'},CALLBACK,$memberdir,$receiver,'msg',@rmsg) if $do_it;
 	$nodel;
 }
 
@@ -306,10 +307,8 @@ sub checkMessageFlag { # look for $user.$pmFile, find $id message and check for 
 	my $messageFoundFlag = 0;
 	if (%{'MF' . $user . $pmFile}) {
 		if (exists ${'MF' . $user . $pmFile}{$id} && ${'MF' . $user . $pmFile}{$id} =~ /$messageFlag/i) { $messageFoundFlag = 1; }
-	} elsif (-e "$memberdir/$user.$pmFile") {
-		fopen ("USERMSG", "$memberdir/$user.$pmFile");
-		my @userMessages = <USERMSG>;
-		fclose ("USERMSG");
+	} elsif (&checkfor_DBorFILE("$memberdir/$user.$pmFile")) {
+		my @userMessages = &read_DBorFILE(0,'',$memberdir,$user,$pmFile);
 		my ($uMessageId,$uMessageFlags);
 		foreach (@userMessages) {
 			($uMessageId, undef, undef, undef, undef, undef, undef, undef, undef, undef, undef, undef, $uMessageFlags, undef) = split(/\|/, $_,  14);
@@ -323,12 +322,9 @@ sub checkMessageFlag { # look for $user.$pmFile, find $id message and check for 
 sub updateMessageFlag { # look for $user.$pmFile, find $id message and check for $messageFlag. change to $newMessageFlag
 	my ($user, $id, $pmFile, $messageFlag, $newMessageFlag) = @_;
 	my $messageFoundFlag = 0;
-	if ((!exists ${'MF' . $user . $pmFile}{$id} || ($messageFlag ne '' && ${'MF' . $user . $pmFile}{$id} =~ /$messageFlag/) || ($messageFlag eq '' && !${'MF' . $user . $pmFile}{$id} =~ /$newMessageFlag/)) && -e "$memberdir/$user.$pmFile") {
-		fopen ("USERFILE", "+<$memberdir/$user.$pmFile");
-		my @userFile = <USERFILE>;
-		seek USERFILE, 0, 0;
-		truncate USERFILE, 0;
-		foreach my $userMessage (@userFile) {
+	if ((!exists ${'MF' . $user . $pmFile}{$id} || ($messageFlag ne '' && ${'MF' . $user . $pmFile}{$id} =~ /$messageFlag/) || ($messageFlag eq '' && !${'MF' . $user . $pmFile}{$id} =~ /$newMessageFlag/)) && &checkfor_DBorFILE("$memberdir/$user.$pmFile")) {
+		my @userFile;
+		foreach my $userMessage (&read_DBorFILE(0,USERFILE,$memberdir,$user,$pmFile)) {
 			my ($uMessageId, $uFrom, $uToUser, $uTocc, $uTobcc, $uSubject, $uDate, $uMessage, $uPid, $uReply , $uip, $uStatus, $uMessageFlags, $uStorefolder, $uAttach) = split(/\|/, $userMessage);
 			if ($uMessageId == $id) {
 				$uMessageFlags =~ s/$newMessageFlag//gi if $newMessageFlag ne '';
@@ -340,9 +336,9 @@ sub updateMessageFlag { # look for $user.$pmFile, find $id message and check for
 				$userMessage = "$uMessageId|$uFrom|$uToUser|$uTocc|$uTobcc|$uSubject|$uDate|$uMessage|$uPid|$uReply|$uip|$uStatus|$uMessageFlags|$uStorefolder|$uAttach";
 			}
 			${'MF' . $user . $pmFile}{$uMessageId} = $uMessageFlags;
-			print USERFILE  $userMessage;
+			push(@userFile, $userMessage);
 		}
-		fclose("USERFILE");
+		&write_DBorFILE(${$uid.$user}{'mysql'},USERFILE,$memberdir,$user,$pmFile,@userFile);
 	}
 	$messageFoundFlag;
 }
@@ -390,19 +386,16 @@ sub Del_Some_IM {
 	&LoadLanguage('InstantMessage');
 	if ($iamguest) { &fatal_error('im_members_only'); }
 
-	my $fileToOpen = "$username.msg";
-	if ($INFO{'caller'} == 2)    { $fileToOpen = "$username.outbox"; }
-	elsif ($INFO{'caller'} == 3) { $fileToOpen = "$username.imstore"; }
-	elsif ($INFO{'caller'} == 4) { $fileToOpen = "$username.imdraft"; }
-	elsif ($INFO{'caller'} == 5) { $fileToOpen = "broadcast.messages"; }
+	my @fileToOpen = ($username,"msg");
+	if ($INFO{'caller'} == 2)    { $fileToOpen[1] = "outbox"; }
+	elsif ($INFO{'caller'} == 3) { $fileToOpen[1] = "imstore"; }
+	elsif ($INFO{'caller'} == 4) { $fileToOpen[1] = "imdraft"; }
+	elsif ($INFO{'caller'} == 5) { @fileToOpen = ("broadcast","messages"); }
 
-	fopen(USRFILE, "+<$memberdir/$fileToOpen");
-	seek USRFILE, 0, 0;
-	my @messages = <USRFILE>;
-	seek USRFILE, 0, 0;
-	truncate USRFILE, 0;
+	my @messages = &read_DBorFILE(0,USRFILE,$memberdir,@fileToOpen);
 
 	# deleting
+	my @left_messages;
 	if ($FORM{'imaction'} eq $inmes_txt{'remove'} || $INFO{'action'} eq $inmes_txt{'remove'} || $INFO{'deleteid'}) {
 		my %CountStore;
 		if ($INFO{'caller'} == 2)    { ${$username}{'PMmoutnum'} = 0; }
@@ -414,7 +407,7 @@ sub Del_Some_IM {
 		foreach (@messages) {
 			my @m = split(/\|/, $_);
 			if (!exists $FORM{"message" . $m[0]}) {
-				print USRFILE $_;
+				push(@left_messages, $_);
 
 				if ($INFO{'caller'} == 2)    { ${$username}{'PMmoutnum'}++; }
 				elsif ($INFO{'caller'} == 3) { $CountStore{$m[13]}++; }
@@ -428,7 +421,7 @@ sub Del_Some_IM {
 				}
 			}
 		}
-		fclose(USRFILE);
+		&write_DBorFILE(${$uid.$fileToOpen[0]}{'mysql'},USRFILE,$memberdir,@fileToOpen,@left_messages);
 		if ($INFO{'caller'} == 3) {
 			${$username}{'PMfoldersCount'} = '';
 			${$username}{'PMstorenum'} = 0;
@@ -450,7 +443,7 @@ sub Del_Some_IM {
 		foreach (@messages) {
 			if (!$FORM{"message" . (split(/\|/, $_, 2))[0]}) {
 				if ($INFO{'caller'} != 3) {
-					print USRFILE $_;
+					push(@left_messages, $_);
 				} else {
 					my @m = split(/\|/, $_);
 					push(@newmessages, [@m]);
@@ -469,21 +462,17 @@ sub Del_Some_IM {
 				}
 			}
 		}
-		fclose(USRFILE);
+		&write_DBorFILE(${$uid.$fileToOpen[0]}{'mysql'},USRFILE,$memberdir,@fileToOpen,@left_messages);
 
 		if (@newmessages) {
 			if ($INFO{'caller'} != 3) {
-				fopen(IUSRFILE, "$memberdir/$username.imstore");
-				foreach (<IUSRFILE>) {
+				foreach (&read_DBorFILE(0,'',$memberdir,$username,'imstore')) {
 					my @m = split(/\|/, $_);
 					push(@newmessages, [@m]);
 					$CountStore{$m[13]}++;
 				}
-				fclose(IUSRFILE);
 			}
-			fopen(TRANSFER, ">$memberdir/$username.imstore");
-			print TRANSFER map({ join('|', @$_) } sort { $$b[6] <=> $$a[6] } @newmessages);
-			fclose(TRANSFER);
+			&write_DBorFILE(${$uid.$username}{'mysql'},'',$memberdir,$username,'imstore',map { join('|', @$_) } sort { $$b[6] <=> $$a[6] } @newmessages);
 
 			${$username}{'PMfoldersCount'} = '';
 			foreach (split(/\|/, ${$username}{'PMfolders'})) {
@@ -504,10 +493,10 @@ sub Del_Some_IM {
 	&redirectexit;
 }
 
-# if the user is valid..
+# if the user is valid...
 sub LoadValidUserDisplay {
 	my $muser = $_[0];
-	if (!$yyUDLoaded{$muser} && -e "$memberdir/$muser.vars") { $sm = 1; &LoadUserDisplay($muser); }
+	if (!$yyUDLoaded{$muser} && &checkfor_DBorFILE("$memberdir/$muser.vars")) { $sm = 1; &LoadUserDisplay($muser); }
 }
 
 # create either a full link or just a name for the IM display
@@ -533,17 +522,15 @@ sub CreateUserDisplayLine {
 				$sendEmail = qq~$menusep<a href="mailto:${$uid.$usrname}{'email'}">$img{'email_sm'}</a>~;
 			}
 
-			my $wwwlink = ${$uid.$usrname}{'weburl'} ? qq~$menusep${$uid.$usrname}{'weburl'}~ : '';
-			my $aimad = ${$uid.$usrname}{'aim'} ? qq~$menusep${$uid.$usrname}{'aim'}~ : '';
-			my $icqad = ${$uid.$usrname}{'icq'} ? qq~$menusep${$uid.$usrname}{'icq'}~ : '';
-			my $yimad = ${$uid.$usrname}{'yim'} ? qq~$menusep${$uid.$usrname}{'yim'}~ : '';
-			my $msnad = ${$uid.$usrname}{'msn'} ? qq~$menusep${$uid.$usrname}{'msn'}~ : '';
-			my $gtalkad = ${$uid.$usrname}{'gtalk'} ? qq~$menusep${$uid.$usrname}{'gtalk'}~ : '';
-			my $skypead = ${$uid.$usrname}{'skype'} ? qq~$menusep${$uid.$usrname}{'skype'}~ : '';
-			my $myspacead = ${$uid.$usrname}{'myspace'} ? qq~$menusep${$uid.$usrname}{'myspace'}~ : '';
-			my $facebookad = ${$uid.$usrname}{'facebook'} ? qq~$menusep${$uid.$usrname}{'facebook'}~ : '';
-
-			$membAdInfo = $profbutton . $wwwlink . $msnad . $gtalkad . $icqad . $yimad . $aimad . $skypead . $myspacead . $facebookad;
+			$membAdInfo .= ${$uid.$usrname}{'weburl'}   ? $menusep.${$uid.$usrname}{'weburl'} : '';
+			$membAdInfo .= ${$uid.$usrname}{'msn'}      ? $menusep.${$uid.$usrname}{'msn'} : '';
+			$membAdInfo .= ${$uid.$usrname}{'gtalk'}    ? $menusep.${$uid.$usrname}{'gtalk'} : '';
+			$membAdInfo .= ${$uid.$usrname}{'skype'}    ? $menusep.${$uid.$usrname}{'skype'} : '';
+			$membAdInfo .= ${$uid.$usrname}{'myspace'}  ? $menusep.${$uid.$usrname}{'myspace'} : '';
+			$membAdInfo .= ${$uid.$usrname}{'facebook'} ? $menusep.${$uid.$usrname}{'facebook'} : '';
+			$membAdInfo .= ${$uid.$usrname}{'icq'}      ? $menusep.${$uid.$usrname}{'icq'} : '';
+			$membAdInfo .= ${$uid.$usrname}{'yim'}      ? $menusep.${$uid.$usrname}{'yim'} : '';
+			$membAdInfo .= ${$uid.$usrname}{'aim'}      ? $menusep.${$uid.$usrname}{'aim'} : '';
 		}
 		$usernamelink = $link{$usrname};
 		if ($musername eq $username) {
@@ -571,16 +558,14 @@ sub IMPost {
 	if ($INFO{'id'} ne '' && !$replyguest) {
 		if ($INFO{'caller'} < 5) { &updateIMS($username, $INFO{'id'}, 'inread'); }
 
-		my $pmFileType = "$username.msg";
-		if ($INFO{'caller'} == 2) { $pmFileType = "$username.outbox"; }
-		elsif ($INFO{'caller'} == 3) { $pmFileType = "$username.imstore"; }
-		elsif ($INFO{'caller'} == 4) { $pmFileType = "$username.imdraft"; }
-		elsif ($INFO{'caller'} == 5) { $pmFileType = "broadcast.messages"; }
+		my @pmFileType = ($username,"msg");
+		if ($INFO{'caller'} == 2)    { $pmFileType[1] = "outbox"; }
+		elsif ($INFO{'caller'} == 3) { $pmFileType[1] = "imstore"; }
+		elsif ($INFO{'caller'} == 4) { $pmFileType[1] = "imdraft"; }
+		elsif ($INFO{'caller'} == 5) { @pmFileType = ("broadcast","messages"); }
 
+		@messages = &read_DBorFILE(0,'',$memberdir,@pmFileType);
 
-		fopen(FILE, "$memberdir/$pmFileType");
-		@messages = <FILE>;
-		fclose(FILE);
 		## split content of IM file up
 		foreach my $checkTheMessage (@messages) {
 			($qmessageid, $mfrom, $mto, $mtocc, $mtobcc, $msubject, $mdate, $message, $mparid, $mreplyno, $mip, $mstatus, $mflags, $mstore, $mattach) = split(/\|/, $checkTheMessage);
@@ -614,11 +599,8 @@ sub IMPost {
 		}
 		if ($INFO{'reply'} || $INFO{'forward'} || $INFO{'quote'}) { $msubject = "Re: $msubject"; }
 	} elsif ($replyguest) {
-		fopen(FILE, "$memberdir/broadcast.messages");
-		my @messages = <FILE>;
-		fclose(FILE);
 		## split content of IM file up
-		foreach my $checkTheMessage (@messages){
+		foreach my $checkTheMessage (&read_DBorFILE(0,'',$memberdir,'broadcast','messages')){
 			($qmessageid, $mfrom, $mto, $mtocc, $mtobcc, $msubject, $mdate, $message, $mparid, $mreplyno, $mip, $mstatus, $mflags, $mstore, $mattach) = split(/\|/, $checkTheMessage);
 			if ($qmessageid == $INFO{'id'}) { last; }
 		}
@@ -659,18 +641,14 @@ sub IMPost {
 sub MarkAll {
 	if ($iamguest) { &fatal_error('im_members_only'); }
 
-	fopen(FILE, "+<$memberdir/$username.msg");
-	seek FILE, 0, 0;
-	my @messages = <FILE>;
-	seek FILE, 0, 0;
-	truncate FILE, 0;
-	foreach (@messages) {
+	my @messages;
+	foreach (&read_DBorFILE(0,MARKALL,$memberdir,$username,'msg')) {
 		my ($imessageid, $imusername, $imusernameto, $imusernametocc, $imusernametobcc, $imsub, $imdate, $mmessage, $imessagepid, $imreply, $mip, $imstatus, $imflags, $imstore, $imattach) = split(/\|/, $_);
 		if ($imflags =~ s/u//i) {
-			print FILE "$imessageid|$imusername|$imusernameto|$imusernametocc|$imusernametobcc|$imsub|$imdate|$mmessage|$imessagepid|$imreply|$mip|$imstatus|$imflags|$imstore|$imattach";
-		} else { print FILE $_; }
+			push(@messages, "$imessageid|$imusername|$imusernameto|$imusernametocc|$imusernametobcc|$imsub|$imdate|$mmessage|$imessagepid|$imreply|$mip|$imstatus|$imflags|$imstore|$imattach");
+		} else { push(@messages, $_); }
 	}
-	fclose(FILE);
+	&write_DBorFILE(${$uid.$username}{'mysql'},MARKALL,$memberdir,$username,'msg',@messages);
 
 	${$username}{'PMimnewcount'} = 0;
 	&buildIMS($username, 'update');
@@ -705,36 +683,29 @@ sub drawPMbox {
 	$PMfileToOpen = $_[0];
 	@dimmessages;
 	@bmessages;
-	if ($view eq 'pm' && ($PM_level  == 1 || $PM_level  == 2 && ($iamadmin || $iamgmod || $iammod) || $PM_level  == 3 && ($iamadmin || $iamgmod) )) {
-		($qmessageid, $mfrom, $mto, $mtocc, $mtobcc, $msubject, $mdate, $message, $mparid, $mreplyno, $mip, $mstatus, $mflags, $mstore, $mattach);
-
+	if (($PMfileToOpen || $INFO{'focus'}) && $view eq 'pm' && ($PM_level  == 1 || ($PM_level  == 2 && $staff) || ($PM_level  == 3 && ($iamadmin || $iamgmod)))) {
 		if (!$INFO{'focus'}) {
 			if ($callerid < 5) {
-				fopen(NFILE, "$memberdir/$username.$PMfileToOpen");
-				@dimmessages = <NFILE>;
+				@dimmessages = &read_DBorFILE(1,'',$memberdir,$username,$PMfileToOpen);
 				my ($mID,$mFlag);
 				foreach (reverse(@dimmessages)) {
-					($mID, undef, undef, undef, undef, undef, undef, undef, undef, undef, undef, undef, $mFlag, undef) = split(/\|/, $_,  14);
+					($mID, undef, undef, undef, undef, undef, undef, undef, undef, undef, undef, undef, $mFlag, undef) = split(/\|/, $_, 14);
 					${$username . $PMfileToOpen}{$mID} = $mFlag;
 					if ($INFO{'id'} == -1 && $mFlag eq 'u') {
 						$INFO{'id'} = $mID;
 					}
 				}
 			} else {
-				fopen(NFILE, "$memberdir/broadcast.messages");
-				@bmessages = <NFILE>;
+				@bmessages = &read_DBorFILE(1,'',$memberdir,'broadcast','messages');
 			}
-			fclose(NFILE);
-		}
-		elsif ($INFO{'focus'} eq 'bmess' && $PMenableBm_level > 0) {
-			fopen(BFILE, "$memberdir/broadcast.messages");
-			@bmessages = <BFILE>;
-			fclose(BFILE);
+		} elsif ($INFO{'focus'} eq 'bmess' && $PMenableBm_level > 0) {
+			@bmessages = &read_DBorFILE(1,'',$memberdir,'broadcast','messages');
 		}
 		$stkmess = 0;
 		if (@bmessages > 0) {
+			my ($mfrom, $mto, $messStatus);
 			foreach my $checkbcm (@bmessages) {
-				my (undef, $mfrom, $mto, undef, undef, undef, undef, undef, undef, undef, undef, $messStatus, undef) = split (/\|/, $checkbcm);
+				(undef, $mfrom, $mto, undef, undef, undef, undef, undef, undef, undef, undef, $messStatus, undef) = split (/\|/, $checkbcm);
 				if ($mfrom eq $username || &BroadMessageView($mto)) {
 					if ($INFO{'sort'} ne 'gpdate' && ($messStatus =~ /g/ || $messStatus =~ /a/)) {
 						push (@stkbmessages, $checkbcm);
@@ -822,12 +793,12 @@ function insert_user (oElement,username,userid) {
 </script>
 	~;
 
-	if ($action =~ /^im/ && (!@dimmessages && $INFO{'focus'} ne 'bmess') && ($PM_level == 1 || $PM_level == 2 && ($iamadmin || $iamgmod || $iammod) || $PM_level == 3 && ($iamadmin || $iamgmod))) {
+	if ($action =~ /^im/ && (!@dimmessages && $INFO{'focus'} ne 'bmess') && ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod)))) {
 		if (!@dimmessages) {
-			if ($action eq 'im') { unlink("$memberdir/$username.msg"); }
-			elsif ($action eq 'imoutbox')  { unlink("$memberdir/$username.outbox"); }
-			elsif ($action eq 'imstorage') { unlink("$memberdir/$username.imstore"); }
-			elsif ($action eq 'imdraft') { unlink("$memberdir/$username.imdraft"); }
+			if    ($action eq 'im')        { &delete_DBorFILE("$memberdir/$username.msg"); }
+			elsif ($action eq 'imoutbox')  { &delete_DBorFILE("$memberdir/$username.outbox"); }
+			elsif ($action eq 'imstorage') { &delete_DBorFILE("$memberdir/$username.imstore"); }
+			elsif ($action eq 'imdraft')   { &delete_DBorFILE("$memberdir/$username.imdraft"); }
 		}
 	}
 
@@ -847,7 +818,7 @@ function insert_user (oElement,username,userid) {
 		$newtemplate = 1;
 	}
 
-	if ($view eq 'profile' || ($view eq 'mycenter' && ($PM_level == 0 || ($PM_level == 2 && !$iamadmin && !$iamgmod && !$iammod ) || ($PM_level == 3 && !$iamadmin && !$iamgmod)))) {
+	if ($view eq 'profile' || ($view eq 'mycenter' && ($PM_level == 0 || ($PM_level == 2 && !$staff) || ($PM_level == 3 && !$iamadmin && !$iamgmod)))) {
 		$display_prof = 'inline';
 		$tabProfHighlighted = 'windowbg2';
 	} else {
@@ -863,7 +834,7 @@ function insert_user (oElement,username,userid) {
 		$tabNotifyHighlighted = 'windowbg';
 	}
 
-	if ($view eq 'pm' || ($view eq 'mycenter' && ($PM_level == 1 || ($PM_level == 2 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && ($iamadmin || $iamgmod))))) {
+	if ($view eq 'pm' || ($view eq 'mycenter' && ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod))))) {
 		$display_pm = 'inline';
 
 		$tabPMHighlighted = 'windowbg2';
@@ -873,7 +844,7 @@ function insert_user (oElement,username,userid) {
 	}
 
 	my $tabWidth = '33%';
-	if ($PM_level == 0 || ($PM_level == 2 && !$iamadmin && !$iamgmod && !$iammod ) || ($PM_level == 3 && !$iamadmin && !$iamgmod)) { $tabWidth = '50%'; }
+	if ($PM_level == 0 || ($PM_level == 2 && !$staff) || ($PM_level == 3 && !$iamadmin && !$iamgmod)) { $tabWidth = '50%'; }
 	$MCViewMenu = '';
 	$MCPmMenu = '';
 	$MCProfMenu = '';
@@ -886,7 +857,7 @@ function insert_user (oElement,username,userid) {
 		<script language="JavaScript1.2" type="text/javascript">
 		<!--
 		function changeToTab(tab) {~;
-		if ($PM_level == 1 || ($PM_level == 2 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && ($iamadmin || $iamgmod))) {
+		if ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod))) {
 			$MCViewMenu .= qq~
 			document.getElementById('cont_pm').style.display = 'none';
 			document.getElementById('menu_pm').className = '';~;
@@ -906,7 +877,7 @@ function insert_user (oElement,username,userid) {
 		<script language="JavaScript1.2" type="text/javascript">
 		<!--
 		function changeToTab(tab) {~;
-		if ($PM_level == 1 || ($PM_level == 2 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && ($iamadmin || $iamgmod))) {
+		if ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod))) {
 			$MCViewMenu .= qq~
 			document.getElementById('cont_pm').style.display = 'none';
 			document.getElementById('menu_pm').className = 'windowbg';~;
@@ -924,11 +895,11 @@ function insert_user (oElement,username,userid) {
 		$MCViewMenu .= qq~
 		<table width="100%" border="0" cellspacing="0" cellpadding="0" align="center" >
 		<tr>~;
-		if ($PM_level == 0 || ($PM_level == 2 && !$iamadmin && !$iamgmod && !$iammod ) || ($PM_level == 3 && !$iamadmin && !$iamgmod)) {
+		if ($PM_level == 0 || ($PM_level == 2 && !$staff) || ($PM_level == 3 && !$iamadmin && !$iamgmod)) {
 			$display_prof = 'inline';
 			$tabProfHighlighted = 'windowbg2';
 		}
-		if ($PM_level == 1 || ($PM_level == 2 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && ($iamadmin || $iamgmod))   ) {
+		if ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod))   ) {
 			$MCViewMenu .= qq~
 			<td width="$tabWidth" style="padding:4px" align="center" valign="middle" class="$tabPMHighlighted" id="menu_pm"><a href="javascript:void(0);" onclick="changeToTab('pm'); return false;">$mc_menus{'messages'}</a></td>~;
 		}
@@ -982,7 +953,7 @@ function insert_user (oElement,username,userid) {
 		<span class="nav"><b><a href="$scripturl?$thisLink">$profile_buddy_list{'buddylist'}</a></b></span><br />~;
 	}
 
-	if ($PM_level == 1 || ($PM_level == 2 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && ($iamadmin || $iamgmod))) {
+	if ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod))) {
 		$thisLink = $profileLink . 'myprofileIM;username=' . $useraccount{$username} . $sidLink;
 		$MCProfMenu .= qq~
 		<span class="nav"><b><a href="$scripturl?$thisLink">$inmes_txt{'765'}</a></b></span>
@@ -1332,20 +1303,14 @@ function insert_user (oElement,username,userid) {
 			}
 		}
 
-		$MCContent .= qq~
-			$showIM
-		<br />
-		~;
+		$MCContent .= $showIM;
 
 	} elsif ($view eq 'pm' && $action eq 'pmsearch') {
 		&spam_protection;
 		$yysearchmain = '';
 		require "$sourcedir/Search.pl";
 		&pmsearch;
-		$MCContent .= qq~
-			$yysearchmain
-		<br />
-		~;
+		$MCContent .= $yysearchmain;
 		$mctitle = "$pm_search{'desc'}";
 
 	} elsif ($view eq 'profile') {
@@ -1366,43 +1331,34 @@ function insert_user (oElement,username,userid) {
 		elsif ($action eq 'myviewprofile') { &ViewProfile; }
 		elsif ($action eq 'myprofileAdmin') { &ModifyProfileAdmin; }
 		elsif ($action eq 'myprofileAdmin2') { &ModifyProfileAdmin2; }
-		$MCContent .= qq~
-			$showProfile
-		<br />
-		~;
+		$MCContent .= $showProfile;
 
 	} elsif ($view eq 'notify') {
 		require "$sourcedir/Notify.pl";
 		if ($action eq 'shownotify') { &ShowNotifications; }
 		elsif ($action eq 'boardnotify2') { &BoardNotify2; &ShowNotifications; }
 		elsif ($action eq 'notify4') { &Notify4; }
-		$MCContent .= qq~$showNotifications 
-		<br />
-		~;
+		$MCContent .= $showNotifications;
 
 	} elsif ($view eq 'recentposts') {
 		require "$sourcedir/Profile.pl";
 		&usersrecentposts;
-		$MCContent .= qq~$showProfile 
-		<br />
-		~;
+		$MCContent .= $showProfile;
 
 	} elsif ($view eq 'favorites'){
 		require "$sourcedir/Favorites.pl";
 		&Favorites;
-		$MCContent .= qq~$showFavorites 
-		<br />
-		~;
+		$MCContent .= $showFavorites;
 	}
 
 	## start PM div
-	if ($PM_level == 1 || ($PM_level == 2 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && ($iamadmin || $iamgmod))) {
+	if ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod))) {
 		$MCPmMenu .= qq~
 	<div id="cont_pm" style="display: $display_pm">
 		<table id="pms" width="100%" align="center" class="windowbg2" cellpadding="1">
 		~;
 
-		if (($PMenableBm_level == 1 && ($iamadmin || $iamgmod || $iammod)) || ($PMenableBm_level == 2 && ($iamadmin || $iamgmod)) || ($PMenableBm_level == 3 && $iamadmin)) {
+		if (($PMenableBm_level == 1 && $staff) || ($PMenableBm_level == 2 && ($iamadmin || $iamgmod)) || ($PMenableBm_level == 3 && $iamadmin)) {
 			$MCPmMenu .= qq~
 			<tr>
 				<td style="text-align: left;" colspan="3">
@@ -1685,7 +1641,7 @@ sub drawPMView {
 		if ($sortBy eq 'gpdate') {
 			$MCContent .= qq~
 	  <tr>
-	    <td class="titlebg"  width="100%" colspan="3"><span class="imgtitlebg">$im_sorted{$uselegend}</span>	</td>
+	    <td class="titlebg"  width="100%" colspan="3"><span class="imgtitlebg">$im_sorted{$uselegend}</span></td>
 	  </tr>
 			~;
 
@@ -1736,7 +1692,7 @@ sub drawPMView {
 							if (!$yyUDLoaded{$muser}) { &LoadUser($muser); }
 							if ($usernameto && $switchComma == 0) { $usernameto .= qq~ ...~; $switchComma = 1; }
 							elsif (!$usernameto) {
-								$usernameto = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$muser}">${$uid.$muser}{'realname'}</a>~;
+								$usernameto = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$muser}" rel="nofollow">${$uid.$muser}{'realname'}</a>~;
 							}
 						}
 						if ($musernamecc) {
@@ -1774,7 +1730,7 @@ sub drawPMView {
 					if ($messageStatus !~ /b/) {
 						$userToMessRead = &checkIMS($musernameto, $messageid, 'messageopened');
 						if (!$yyUDLoaded{$musernameto}) { &LoadUser($musernameto); }
-						$usernameto = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musernameto}">${$uid.$musernameto}{'realname'}</a>~;
+						$usernameto = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musernameto}" rel="nofollow">${$uid.$musernameto}{'realname'}</a>~;
 					} else {
 						if ($musernameto eq 'all') { $usernameto = $inmes_txt{'bmallmembers'}; }
 						elsif ($musernameto eq 'mods') { $usernameto = $inmes_txt{'bmmods'}; }
@@ -1967,7 +1923,7 @@ sub drawPMView {
 					$usernamefrom = qq~$guestName<br />(<a href="mailto:$guestEmail">$guestEmail</a>)~;
 				} else {
 					&LoadUser($musername); # is from user
-					$usernamefrom = ${$uid.$musername}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}">${$uid.$musername}{'realname'}</a>~ : ($musername ? qq~$musername ($maintxt{'470a'})~ : $maintxt{'470a'}); # 470a == Ex-Member
+					$usernamefrom = ${$uid.$musername}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}" rel="nofollow">${$uid.$musername}{'realname'}</a>~ : ($musername ? qq~$musername ($maintxt{'470a'})~ : $maintxt{'470a'}); # 470a == Ex-Member
 				}
 				$MCContent .= $usernamefrom; # [inbox / broadcast / storage in]
 
@@ -2002,7 +1958,7 @@ sub drawPMView {
 					}
 					foreach $uname (split(/,/, $uname)) {
 						&LoadUser($uname);
-						push(@usernameto, (${$uid.$uname}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$uname}">${$uid.$uname}{'realname'}</a>~ : ($uname ? qq~$uname ($maintxt{'470a'})~ : $maintxt{'470a'}))); # 470a == Ex-Member
+						push(@usernameto, (${$uid.$uname}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$uname}" rel="nofollow">${$uid.$uname}{'realname'}</a>~ : ($uname ? qq~$uname ($maintxt{'470a'})~ : $maintxt{'470a'}))); # 470a == Ex-Member
 					}
 				}
 				$MCContent .= join(', ', @usernameto); # [outbox / storage out]
@@ -2034,7 +1990,7 @@ sub drawPMView {
 					}
 					foreach $uname (split(/,/, $uname)) {
 						&LoadUser($uname);
-						push(@usernameto, (${$uid.$uname}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$uname}">${$uid.$uname}{'realname'}</a>~ : ($uname ? qq~$uname ($maintxt{'470a'})~ : $maintxt{'470a'}))); # 470a == Ex-Member
+						push(@usernameto, (${$uid.$uname}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$uname}" rel="nofollow">${$uid.$uname}{'realname'}</a>~ : ($uname ? qq~$uname ($maintxt{'470a'})~ : $maintxt{'470a'}))); # 470a == Ex-Member
 					}
 				}
 				$MCContent .= join(', ', @usernameto); # [draft]
@@ -2059,7 +2015,7 @@ sub drawPMView {
 					}
 					foreach $uname (split(/,/, $uname)) {
 						&LoadUser($uname);
-						push(@usernameto, (${$uid.$uname}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$uname}">${$uid.$uname}{'realname'}</a>~ : ($uname ? qq~$uname ($maintxt{'470a'})~ : $maintxt{'470a'}))); # 470a == Ex-Member
+						push(@usernameto, (${$uid.$uname}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$uname}" rel="nofollow">${$uid.$uname}{'realname'}</a>~ : ($uname ? qq~$uname ($maintxt{'470a'})~ : $maintxt{'470a'}))); # 470a == Ex-Member
 					} 
 					$usernameto = join(', ', @usernameto);
 
@@ -2069,7 +2025,7 @@ sub drawPMView {
 					$usernameto = qq~$guestName<br />(<a href="mailto:$guestEmail">$guestEmail</a>)~;
 
 					&LoadUser($musername); # is from user
-					$usernamefrom = ${$uid.$musername}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}">${$uid.$musername}{'realname'}</a>~ : ($musername ? qq~$musername ($maintxt{'470a'})~ : $maintxt{'470a'}); # 470a == Ex-Member
+					$usernamefrom = ${$uid.$musername}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}" rel="nofollow">${$uid.$musername}{'realname'}</a>~ : ($musername ? qq~$musername ($maintxt{'470a'})~ : $maintxt{'470a'}); # 470a == Ex-Member
 
 				} elsif ($messageStatus =~ /b/) {
 					foreach my $uname (split(/,/, $musernameto)) {
@@ -2085,7 +2041,7 @@ sub drawPMView {
 					$usernameto = join(', ', @usernameto); 
 
 					&LoadUser($musername); # is from user
-					$usernamefrom = ${$uid.$musername}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}">${$uid.$musername}{'realname'}</a>~ : ($musername ? qq~$musername ($maintxt{'470a'})~ : $maintxt{'470a'}); # 470a == Ex-Member
+					$usernamefrom = ${$uid.$musername}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}" rel="nofollow">${$uid.$musername}{'realname'}</a>~ : ($musername ? qq~$musername ($maintxt{'470a'})~ : $maintxt{'470a'}); # 470a == Ex-Member
 
 				} else {
 					my $uname = $musernameto; # is to user
@@ -2101,12 +2057,12 @@ sub drawPMView {
 					}
 					foreach $uname (split(/,/, $uname)) {
 						&LoadUser($uname);
-						push(@usernameto, (${$uid.$uname}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$uname}">${$uid.$uname}{'realname'}</a>~ : ($uname ? qq~$uname ($maintxt{'470a'})~ : $maintxt{'470a'}))); # 470a == Ex-Member
+						push(@usernameto, (${$uid.$uname}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$uname}" rel="nofollow">${$uid.$uname}{'realname'}</a>~ : ($uname ? qq~$uname ($maintxt{'470a'})~ : $maintxt{'470a'}))); # 470a == Ex-Member
 					} 
 					$usernameto = join(', ', @usernameto);
 
 					&LoadUser($musername); # is from user
-					$usernamefrom = ${$uid.$musername}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}">${$uid.$musername}{'realname'}</a>~ : ($musername ? qq~$musername ($maintxt{'470a'})~ : $maintxt{'470a'}); # 470a == Ex-Member 
+					$usernamefrom = ${$uid.$musername}{'realname'} ? qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}" rel="nofollow">${$uid.$musername}{'realname'}</a>~ : ($musername ? qq~$musername ($maintxt{'470a'})~ : $maintxt{'470a'}); # 470a == Ex-Member 
 				}
 				$MCContent .= qq~$usernamefrom / $usernameto~; #[store other]
 			}
@@ -2250,8 +2206,8 @@ sub drawPMView {
 			else { $dorest = qq~<img src="$imagesdir/usageempty.gif" height="8" width="$imrest" align="middle" alt="" />~; }
 			$imbargfx = qq~$inmes_imtxt{'67'}:&nbsp;<img src="$imagesdir/usage.gif" align="middle" alt="" /><img src="$imagesdir/usagebar.gif" height="8" width="$imbar" align="middle" alt="" />$dorest<img src="$imagesdir/usage.gif" align="middle" alt="" />&nbsp;$impercent&nbsp;%&nbsp;<br />~;
 		} else {
-			$intext = qq~&nbsp;~;
-			$imbargfx = qq~&nbsp;~;
+			$intext = '';
+			$imbargfx = '';
 		}
 		unless ($action eq 'imstorage' && $INFO{'viewfolder'} eq '') { 
 			$removeButton = qq~<input type="submit" name="imaction" value="$inmes_txt{'remove'}" class="button" onclick="return confirm('$inmes_txt{'delmultipms'}');" />~;
@@ -2262,14 +2218,14 @@ sub drawPMView {
 			$MCContent .= qq~
 	  <tr>
 	    <td class="titlebg" colspan="3" align="right" height="21" >
-			~;
+			<br />~;
 			if (!$viewBMess) {
 				$MCContent .= qq~
-		<span  class="small"><b>$imbargfx&nbsp;$intext<br /><br /></b></span>~;
+		<span  class="small"><b>$imbargfx&nbsp;$intext</b><br /><br /></span>~ if $imbargfx || $intext;
 				unless ($action eq 'imstorage' && $INFO{'viewfolder'} eq '') { $MCContent .= $movebutton; }
 			}
 			if (!$viewBMess || ($viewBMess && ($iamadmin|| $deleteButton))) {
-				$MCContent .= qq~ $removeButton~;
+				$MCContent .= qq~ $removeButton<br /><br />~;
 			}
 			$MCContent .= qq~
 	    </td>
@@ -2326,7 +2282,7 @@ sub LoadBuddyList {
 		$css = $cssvalues[($counter % $cssnum)];
 		my ($buddyrealname);
 		my ($online, $buddyemail, $buddypm, $buddywww) = '&nbsp;';
-		if (-e "$memberdir/$buddyname.vars") {
+		if (&checkfor_DBorFILE("$memberdir/$buddyname.vars")) {
 			&LoadUser($buddyname);
 			$online = &userOnLineStatus($buddyname);
 			$buddyrealname = ${$uid.$buddyname}{'realname'};
@@ -2339,7 +2295,7 @@ sub LoadBuddyList {
 			}
 
 			&CheckUserPM_Level($buddyname);
-			if ($PM_level == 1 || ($PM_level == 2 && $UserPM_Level{$buddyname} > 1 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && $UserPM_Level{$buddyname} == 3 && ($iamadmin || $iamgmod))) {
+			if ($PM_level == 1 || ($PM_level == 2 && $UserPM_Level{$buddyname} > 1 && $staff) || ($PM_level == 3 && $UserPM_Level{$buddyname} == 3 && ($iamadmin || $iamgmod))) {
 				$buddypm = qq~<a href="$scripturl?action=imsend;to=$useraccount{$buddyname}"><img src="$imagesdir/imclose.gif" border="0" alt="$profile_txt{'688'} $buddyrealname" title="$profile_txt{'688'} $buddyrealname" /></a>~;
 			}
 
@@ -2362,7 +2318,7 @@ sub mcMenu {
 	my ($pmclass, $profclass, $postclass);
 	if ($action eq "mycenter" || $action eq "im" || $action eq "imdraft" || $action eq "imoutbox" || $action eq "imstorage" || $action eq "imsend" || $action eq "imsend2" || $action eq "imshow") {
 		$pmclass = qq~ class="selected"~;
-		if ($PM_level == 0 || ($PM_level == 2 && !$iamadmin && !$iamgmod && !$iammod ) || ($PM_level == 3 && !$iamadmin && !$iamgmod)) {
+		if ($PM_level == 0 || ($PM_level == 2 && !$staff) || ($PM_level == 3 && !$iamadmin && !$iamgmod)) {
 			$profclass = qq~ class="selected"~;
 		}
 	}
@@ -2379,7 +2335,7 @@ sub mcMenu {
 	my $tabfill = qq~<img src="$imagesdir/tabfill.gif" border="0" alt="" style="vertical-align: middle;" />~;
 
 	# pm link
-	if ($PM_level == 1 || ($PM_level == 2 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && ($iamadmin || $iamgmod))) {
+	if ($PM_level == 1 || ($PM_level == 2 && $staff) || ($PM_level == 3 && ($iamadmin || $iamgmod))) {
 		$yymcmenu .= qq~<span onclick="changeToTab('pm'); return false;"$pmclass id="menu_pm"><a href="$scripturl?action=mycenter" onclick="changeToTab('pm'); return false;" style="padding: 3px 0 4px 0; ">$tabfill$mc_menus{'messages'}$tabfill</a></span>$tabsep
 		~;
 	}

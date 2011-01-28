@@ -26,7 +26,7 @@ sub ModifyMessage {
 	if ($iamguest) { &fatal_error("members_only"); }
 	if ($currentboard eq '') { &fatal_error("no_access"); }
 
-	my ($mnum, $msub, $mname, $memail, $mdate, $mreplies, $musername, $micon, $mstate, $msubject, $mattach, $mip, $mmessage, $mns, $mlm, $mlmb);
+	my ($mnum, $msub, $mname, $memail, $mdate, $mreplies, $musername, $micon, $mstate, $msubject, $mreplyno, $mip, $mmessage, $mns, $mlm, $mlmb);
 	$threadid = $INFO{'thread'};
 	$postid   = $INFO{'message'};
 
@@ -42,15 +42,13 @@ sub ModifyMessage {
 	if ($mstate =~ /l/i) {
 		my $icanbypass = &checkUserLockBypass if $bypass_lock_perm;
 		if (!$icanbypass) { &fatal_error("topic_locked"); }
-	} elsif (!$iamadmin && !$iamgmod && !$iammod && $tlnomodflag && $date > $mdate + ($tlnomodtime * 3600 * 24)) {
+	} elsif (!$staff && $tlnomodflag && $date > $mdate + ($tlnomodtime * 3600 * 24)) {
 		&fatal_error("time_locked","$tlnomodtime$timelocktxt{'02'}");
 	}
 	if ($postid eq "Poll") {
-		unless (-e "$datadir/$threadid.poll") { &fatal_error("not_allowed"); }
+		unless (&checkfor_DBorFILE("$datadir/$threadid.poll")) { &fatal_error("not_allowed"); }
 
-		fopen(FILE, "$datadir/$threadid.poll");
-		my @poll_data = <FILE>;
-		fclose(FILE);
+		my @poll_data = &read_DBorFILE(0,'',$datadir,$threadid,'poll');
 		chomp(@poll_data);
 		($poll_question, $poll_locked, $poll_uname, $poll_name, $poll_email, $poll_date, $guest_vote, $hide_results, $multi_choice, $poll_mod, $poll_modname, $poll_comment, $vote_limit, $pie_radius, $pie_legends, $poll_end) = split(/\|/, $poll_data[0]);
 		&ToChars($poll_question);
@@ -61,7 +59,7 @@ sub ModifyMessage {
 			&ToChars($options[$i]);
 		}
 
-		unless ($poll_uname eq $username || $iammod || $iamadmin || $iamgmod) { &fatal_error("not_allowed"); }
+		unless ($poll_uname eq $username || $staff) { &fatal_error("not_allowed"); }
 
 		$poll_comment =~ s~<br \/>~\n~g;
 		$poll_comment =~ s~<br>~\n~g;
@@ -71,14 +69,12 @@ sub ModifyMessage {
 
 	} else {
 		unless (ref($thread_arrayref{$threadid})) {
-			fopen(FILE, "$datadir/$threadid.txt") || &fatal_error("cannot_open","$datadir/$threadid.txt", 1);
-			@{$thread_arrayref{$threadid}} = <FILE>;
-			fclose(FILE);
+			@{$thread_arrayref{$threadid}} = &read_DBorFILE(0,'',$datadir,$threadid,'txt');
 		}
-		($sub, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $message, $mns, $mlm, $mlmb, $mfn) = split(/\|/, ${$thread_arrayref{$threadid}}[$postid]);
+		($sub, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $message, $mns, $mlm, $mlmb, $mfn) = split(/\|/, ${$thread_arrayref{$threadid}}[$postid]);
 		chomp $mfn;
 
-		if ((${$uid.$username}{'regtime'} > $mdate || $musername ne $username) && !($iammod || $iamadmin || $iamgmod)) {
+		if ((${$uid.$username}{'regtime'} > $mdate || $musername ne $username) && !$staff) {
 			&fatal_error("change_not_allowed");
 		}
 
@@ -92,18 +88,19 @@ sub ModifyMessage {
 </tr>
 ~;
 		$icon = $micon;
-		if    ($icon eq "xx")          { $ic1  = " selected=\"selected\" "; }
-		elsif ($icon eq "thumbup")     { $ic2  = " selected=\"selected\" "; }
-		elsif ($icon eq "thumbdown")   { $ic3  = " selected=\"selected\" "; }
-		elsif ($icon eq "exclamation") { $ic4  = " selected=\"selected\" "; }
-		elsif ($icon eq "question")    { $ic5  = " selected=\"selected\" "; }
-		elsif ($icon eq "lamp")        { $ic6  = " selected=\"selected\" "; }
-		elsif ($icon eq "smiley")      { $ic7  = " selected=\"selected\" "; }
-		elsif ($icon eq "angry")       { $ic8  = " selected=\"selected\" "; }
-		elsif ($icon eq "cheesy")      { $ic9  = " selected=\"selected\" "; }
-		elsif ($icon eq "grin")        { $ic10 = " selected=\"selected\" "; }
-		elsif ($icon eq "sad")         { $ic11 = " selected=\"selected\" "; }
-		elsif ($icon eq "wink")        { $ic12 = " selected=\"selected\" "; }
+		if    ($icon eq "xx")           { $ic1  = " selected=\"selected\" "; }
+		elsif ($icon eq "thumbup")      { $ic2  = " selected=\"selected\" "; }
+		elsif ($icon eq "thumbdown")    { $ic3  = " selected=\"selected\" "; }
+		elsif ($icon eq "exclamation")  { $ic4  = " selected=\"selected\" "; }
+		elsif ($icon eq "no_postcount") { $ic4  = " selected=\"selected\" "; }
+		elsif ($icon eq "question")     { $ic5  = " selected=\"selected\" "; }
+		elsif ($icon eq "lamp")         { $ic6  = " selected=\"selected\" "; }
+		elsif ($icon eq "smiley")       { $ic7  = " selected=\"selected\" "; }
+		elsif ($icon eq "angry")        { $ic8  = " selected=\"selected\" "; }
+		elsif ($icon eq "cheesy")       { $ic9  = " selected=\"selected\" "; }
+		elsif ($icon eq "grin")         { $ic10 = " selected=\"selected\" "; }
+		elsif ($icon eq "sad")          { $ic11 = " selected=\"selected\" "; }
+		elsif ($icon eq "wink")         { $ic12 = " selected=\"selected\" "; }
 		$message =~ s~<br \/>~\n~ig;
 		$message =~ s~<br>~\n~ig;
 		$message =~ s/ \&nbsp; \&nbsp; \&nbsp;/\t/ig;
@@ -139,37 +136,30 @@ sub ModifyMessage2 {
 		$postid   = $FORM{'id'};
 
 		if ($postid eq "Poll") {
-			# showcase poll start
-			# Look for a showcase.poll file to unlink.
-			if (-e "$datadir/showcase.poll") {
-				fopen (FILE, "$datadir/showcase.poll");
-				if ($threadid == <FILE>) {
-					fclose (FILE);
-					unlink ("$datadir/showcase.poll");
-				} else {
-					fclose (FILE);
-				}
+			&fatal_error("not_allowed") unless $staff;
+
+			# First look for a poll.showcase file to delete
+			if ($threadid == (&read_DBorFILE(1,'',$datadir,'poll','showcase'))[0]) {
+				&delete_DBorFILE("$datadir/poll.showcase");
 			}
 			# showcase poll end
-			unlink("$datadir/$threadid.poll");
-			unlink("$datadir/$threadid.polled");
+			&delete_DBorFILE("$datadir/$threadid.poll");
+			&delete_DBorFILE("$datadir/$threadid.polled");
 			$yySetLocation = qq~$scripturl?num=$threadid~;
 			&redirectexit;
 
 		} else {
 			unless (ref($thread_arrayref{$threadid})) {
-				fopen(FILE, "$datadir/$threadid.txt") || &fatal_error("cannot_open","$datadir/$threadid.txt", 1);
-				@{$thread_arrayref{$threadid}} = <FILE>;
-				fclose(FILE);
+				@{$thread_arrayref{$threadid}} = &read_DBorFILE(0,'',$datadir,$threadid,'txt');
 			}
 			$msgcnt = @{$thread_arrayref{$threadid}};
 
 			# Make sure the user is allowed to edit this post.
 			if ($postid >= 0 && $postid < $msgcnt) {
-				($msub, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $mmessage, $mns, $mlm, $mlmb, $mfn) = split(/\|/, ${$thread_arrayref{$threadid}}[$postid]);
+				($msub, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $mmessage, $mns, $mlm, $mlmb, $mfn) = split(/\|/, ${$thread_arrayref{$threadid}}[$postid]);
 				chomp $mfn;
-				if (${$uid.$username}{'regdate'} > $mdate || (!$iamadmin && !$iamgmod && !$iammod && $musername ne $username) || !$sessionvalid) { &fatal_error("delete_not_allowed"); }
-				if (!$iamadmin && !$iamgmod && !$iammod && $tlnodelflag && $date > $mdate + ($tlnodeltime * 3600 * 24)) { &fatal_error("time_locked","$tlnodeltime$timelocktxt{'02a'}"); }
+				if (${$uid.$username}{'regdate'} > $mdate || (!$staff && $musername ne $username)) { &fatal_error("delete_not_allowed"); }
+				if (!$staff && $tlnodelflag && $date > $mdate + ($tlnodeltime * 3600 * 24)) { &fatal_error("time_locked","$tlnodeltime$timelocktxt{'02a'}"); }
 			} else {
 				&fatal_error("bad_postnumber",$postid);
 			}
@@ -179,7 +169,7 @@ sub ModifyMessage2 {
 		}
 	}
 
-	my ($threadid, $postid, $msub, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $mmessage, $mns, $mlm, $mlmb, $tnum, $tsub, $tname, $temail, $tdate, $treplies, $tusername, $ticon, $tstate, @threads, $tmpa, $tmpb, $newlastposttime, $newlastposter, $lastpostid, $views, $name, $email, $subject, $message, $ns,);
+	my ($threadid, $postid, $msub, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $mmessage, $mns, $mlm, $mlmb, $tnum, $tsub, $tname, $temail, $tdate, $treplies, $tusername, $ticon, $tstate, @threads, $tmpa, $tmpb, $newlastposttime, $newlastposter, $lastpostid, $views, $name, $email, $subject, $message, $ns,);
 
 	$threadid   = $FORM{'threadid'};
 	$postid     = $FORM{'postid'};
@@ -192,15 +182,13 @@ sub ModifyMessage2 {
 		$numpolloptions ||= 8;
 		$vote_limit     ||= 0;
 
-		unless (-e "$datadir/$threadid.poll") { &fatal_error("not_allowed"); }
+		unless (&checkfor_DBorFILE("$datadir/$threadid.poll")) { &fatal_error("not_allowed"); }
 
-		fopen(FILE, "$datadir/$threadid.poll");
-		my @poll_data = <FILE>;
-		fclose(FILE);
+		my @poll_data = &read_DBorFILE(0,'',$datadir,$threadid,'poll');
 		chomp($poll_data);
 		($poll_question, $poll_locked, $poll_uname, $poll_name, $poll_email, $poll_date, $guest_vote, $hide_results, $multi_choice, $poll_mod, $poll_modname, $poll_comment, $vote_limit, $pie_radius, $pie_legends, $poll_end) = split(/\|/, $poll_data[0]);
 
-		unless ($poll_uname eq $username || $iammod || $iamadmin || $iamgmod) { &fatal_error("not_allowed"); }
+		unless ($poll_uname eq $username || $staff) { &fatal_error("not_allowed"); }
 
 		my $numcount = 0;
 		unless ($FORM{"question"}) { &fatal_error("no_question"); }
@@ -286,25 +274,15 @@ sub ModifyMessage2 {
 
 		# showcase poll start
 		if ($iamadmin || $iamgmod) {
-			my $scthreadid;
-			if (-e "$datadir/showcase.poll") {
-				fopen (FILE, "$datadir/showcase.poll");
-				$scthreadid = <FILE>;
-				fclose (FILE);
-			}
-			if ($threadid == $scthreadid && !$FORM{'scpoll'}) {
-				unlink("$datadir/showcase.poll");
+			if ($threadid == (&read_DBorFILE(1,'',$datadir,'poll','showcase'))[0] && !$FORM{'scpoll'}) {
+				&delete_DBorFILE("$datadir/poll.showcase");
 			} elsif ($FORM{'scpoll'}) {
-				fopen (SCFILE, ">$datadir/showcase.poll");
-				print SCFILE $threadid;
-				fclose (SCFILE);
+				&write_DBorFILE(1,'',$datadir,'poll','showcase',($threadid));
 			}
 		}
 		# showcase poll end
 
-		fopen(POLL, ">$datadir/$threadid.poll");
-		print POLL @new_poll_data;
-		fclose(POLL);
+		&write_DBorFILE(1,'',$datadir,$threadid,'poll',@new_poll_data);
 
 		$yySetLocation = qq~$scripturl?num=$threadid~;
 
@@ -312,16 +290,14 @@ sub ModifyMessage2 {
 	}
 
 	unless (ref($thread_arrayref{$threadid})) {
-		fopen(FILE, "$datadir/$threadid.txt") || &fatal_error("cannot_open","$datadir/$threadid.txt", 1);
-		@{$thread_arrayref{$threadid}} = <FILE>;
-		fclose(FILE);
+		@{$thread_arrayref{$threadid}} = &read_DBorFILE(0,'',$datadir,$threadid,'txt');
 	}
 
 	# Make sure the user is allowed to edit this post.
 	if ($postid >= 0 && $postid < @{$thread_arrayref{$threadid}}) {
-		($msub, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $mmessage, $mns, $mlm, $mlmb, $mfn) = split(/\|/, ${$thread_arrayref{$threadid}}[$postid]);
+		($msub, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $mmessage, $mns, $mlm, $mlmb, $mfn) = split(/\|/, ${$thread_arrayref{$threadid}}[$postid]);
 		chomp $mfn;
-		unless ((${$uid.$username}{'regdate'} < $mdate && $musername eq $username) || $iammod || $iamadmin || $iamgmod) {
+		unless ((${$uid.$username}{'regdate'} < $mdate && $musername eq $username) || $staff) {
 			&fatal_error("change_not_allowed");
 		}
 	} else {
@@ -349,7 +325,7 @@ sub ModifyMessage2 {
 	$spamdetected = &spamcheck("$subject $message");
 	if (!${$uid.$FORM{$username}}{'spamcount'}) { ${$uid.$FORM{$username}}{'spamcount'} = 0; }
 	$postspeed = $date - $posttime;
-	if (!$iamadmin && !$iamgmod && !$iammod){
+	if (!$staff){
 		if (($speedpostdetection && $postspeed < $min_post_speed) || $spamdetected == 1) {
 			${$uid.$username}{'spamcount'}++;
 			${$uid.$username}{'spamtime'} = $date;
@@ -389,7 +365,7 @@ sub ModifyMessage2 {
 	if ($testmessage eq "" && $message ne "" && $pollthread != 2) { fatal_error("useless_post","$testmessage"); }
 
 	if (!$minlinkpost){ $minlinkpost = 0 ;}
-	if (${$uid.$username}{'postcount'} < $minlinkpost && !$iamadmin && !$iamgmod && !$iammod && !$iamguest) { 
+	if (${$uid.$username}{'postcount'} < $minlinkpost && !$staff && !$iamguest) { 
 		if ($message =~ m~http:\/\/~ || $message =~ m~https:\/\/~ || $message =~ m~ftp:\/\/~ || $message =~ m~www.~ || $message =~ m~ftp.~ =~ m~\[url~ || $message=~ m~\[link~ || $message=~ m~\[img~ || $message=~ m~\[ftp~) {
 			&fatal_error("no_links_allowed");
 		}
@@ -426,9 +402,7 @@ sub ModifyMessage2 {
 	else { $useredit_ip = "$mip $user_ip"; }
 
 	my (@attachments,%post_attach,%del_filename);
-	fopen(ATM, "+<$vardir/attachments.txt");
-	seek ATM, 0, 0;
-	while (<ATM>) {
+	foreach (&read_DBorFILE(0,ATM,$vardir,'attachments','txt')) {
 		$_ =~ /^(\d+)\|(\d+)\|.+\|(.+)\|\d+\s+/;
 		$del_filename{$3}++;
 		if ($threadid == $1 && $postid == $2) {
@@ -452,13 +426,13 @@ sub ModifyMessage2 {
 			my $fixext = $2;
 
 			my $spamdetected = &spamcheck("$fixname");
-			if (!$iamadmin && !$iamgmod && !$iammod){
+			if (!$staff){
 				if ($spamdetected == 1) {
 					${$uid.$username}{'spamcount'}++;
 					${$uid.$username}{'spamtime'} = $date;
 					&UserAccount($username,"update");
 					$spam_hits_left_count = $post_speed_count - ${$uid.$username}{'spamcount'};
-					foreach (@newfilelist) { unlink("$uploaddir/$_"); }
+					foreach (@newfilelist) { &delete_DBorFILE("$uploaddir/$_"); }
 					&fatal_error("tsc_alert");
 				}
 			}
@@ -467,10 +441,10 @@ sub ModifyMessage2 {
 			$fixname =~ s/\./_/g;
 			$fixfile = qq~$fixname$fixext~;
 
-			unlink(qq~$uploaddir/$FORM{"w_filename$y"}~) if $FORM{"w_filename$y"};
+			&delete_DBorFILE(qq~$uploaddir/$FORM{"w_filename$y"}~) if $FORM{"w_filename$y"};
 			if (!$overwrite) { $fixfile = &check_existence($uploaddir, $fixfile); }
-			elsif ($overwrite == 2 && -e "$uploaddir/$fixfile") {
-				foreach (@newfilelist) { unlink("$uploaddir/$_"); }
+			elsif ($overwrite == 2 && &checkfor_DBorFILE("$uploaddir/$fixfile")) {
+				foreach (@newfilelist) { &delete_DBorFILE("$uploaddir/$_"); }
 				&fatal_error("file_overwrite");
 			}
 
@@ -483,11 +457,11 @@ sub ModifyMessage2 {
 			}
 			if ($match) {
 				unless ($allowattach && (($allowguestattach == 0 && $username ne 'Guest') || $allowguestattach == 1)) {
-					foreach (@newfilelist) { unlink("$uploaddir/$_"); }
+					foreach (@newfilelist) { &delete_DBorFILE("$uploaddir/$_"); }
 					&fatal_error("no_perm_att");
 				}
 			} else {
-				foreach (@newfilelist) { unlink("$uploaddir/$_"); }
+				foreach (@newfilelist) { &delete_DBorFILE("$uploaddir/$_"); }
 				require "$sourcedir/Post.pl";
 				&Preview("$fixfile $fatxt{'20'} @ext");
 			}
@@ -495,14 +469,14 @@ sub ModifyMessage2 {
 			my ($size,$buffer,$filesize,$file_buffer);
 			while ($size = read($file, $buffer, 512)) { $filesize += $size; $file_buffer .= $buffer; }
 			if ($limit && $filesize > (1024 * $limit)) {
-				foreach (@newfilelist) { unlink("$uploaddir/$_"); }
+				foreach (@newfilelist) { &delete_DBorFILE("$uploaddir/$_"); }
 				require "$sourcedir/Post.pl";
 				&Preview("$fatxt{'21'} $fixfile (" . int($filesize / 1024) . " KB) $fatxt{'21b'} " . $limit);
 			}
 			if ($dirlimit) {
 				my $dirsize = &dirsize($uploaddir);
 				if ($filesize > ((1024 * $dirlimit) - $dirsize)) {
-					foreach (@newfilelist) { unlink("$uploaddir/$_"); }
+					foreach (@newfilelist) { &delete_DBorFILE("$uploaddir/$_"); }
 					require "$sourcedir/Post.pl";
 					&Preview("$fatxt{'22'} $fixfile (" . (int($filesize / 1024) - $dirlimit + int($dirsize / 1024)) . " KB) $fatxt{'22b'}");
 				}
@@ -515,14 +489,14 @@ sub ModifyMessage2 {
 				fclose(NEWFILE);
 
 			} else { # return the server's error message if the new file could not be created
-				foreach (@newfilelist) { unlink("$uploaddir/$_"); }
+				foreach (@newfilelist) { &delete_DBorFILE("$uploaddir/$_"); }
 				&fatal_error("file_not_open","$uploaddir");
 			}
 
 			# check if file has actually been uploaded, by checking the file has a size
 			my $filesizekb = -s "$uploaddir/$fixfile";
 			unless ($filesizekb) {
-				foreach (qw("@newfilelist" $fixfile)) { unlink("$uploaddir/$_"); }
+				foreach (qw("@newfilelist" $fixfile)) { &delete_DBorFILE("$uploaddir/$_"); }
 				&fatal_error("file_not_uploaded",$fixfile);
 			}
 			$filesizekb = int($filesizekb / 1024);
@@ -544,7 +518,7 @@ sub ModifyMessage2 {
 				}
 				fclose(ATTFILE);
 				if(!$okatt) { # delete the file as it contains illegal code
-					foreach (qw("@newfilelist" $fixfile)) { unlink("$uploaddir/$_"); }
+					foreach (qw("@newfilelist" $fixfile)) { &delete_DBorFILE("$uploaddir/$_"); }
 					&fatal_error("file_not_uploaded","$fixfile <= illegal code inside image file!");
 				}
 			}
@@ -555,7 +529,7 @@ sub ModifyMessage2 {
 
 		} elsif ($FORM{"w_filename$y"}) {
 			if ($FORM{"w_file$y"} eq "attachdel") {
-				unlink(qq~$uploaddir/$FORM{"w_filename$y"}~) if $del_filename{$FORM{"w_filename$y"}} == 1;
+				&delete_DBorFILE(qq~$uploaddir/$FORM{"w_filename$y"}~) if $del_filename{$FORM{"w_filename$y"}} == 1;
 				$del_filename{$FORM{"w_filename$y"}}--;
 			} elsif ($FORM{"w_file$y"} eq "attachold") {
 				push(@filelist, $FORM{"w_filename$y"});
@@ -564,38 +538,27 @@ sub ModifyMessage2 {
 		}
 	}
 	# Print attachments.txt
-	truncate ATM, 0;
-	seek ATM, 0, 0;
-	print ATM sort { (split /\|/,$a)[6] <=> (split /\|/,$b)[6] } @attachments;
-	fclose(ATM);
+	&write_DBorFILE(0,ATM,$vardir,'attachments','txt',sort( { (split /\|/,$a)[6] <=> (split /\|/,$b)[6] } @attachments ));
 
 	# Create the list of files
 	$fixfile = join(",", @filelist);
 
-	${$thread_arrayref{$threadid}}[$postid] = qq~$subject|$mname|$memail|$mdate|$musername|$icon|0|$useredit_ip|$message|$ns|$date|$username|$fixfile\n~;
-	fopen(FILE, ">$datadir/$threadid.txt") || &fatal_error("cannot_open","$datadir/$threadid.txt",1);
-	print FILE @{$thread_arrayref{$threadid}};
-	fclose(FILE);
+	${$thread_arrayref{$threadid}}[$postid] = qq~$subject|$mname|$memail|$mdate|$musername|$icon|$mreplyno|$useredit_ip|$message|$ns|$date|$username|$fixfile\n~;
+	&write_DBorFILE(0,'',$datadir,$threadid,'txt',@{$thread_arrayref{$threadid}});
 
 	if ($postid == 0 || $iammod || $iamgmod || $iamadmin) {
 		# Save the current board. icon, status or subject may have changed -> update board info
-		fopen(BOARD, "+<$boardsdir/$currentboard.txt") || &fatal_error("cannot_open","$boardsdir/$currentboard.txt",1);
-		my @board = <BOARD>;
+		my @board = &read_DBorFILE(0,FILE,$boardsdir,$currentboard,'txt');
 		for (my $a = 0; $a < @board; $a++) {
 			if ($board[$a] =~ m~\A$threadid\|~o) { $board[$a] = "$yyThreadLine\n"; last; }
 		}
-		truncate BOARD, 0;
-		seek BOARD, 0, 0;
-		print BOARD @board;
-		fclose(BOARD);
+		&write_DBorFILE(0,FILE,$boardsdir,$currentboard,'txt',@board);
 
 		&BoardSetLastInfo($currentboard,\@board);
 
 	} elsif ($postid == $#{$thread_arrayref{$threadid}}) {
 		# maybe last message changed subject and/or icon -> update board info
-		fopen(BOARD, "$boardsdir/$currentboard.txt") || &fatal_error('cannot_open', "$boardsdir/$currentboard.txt", 1);
-		my @board = <BOARD>;
-		fclose(BOARD);
+		my @board = &read_DBorFILE(0,'',$boardsdir,$currentboard,'txt');
 		&BoardSetLastInfo($currentboard,\@board);
 	}
 
@@ -620,9 +583,7 @@ sub MultiDel { # deletes singel- or multi-Posts
 	$thread = $INFO{'thread'};
 
 	unless (ref($thread_arrayref{$thread})) {
-		fopen(FILE, "$datadir/$thread.txt") || &fatal_error("cannot_open","$datadir/$thread.txt",1);
-		@{$thread_arrayref{$thread}} = <FILE>;
-		fclose(FILE);
+		@{$thread_arrayref{$thread}} = &read_DBorFILE(0,'',$datadir,$thread,'txt');
 	}
 	my @messages = @{$thread_arrayref{$thread}};
 
@@ -630,14 +591,14 @@ sub MultiDel { # deletes singel- or multi-Posts
 	my $kill = 0;
 	my $postid;
 	for ($count = $#messages; $count >= 0; $count--) {
-		if ($FORM{"del$count"} ne '') {
+		if ($FORM{"del$count"} ne '' || $INFO{"del$count"} ne '') {
 			chomp $messages[$count];
 			@message = split(/\|/, $messages[$count]);
 			$musername = $message[4];
 
 			# Checks that the user is actually allowed to access multidel
-			if (${$uid.$username}{'regdate'} > $message[3] || (!$iamadmin && !$iamgmod && !$iammod && $musername ne $username) || !$sessionvalid) { &fatal_error("delete_not_allowed"); }
-			if (!$iamadmin && !$iamgmod && !$iammod && $tlnodelflag && $date > $message[3] + ($tlnodeltime * 3600 * 24)) { &fatal_error("time_locked","$tlnodeltime$timelocktxt{'02a'}"); }
+			if (${$uid.$username}{'regdate'} > $message[3] || (!$staff && $musername ne $username)) { &fatal_error("delete_not_allowed"); }
+			if (!$staff && $tlnodelflag && $date > $message[3] + ($tlnodeltime * 3600 * 24)) { &fatal_error("time_locked","$tlnodeltime$timelocktxt{'02a'}"); }
 
 			if ($message[12]) { # delete post attachments
 				require "$admindir/Attachments.pl";
@@ -652,7 +613,7 @@ sub MultiDel { # deletes singel- or multi-Posts
 			$postid = $count if $kill == 1;
 
 			# decrease members post count if not in a zero post count board
-			unless (${$uid.$currentboard}{'zero'} || $musername eq 'Guest' || $message[6] eq 'no_postcount') {
+			unless (${$uid.$currentboard}{'zero'} || $musername eq 'Guest' || $message[5] eq 'no_postcount' || $message[6] eq 'no_postcount') {
 				if (!${$uid.$musername}{'password'}) {
 					&LoadUser($musername);
 				}
@@ -670,7 +631,7 @@ sub MultiDel { # deletes singel- or multi-Posts
 						}
 					}
 				}
-				&ManageMemberinfo("update", $musername, '', '', $grp_after, ${$uid.$musername}{'postcount'});
+				&ManageMemberinfo("update", $musername, '', '', '', $grp_after, ${$uid.$musername}{'postcount'});
 
 				my ($md,$mu,$mdmu);
 				foreach (reverse @messages) {
@@ -692,12 +653,15 @@ sub MultiDel { # deletes singel- or multi-Posts
 		$iamposter = ($message[4] eq $username) ? 1 : 0;
 		&DeleteThread($thread);
 	}
+	for ($count = 0; $count < @messages; $count++) {
+		@message = split(/\|/, $messages[$count]);
+		$message[6] = $count;
+		$messages[$count] = join('|', @message);
+	}
 	@{$thread_arrayref{$thread}} = @messages;
 
 	# if thread has not been deleted: update thread, update message index details ...
-	fopen(FILE, ">$datadir/$thread.txt") || &fatal_error("cannot_open","$datadir/$thread.txt",1);
-	print FILE @{$thread_arrayref{$thread}};
-	fclose(FILE);
+	&write_DBorFILE(0,'',$datadir,$thread,'txt',@{$thread_arrayref{$thread}});
 
 	my @firstmessage = split(/\|/, ${$thread_arrayref{$thread}}[0]);
 	my @lastmessage  = split(/\|/, ${$thread_arrayref{$thread}}[$#{$thread_arrayref{$thread}}]);
@@ -711,13 +675,11 @@ sub MultiDel { # deletes singel- or multi-Posts
 	# update the current board.
 	&BoardTotals("load", $currentboard);
 	${$uid.$currentboard}{'messagecount'} -= $kill;
-	 # &BoardTotals("update", ...) is done later in &BoardSetLastInfo
+	# &BoardTotals("update", ...) is done later in &BoardSetLastInfo
 
-	my $threadline = '';
-	fopen(BOARDFILE, "+<$boardsdir/$currentboard.txt") || &fatal_error("cannot_open","$boardsdir/$currentboard.txt",1);
-	my @buffer = <BOARDFILE>;
+	my @buffer = &read_DBorFILE(0,BOARDFILE,$boardsdir,$currentboard,'txt');
 
-	my $a;
+	my ($a,$threadline);
 	for ($a = 0; $a < @buffer; $a++) {
 		if ($buffer[$a] =~ /^$thread\|/) {
 			$threadline = $buffer[$a];
@@ -742,17 +704,17 @@ sub MultiDel { # deletes singel- or multi-Posts
 		}
 	}
 	if (!$inserted) { push(@buffer, join("|", @newthreadline) . "\n"); }
-
-	truncate BOARDFILE, 0;
-	seek BOARDFILE, 0, 0;
-	print BOARDFILE @buffer;
-	fclose(BOARDFILE);
+	&write_DBorFILE(0,BOARDFILE,$boardsdir,$currentboard,'txt',@buffer);
 
 	&BoardSetLastInfo($currentboard,\@buffer);
 
-	$postid = $postid > ${$thread}{'replies'} ? ${$thread}{'replies'} : ($postid - 1);
-	my $start = !$ttsreverse ? (int($postid / $maxmessagedisplay) * $maxmessagedisplay) : ${$thread}{'replies'} - (int((${$thread}{'replies'} - $postid) / $maxmessagedisplay) * $maxmessagedisplay);
-	$yySetLocation = qq~$scripturl?num=$thread/$start#$postid~;
+	if ($INFO{'recent'}) {
+		$yySetLocation = qq~$scripturl?action=recent~;
+	} else {
+		$postid = $postid > ${$thread}{'replies'} ? ${$thread}{'replies'} : ($postid - 1);
+		my $start = !$ttsreverse ? (int($postid / $maxmessagedisplay) * $maxmessagedisplay) : ${$thread}{'replies'} - (int((${$thread}{'replies'} - $postid) / $maxmessagedisplay) * $maxmessagedisplay);
+		$yySetLocation = qq~$scripturl?num=$thread/$start#$postid~;
+	}
 
 	&redirectexit;
 }

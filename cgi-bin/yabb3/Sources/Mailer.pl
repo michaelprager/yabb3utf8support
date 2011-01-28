@@ -109,16 +109,17 @@ sub sendmail {
 
 	} elsif ($mailtype == 4) {
 		# Dummy mail engine
-		fopen(MAIL, ">>$vardir/mail.log");
-		print MAIL "Mail sent at " . scalar localtime() . "\n";
-		print MAIL "To: $toheader\n";
-		print MAIL "From: $fromheader\n";
-		print MAIL "X-Mailer: YaBB Sendmail\n";
-		print MAIL "Subject: $subject\n\n";
 		$message =~ s/\r\n/\n/g;
-		print MAIL "$message\n";
-		print MAIL "End of Message\n\n";
-		fclose(MAIL);
+		&write_DBorFILE(1,MAIL,$vardir,'mail','log',(
+			&read_DBorFILE(0,MAIL,$vardir,'mail','log'),
+			"Mail sent at " . scalar localtime() . "\n",
+			"To: $toheader\n",
+			"From: $fromheader\n",
+			"X-Mailer: YaBB Sendmail\n",
+			"Subject: $subject\n\n",
+			"$message\n",
+			"End of Message\n\n")
+		);
 		return 1;
 	}
 }

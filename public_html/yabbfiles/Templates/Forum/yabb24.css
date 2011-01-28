@@ -155,6 +155,30 @@ input, .button {
 	color: #000033;
 }
 
+/* Soft coded css buttons */
+.buttonleft {
+	padding: 0px 0px 0px 6px;
+	background-image: url(../../Buttons/Button22_left.png);
+}
+.buttonright {
+	padding: 0px 6px 0px 0px;
+	background-image: url(../../Buttons/Button22_right.png);
+}
+.buttonimage {
+	padding: 0px 0px 0px 25px;
+	background-position: 0px 0px;
+}
+.buttontext {
+	position: relative;
+	top: 5px;
+	left: 0px;
+	font-family: verdana, arial, helvetica, sans-serif;
+	font-size: 9px;
+	color: #000000;
+	font-weight: normal;
+	font-style: normal;
+}
+/* Soft coded css buttons end */
 /* Advanced Tabs start */
 .menutop {
 	height: 24px;

@@ -27,11 +27,7 @@ sub ManageBoardNotify {
 	if ($todo eq "load" || $todo eq "update" || $todo eq "delete" || $todo eq "add") {
 		undef %theboard;
 		## open board mail file and build hash name / detail
-		if (-e "$boardsdir/$theboard.mail") {
-			fopen(BOARDNOTE, "$boardsdir/$theboard.mail");
-			%theboard = map /(.*)\t(.*)/, <BOARDNOTE>;
-			fclose(BOARDNOTE);
-		}
+		%theboard = map /(.*)\t(.*)/, &read_DBorFILE(1,'',$boardsdir,$theboard,'mail');
 	}
 	if ($todo eq "add") {
 		$theboard{$user} = "$userlang|$notetype|$noteview";
@@ -66,12 +62,10 @@ sub ManageBoardNotify {
 	}
 	if ($todo eq "save" || $todo eq "update" || $todo eq "delete" || $todo eq "add") {
 		if (%theboard) {
-			fopen(BOARDNOTE, ">$boardsdir/$theboard.mail");
-			print BOARDNOTE map "$_\t$theboard{$_}\n", sort { $theboard{$a} cmp $theboard{$b} } keys %theboard;
-			fclose(BOARDNOTE);
+			&write_DBorFILE(1,'',$boardsdir,$theboard,'mail',(map "$_\t$theboard{$_}\n", sort { $theboard{$a} cmp $theboard{$b} } keys %theboard));
 			undef %theboard;
 		} else {
-			unlink("$boardsdir/$theboard.mail");
+			&delete_DBorFILE("$boardsdir/$theboard.mail");
 		}
 	}
 }
@@ -157,11 +151,7 @@ sub ManageThreadNotify {
 	if ($todo eq "load" || $todo eq "update" || $todo eq "delete" || $todo eq "add") {
 		undef %thethread;
 		##  open mail file and build hash 
-		if (-e "$datadir/$thethread.mail") {
-			fopen(THREADNOTE, "$datadir/$thethread.mail");
-			%thethread = map /(.*)\t(.*)/, <THREADNOTE>;
-			fclose(THREADNOTE);
-		}
+		%thethread = map /(.*)\t(.*)/, &read_DBorFILE(1,'',$datadir,$thethread,'mail');
 	}
 	if ($todo eq "add") {
 		$thethread{$user} = "$userlang|$notetype|$noteview";
@@ -196,12 +186,10 @@ sub ManageThreadNotify {
 	}
 	if ($todo eq "save" || $todo eq "update" || $todo eq "delete" || $todo eq "add") {
 		if (%thethread) {
-			fopen(THREADNOTE, ">$datadir/$thethread.mail");
-			print THREADNOTE map "$_\t$thethread{$_}\n", sort { $thethread{$a} cmp $thethread{$b} } keys %thethread;
-			fclose(THREADNOTE);
+			&write_DBorFILE(1,'',$datadir,$thethread,'mail',(map "$_\t$thethread{$_}\n", sort { $thethread{$a} cmp $thethread{$b} } keys %thethread));
 			undef %thethread;
 		} else {
-			unlink("$datadir/$thethread.mail");
+			&delete_DBorFILE("$datadir/$thethread.mail");
 		}
 	}
 }
@@ -271,9 +259,13 @@ sub getMailFiles {
 	opendir(BOARDNOT, "$boardsdir");
 	@bmaildir = map { (split(/\./, $_))[0] } grep { /\.mail$/ } readdir(BOARDNOT);
 	closedir(BOARDNOT);
-	opendir(THREADNOT, "$datadir");
-	@tmaildir = map { (split(/\./, $_))[0] } grep { /\.mail$/ } readdir(THREADNOT);
-	closedir(THREADNOT);
+	if ($use_MySQL) {
+		@tmaildir = &get_mail_array();
+	} else {
+		opendir(THREADNOT, "$datadir");
+		@tmaildir = map { (split(/\./, $_))[0] } grep { /\.mail$/ } readdir(THREADNOT);
+		closedir(THREADNOT);
+	}
 }
 
 sub ShowNotifications {
@@ -308,8 +300,8 @@ sub ShowNotifications {
 
 	($board_notify,$thread_notify) = &NotificationAlert;
 	my ($num,$new);
-	# Board notifications
-	foreach (keys %$board_notify) { # boardname, boardnotifytype , new
+	# Board notifications sorted lexically and case-insensitively
+	foreach (sort {lc(${$$board_notify{$a}}[0]) cmp lc(${$$board_notify{$b}}[0])} keys %$board_notify) { # boardname, boardnotifytype , new
 		$num++;
 
 		my ($selected1, $selected2);
@@ -373,14 +365,19 @@ sub ShowNotifications {
 	~;
 
 	$num = 0;
-	foreach (keys %$thread_notify) { # mythread, msub, new, username_link, catname_link, boardname_link, lastpostdate
+	# sort numerically descending
+	# mythread, msub, new, username_link, catname_link, boardname_link, lastpostdate
+	foreach (sort { ${$$thread_notify{$b}}[6] <=> ${$$thread_notify{$a}}[6] } keys %$thread_notify) {
 		$num++;
+
+		## format last post date for output
+		my $lastpostdate = &timeformat(${$$thread_notify{$_}}[6]);
 
 		## build block for display
 		$threadblock .= qq~
 		<tr><td align="left" width="85%" class="windowbg2">
-				<b><a href="$scripturl?num=${$$thread_notify{$_}}[0]/new">${$$thread_notify{$_}}[2] ${$$thread_notify{$_}}[1]</a></b> $notify_txt{'120'} ${$$thread_notify{$_}}[3]
-				<br /><span class="small">${$$thread_notify{$_}}[4] &raquo; ${$$thread_notify{$_}}[5] - $notify_txt{'lastpost'} ${$$thread_notify{$_}}[6]</span>
+				<b><a href="$scripturl?num=${$$thread_notify{$_}}[0]/new#new">${$$thread_notify{$_}}[2] ${$$thread_notify{$_}}[1]</a></b> $notify_txt{'120'} ${$$thread_notify{$_}}[3]
+				<br /><span class="small">${$$thread_notify{$_}}[4] &raquo; ${$$thread_notify{$_}}[5] - $notify_txt{'lastpost'} $lastpostdate</span>
 		</td><td align="center" width="15%" class="windowbg2">
 				<input type="checkbox" name="thread-${$$thread_notify{$_}}[0]" value="1" />
 		</td></tr>
@@ -403,7 +400,7 @@ sub ShowNotifications {
 		</td></tr>
 		$threadblock
 		<tr><td align="right" width="85%" class="catbg"><span class="small"><label for="checkall">$notify_txt{'144'}</label></span></td>
-		<td align="center" width="15%" class="catbg"><input type="checkbox" name="checkall" id="checkall" value="" onclick="if (this.checked) checkAll(0); else uncheckAll(0);" /></td>
+		<td align="center" width="15%" class="catbg"><input type="checkbox" name="checkall" id="checkall" value="" onclick="if (this.checked) checkAll(0); else uncheckAll(0);" /></td></tr>
 		<tr><td colspan="2" align="center" class="windowbg">
 		<input type="submit" value="$notify_txt{'124'}" class="button" />&nbsp; <input type="reset" value="$notify_txt{'121'}" class="button" />
 		</td></tr>
@@ -438,7 +435,7 @@ sub NotificationAlert {
 
 	## run through boards list
 	foreach $myboard (@bmaildir) { # board name from file name
-		if (!-e "$boardsdir/$myboard.txt") { # remove from user board_notifications
+		if (!&checkfor_DBorFILE("$boardsdir/$myboard.txt")) { # remove from user board_notifications
 			&ManageBoardNotify("delete", $myboard, $username);
 			next;
 		}
@@ -466,14 +463,14 @@ sub NotificationAlert {
 
 	foreach $mythread (@tmaildir) { # number of next thread
 		# see if thread exists and search for it if moved
-		if (!-e "$datadir/$mythread.txt") {
+		if (!&checkfor_DBorFILE("$datadir/$mythread.txt")) {
 			&ManageThreadNotify("delete", $mythread, $username);
 			eval { require "$datadir/movedthreads.cgi" };
 			next if !exists $moved_file{$mythread} || !$moved_file{$mythread};
 			my $newthread;
 			while (exists $moved_file{$mythread}) {
 				$mythread = $moved_file{$mythread};
-				$newthread = $mythread if !exists $moved_file{$mythread} && -e "$datadir/$mythread.txt";
+				$newthread = $mythread if !exists $moved_file{$mythread} && &checkfor_DBorFILE("$datadir/$mythread.txt");
 			}
 			next if !$newthread;
 			&ManageThreadNotify("add", $newthread, $username, ${$uid.$username}{'language'}, 1, 1);
@@ -488,16 +485,14 @@ sub NotificationAlert {
 
 			## pull out board and last post
 			my $boardid = ${$mythread}{'board'};
-			my ($msub,$mname,$musername,$new,$username_link,$catname_link,$boardname_link,$lastpostdate);
+			my ($msub,$mname,$musername,$new,$username_link,$catname_link,$boardname_link);
 			if ($action eq 'shownotify') {
 				unless (${${'notify'.$boardid.$mythread}}[0]) {
 					my ($messageid,$messagesubject);
-					fopen(BOARDTXT, "$boardsdir/$boardid.txt") || &fatal_error("cannot_open","$boardsdir/$boardid.txt", 1);
-					foreach (<BOARDTXT>) {
+					foreach (&read_DBorFILE(0,'',$boardsdir,$boardid,'txt')) {
 						($messageid, $messagesubject, $mname, undef, undef, undef, $musername, undef) = split(/\|/, $_, 8);
 						${'notify'.$boardid.$messageid} = [$messagesubject,$mname,$musername];
 					}
-					fclose(BOARDTXT);
 				}
 				$msub = ${${'notify'.$boardid.$mythread}}[0];
 				$mname = ${${'notify'.$boardid.$mythread}}[1];
@@ -526,15 +521,12 @@ sub NotificationAlert {
 				## build view profile link, if real name exists
 				&LoadUser($musername); # load poster
 				if (${$uid.$musername}{'realname'}) {
-					$username_link = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}">${$uid.$musername}{'realname'}</a>~;
+					$username_link = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}" rel="nofollow">${$uid.$musername}{'realname'}</a>~;
 				} elsif ($mname) {
 					$username_link = $mname;
 				} else {
 					$username_link = $musername;
 				}
-
-				## format last post for output
-				$lastpostdate = &timeformat(${$mythread}{'lastpostdate'});
 			}
 
 			if ($max_log_days_old) {
@@ -549,7 +541,7 @@ sub NotificationAlert {
 				}
 			}
 
-			$thread_notify{$mythread} = [$mythread, $msub, $new, $username_link, $catname_link, $boardname_link, $lastpostdate];
+			$thread_notify{$mythread} = [$mythread, $msub, $new, $username_link, $catname_link, $boardname_link, ${$mythread}{'lastpostdate'}];
 		}
 	}
 

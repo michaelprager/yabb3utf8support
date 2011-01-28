@@ -16,7 +16,7 @@ $memberlistplver = 'YaBB 3.0 Beta $Revision: 100 $';
 if ($action eq 'detailedversion') { return 1; }
 
 if ($iamguest && $ML_Allowed) { &fatal_error('no_access'); }
-if ($ML_Allowed  == 2 && !$iamadmin && !$iamgmod && !$iammod) { &fatal_error('no_access'); }
+if ($ML_Allowed  == 2 && !$staff) { &fatal_error('no_access'); }
 if ($ML_Allowed  == 3 && !$iamadmin && !$iamgmod) { &fatal_error('no_access'); }
 
 &LoadLanguage('MemberList');
@@ -35,7 +35,7 @@ sub Ml {
 		$barmax = 1;
 		&ManageMemberinfo("load");
 		while (($key, $value) = each(%memberinf)) {
-			(undef, undef, undef, $memposts) = split(/\|/, $value);
+			(undef, undef, undef, undef, $memposts, undef) = split(/\|/, $value, 6);
 			if ($memposts > $barmax) { $barmax = $memposts; }
 		}
 		undef %memberinf;
@@ -81,7 +81,7 @@ sub MLByLetter {
 	$i      = 0;
 	&ManageMemberinfo("load");
 	foreach $membername (sort { lc $memberinf{$a} cmp lc $memberinf{$b} } keys %memberinf) {
-		($memrealname, $mememail, undef, undef) = split(/\|/, $memberinf{$membername});
+		(undef, $memrealname, $mememail, undef) = split(/\|/, $memberinf{$membername}, 4);
 		if ($letter) {
 			$SearchName = lc(substr($memrealname, 0, 1));
 			if ($SearchName eq $letter) { $ToShow[$i] = $membername; $i++; }
@@ -94,8 +94,8 @@ sub MLByLetter {
 	undef %memberinf;
 	$memcount = @ToShow;
 	if (!$memcount && $letter) {
-		$pageindex1 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.gif" border="0" alt="" style="vertical-align: middle;" /></span>~;
-		$pageindex2 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.gif" border="0" alt="" style="vertical-align: middle;" /></span>~;
+		$pageindex1 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.png" border="0" alt="" style="vertical-align: middle;" /></span>~;
+		$pageindex2 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.png" border="0" alt="" style="vertical-align: middle;" /></span>~;
 	} else {
 		&buildIndex;
 	}
@@ -118,10 +118,10 @@ sub MLByLetter {
 }
 
 sub MLTop {
-	%top_list = ();
+	my (%top_list, $membername, $value, $memrealname, $memposts);
 	&ManageMemberinfo("load");
 	while (($membername, $value) = each(%memberinf)) {
-		($memrealname, undef, undef, $memposts) = split(/\|/, $value);
+		(undef, $memrealname, undef, undef, $memposts, undef) = split(/\|/, $value, 6);
 		$memposts = sprintf("%06d", (999999 - $memposts));
 		$top_list{$membername} = qq~$memposts|$memrealname~;
 	}
@@ -145,14 +145,14 @@ sub MLTop {
 }
 
 sub MLPosition {
-	%TopMembers = ();
+	my (%TopMembers, $membername, $value, $memberrealname, $memposition, $memposts);
 	&ManageMemberinfo("load");
 
 	my %nopostorder;
 	for (my $i = 0; $i < @nopostorder; $i++) { $nopostorder{$nopostorder[$i]} = $i;}
 
 	memberposition: while (($membername, $value) = each(%memberinf)) {
-		($memberrealname, undef, $memposition, $memposts) = split(/\|/, $value);
+		(undef, $memberrealname, undef, $memposition, $memposts, undef) = split(/\|/, $value, 6);
 		$memposts = 9999999999 - $memposts;
 
 		foreach (keys %Group) {
@@ -196,20 +196,19 @@ sub MLPosition {
 }
 
 sub MLDate {
-	($memcount, undef) = &MembershipGet;
+	$memcount = $members_total;
 	&buildIndex;
 	&buildPages(1);
-	fopen(MEMBERLISTREAD, "$memberdir/memberlist.txt");
-	$counter = 0;
-	while ($counter < $start && ($buffer = <MEMBERLISTREAD>)) { $counter++; }
-	for ($counter = 0; $counter < $MembersPerPage && ($buffer = <MEMBERLISTREAD>); $counter++) {
-		chomp $buffer;
-		if ($buffer) {
-			($membername, undef) = split(/\t/, $buffer, 2);
+	my @buffer = &read_DBorFILE(0,'',$memberdir,'memberinfo','txt');
+	my $counter = 0;
+	while ($counter < $start && shift(@buffer)) { $counter++; }
+	for ($counter = 0; ($counter < $MembersPerPage && $buffer[$counter]); $counter++) {
+		chomp $buffer[$counter];
+		if ($buffer[$counter]) {
+			($membername, undef) = split(/\t/, $buffer[$counter], 2);
 			&showRows($membername);
 		}
 	}
-	fclose(MEMBERLISTREAD);
 	&buildPages(0);
 	$yytitle = "$ml_txt{'313'} $ml_txt{'4'} $ml_txt{'233'} $numshow";
 	&template;
@@ -234,7 +233,7 @@ sub showRows {
 		my $additional_tds = $extendedprofiles ? &ext_memberlist_tds($user) : '';
 
 		$dr_regdate = '';
-		if(${$uid.$user}{'regtime'}) {
+		if (${$uid.$user}{'regtime'}) {
 			$dr_regdate = &timeformat(${$uid.$user}{'regtime'});
 			$dr_regdate =~ s~(.*)(, 1?[0-9]):[0-9][0-9].*~$1~;
 			if($iamadmin && ${$uid.$user}{'regtime'} < $forumstart) {
@@ -276,7 +275,7 @@ sub showRows {
 sub buildIndex {
 	unless ($memcount == 0) {
 		if (!$iamguest) {
-			(undef, undef, $usermemberpage,undef ) = split(/\|/, ${$uid.$username}{'pageindex'});
+			(undef, undef, $usermemberpage,undef ) = split(/\|/, ${$uid.$username}{'pageindex'}, 4);
 		}
 
 		# Build the page links list.
@@ -303,13 +302,13 @@ sub buildIndex {
 		else { $endpage = $memcount }
 		$lastpn     = int(($memcount - 1) / $MembersPerPage) + 1;
 		$lastptn    = ($lastpn - 1) * $MembersPerPage;
-		$pageindex1 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.gif" border="0" alt="" style="vertical-align: middle;" /> $ml_txt{'139'}: $pagenumb</span>~;
-		$pageindex2 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.gif" border="0" alt="" style="vertical-align: middle;" /> $ml_txt{'139'}: $pagenumb</span>~;
+		$pageindex1 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.png" border="0" alt="" style="vertical-align: middle;" /> $ml_txt{'139'}: $pagenumb</span>~;
+		$pageindex2 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.png" border="0" alt="" style="vertical-align: middle;" /> $ml_txt{'139'}: $pagenumb</span>~;
 		if ($pagenumb > 1 || $all) {
 
 			if ($usermemberpage == 1 || $iamguest) {
 				$pagetxtindexst = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;">~;
-				if (!$iamguest) { $pagetxtindexst .= qq~<a href="$scripturl?sort=$FORM{'sortform'};letter=$letter;start=$start;action=memberpagedrop$findmember"><img src="$imagesdir/index_togl.gif" border="0" alt="$ml_txt{'19'}" title="$ml_txt{'19'}" style="vertical-align: middle;" /></a> $ml_txt{'139'}: ~; }
+				if (!$iamguest) { $pagetxtindexst .= qq~<a href="$scripturl?sort=$FORM{'sortform'};letter=$letter;start=$start;action=memberpagedrop$findmember"><img src="$imagesdir/index_togl.png" border="0" alt="$ml_txt{'19'}" title="$ml_txt{'19'}" style="vertical-align: middle;" /></a> $ml_txt{'139'}: ~; }
 				else { $pagetxtindexst .= qq~<img src="$imagesdir/xx.gif" border="0" alt="" style="vertical-align: middle;" /> $ml_txt{'139'}: ~; }
 				if ($startpage > 0) { $pagetxtindex = qq~<a href="$scripturl?action=ml;sort=$FORM{'sortform'};letter=$letter$findmember" style="font-weight: normal;">1</a>&nbsp;...&nbsp;~; }
 				if ($startpage == $MembersPerPage) { $pagetxtindex = qq~<a href="$scripturl?action=ml;sort=$FORM{'sortform'};letter=$letter$findmember" style="font-weight: normal;">1</a>&nbsp;~; }
@@ -324,7 +323,7 @@ sub buildIndex {
 				$pageindex2 = qq~$pagetxtindexst$pagetxtindex</span>~;
 			} else {
 				$pagedropindex1 = qq~<span style="float: left; width: 350px; margin: 0px; margin-top: 2px; border: 0px;">~;
-				$pagedropindex1 .= qq~<span style="float: left; height: 21px; margin: 0; margin-right: 4px;"><a href="$scripturl?sort=$FORM{'sortform'};letter=$letter;start=$start;action=memberpagetext$findmember"><img src="$imagesdir/index_togl.gif" border="0" alt="$ml_txt{'19'}" title="$ml_txt{'19'}" /></a></span>~;
+				$pagedropindex1 .= qq~<span style="float: left; height: 21px; margin: 0; margin-right: 4px;"><a href="$scripturl?sort=$FORM{'sortform'};letter=$letter;start=$start;action=memberpagetext$findmember"><img src="$imagesdir/index_togl.png" border="0" alt="$ml_txt{'19'}" title="$ml_txt{'19'}" /></a></span>~;
 				$pagedropindex2 = $pagedropindex1;
 				$tstart         = $start;
 				if (substr($INFO{'start'}, 0, 3) eq "all") { ($tstart, $start) = split(/\-/, $INFO{'start'}); }
@@ -514,9 +513,9 @@ sub FindMembers {
 	$LookFor =~ s/\*+/.*?/g;
 
 	&ManageMemberinfo("load");
-	my %memberfind = ();
+	my (%memberfind, $membername, $value, $memrealname, $mememail);
 	while (($membername, $value) = each(%memberinf)) {
-		($memrealname, $mememail, undef) = split(/\|/, $value, 3);
+		(undef, $memrealname, $mememail, undef) = split(/\|/, $value, 4);
 		if ($memrealname =~ /$LookFor/i) {
 			$memberfind{$membername} = $memrealname;
 		} elsif ($mememail =~ /$LookFor/i) {
@@ -524,7 +523,7 @@ sub FindMembers {
 			$memberfind{$membername} = $memrealname if $iamadmin || $iamgmod || !${$uid.$membername}{'hidemail'};
 		}
 	}
-	@findmemlist = sort { lc $memberfind{$a} cmp lc $memberfind{$b} } keys %memberfind;
+	my @findmemlist = sort { lc $memberfind{$a} cmp lc $memberfind{$b} } keys %memberfind;
 	undef (%memberfind);
 	$memcount = @findmemlist;
 	&buildIndex;

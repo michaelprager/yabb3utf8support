@@ -50,7 +50,7 @@ sub Register {
 	if (!$langopt) { &guestLangSel; }
 
 	if (!$iamguest) { &fatal_error("no_registration_logged_in"); }
-	if (-e "$vardir/email_domain_filter.txt" ) { require "$vardir/email_domain_filter.txt"; }
+	if (&checkfor_DBorFILE("$vardir/email_domain_filter.txt")) { require "$vardir/email_domain_filter.txt"; }
 	if ($adomains) {
 		@domains = split (/\,/, $adomains);
 		$aedomains = qq~<table border="0" width="100%" cellspacing="0" cellpadding="0"><tr><td><input type="text" maxlength="100" name="email" id="email" value="$tmpregemail" size="15" /></td><td><select name="domain" id="domain">~;
@@ -117,6 +117,9 @@ sub Register {
 	if ($name_cannot_be_userid) {
 		$yymain .= qq~
 			<br /><span class="small">$register_txt{'521'}</span>~;
+	} else {
+		$yymain .= qq~
+			<br /><span class="small">$register_txt{'522'}</span>~;
 	}
 	$yymain .= qq~</label>
 		</td>
@@ -426,14 +429,13 @@ sub Register {
 	}
 
 	if ($RegAgree) {
+		my @agreement;
 		if ($language) {
-			fopen(AGREE, "$langdir/$language/agreement.txt");
+			@agreement = &read_DBorFILE(0,'',"$langdir/$language",'agreement','txt');
 		} else {
-			fopen(AGREE, "$langdir/$lang/agreement.txt");
+			@agreement = &read_DBorFILE(0,'',"$langdir/$lang",'agreement','txt');
 		}
-		@agreement = <AGREE>;
-		fclose(AGREE);
-		$fullagree = join("", @agreement);
+		my $fullagree = join("", @agreement);
 		$fullagree =~ s/\n/<br \/>/g;
 		$yymain .= qq~
 	<tr>
@@ -609,7 +611,7 @@ sub Register2 {
 	&fatal_error("id_reserved","$member{'regusername'}") if $member{'regusername'} =~ /guest/i;
 	&fatal_error("invalid_character","$register_txt{'35'} $register_txt{'241re'}") if $member{'regusername'} =~ /[^\w\+\-\.\@]/;
 	&fatal_error("no_email","($member{'regusername'})") if $member{'email'} eq "";
-	&fatal_error("id_taken","($member{'regusername'})") if -e ("$memberdir/$member{'regusername'}.vars");
+	&fatal_error("id_taken","($member{'regusername'})") if &checkfor_DBorFILE("$memberdir/$member{'regusername'}.vars");
 	&fatal_error("password_is_userid") if $member{'regusername'} eq $member{'passwrd1'};
 	&fatal_error("no_reg_reason") if $member{'reason'} eq "" && $regtype == 1;
 
@@ -620,6 +622,9 @@ sub Register2 {
 	$member{'regrealname'} = $convertstr;
 	&fatal_error("realname_to_long","($member{'regrealname'} => $convertstr)") if $cliped;
 	&fatal_error('invalid_character', "$register_txt{'38'} $register_txt{'241re'}") if $member{'regrealname'} =~ /[^ \w\x80-\xFF\[\]\(\)#\%\+,\-\|\.:=\?\@\^]/;
+ 	&fatal_error('TODO: SQLPORT: check if this conversion is valid'); # TODO: SQL Port
+	&ToHTML($member{'name'});
+	&ToChars($member{'name'});
 
 	if ($name_cannot_be_userid && lc $member{'regusername'} eq lc $member{'regrealname'}) { &fatal_error('name_is_userid'); }
 
@@ -665,12 +670,9 @@ sub Register2 {
 	&fatal_error("invalid_character","$register_txt{'69'} $register_txt{'241e'}") if $member{'email'} !~ /^[\w\-\.\+]+\@[\w\-\.\+]+\.\w{2,4}$/;
 	&fatal_error("invalid_email") if $member{'email'} =~ /(@.*@)|(\.\.)|(@\.)|(\.@)|(^\.)|(\.$)/ || $member{'email'} !~ /\A.+@\[?(\w|[-.])+\.[a-zA-Z]{2,4}|[0-9]{1,4}\]?\Z/;
 
-	fopen(RESERVE, "$vardir/reserve.txt") || &fatal_error("cannot_open","$vardir/reserve.txt", 1);
-	@reserve = <RESERVE>;
-	fclose(RESERVE);
-	fopen(RESERVECFG, "$vardir/reservecfg.txt") || &fatal_error("cannot_open","$vardir/reservecfg.txt", 1);
-	@reservecfg = <RESERVECFG>;
-	fclose(RESERVECFG);
+	@reserve = &read_DBorFILE(0,'',$vardir,'reserve','txt');
+	@reservecfg = &read_DBorFILE(0,'',$vardir,'reservecfg','txt');
+
 	for ($a = 0; $a < @reservecfg; $a++) {
 		chomp $reservecfg[$a];
 	}
@@ -704,10 +706,10 @@ sub Register2 {
 	else { $new_template = qq~Forum default~; }
 
 	# check if user isn't already registered
-	&fatal_error("id_taken") if (-e ("$memberdir/$member{'regusername'}.vars"));
+	&fatal_error("id_taken") if &checkfor_DBorFILE("$memberdir/$member{'regusername'}.vars");
 	# check if user isn't already in pre-registration
-	&fatal_error("already_preregged") if (-e ("$memberdir/$member{'regusername'}.pre"));
-	&fatal_error("already_preregged") if (-e ("$memberdir/$member{'regusername'}.wait"));
+	&fatal_error("already_preregged") if (&checkfor_DBorFILE("$memberdir/$member{'regusername'}.pre"));
+	&fatal_error("already_preregged") if (&checkfor_DBorFILE("$memberdir/$member{'regusername'}.wait"));
 
 	if ($new_template !~ m^\A[0-9a-zA-Z\_\(\)\ \#\%\-\:\+\?\$\&\~\.\,\@]+\Z^ && $new_template ne '') { &fatal_error('invalid_template'); }
 	if ($member{'language'} !~ m^\A[0-9a-zA-Z\_\(\)\ \#\%\-\:\+\?\$\&\~\.\,\@]+\Z^ && $member{'language'} ne '') { &fatal_error('invalid_language'); }
@@ -771,16 +773,12 @@ sub Register2 {
 	if ($regtype == 1 || $regtype == 2) {
 		my (@reglist,@x);
 		# If a pre-registration list exists load it
-		if (-e "$memberdir/memberlist.inactive") {
-			fopen(INACT, "$memberdir/memberlist.inactive");
-			@reglist = <INACT>;
-			fclose(INACT);
+		if (&checkfor_DBorFILE("$memberdir/memberlist.inactive")) {
+			@reglist = &read_DBorFILE(0,'',$memberdir,'memberlist','inactive');
 		}
 		# If a approve-registration list exists load it too
-		if (-e "$memberdir/memberlist.approve") {
-			fopen(APPROVE, "$memberdir/memberlist.approve");
-			push(@reglist, <APPROVE>);
-			fclose(APPROVE);
+		if (&checkfor_DBorFILE("$memberdir/memberlist.approve")) {
+			push(@reglist, &read_DBorFILE(0,'',$memberdir,'memberlist','approve'));
 		}
 		foreach (@reglist) {
 			@x = split(/\|/, $_);
@@ -802,13 +800,9 @@ sub Register2 {
 
 		&UserAccount($reguser, "preregister");
 		if ($do_scramble_id) { $cryptuser = &cloak($reguser); } else { $cryptuser = $reguser; }
-		fopen(INACT, ">>$memberdir/memberlist.inactive", 1);
-		print INACT "$date|$activationcode|$reguser|$member{'passwrd1'}|$member{'email'}|$user_ip\n";
-		fclose(INACT);
+		&write_DBorFILE(0,INACT,$memberdir,'memberlist','inactive',(&read_DBorFILE(0,INACT,$memberdir,'memberlist','inactive'),"$date|$activationcode|$reguser|$member{'passwrd1'}|$member{'email'}|\n"));
 
-		fopen(REGLOG, ">>$vardir/registration.log", 1);
-		print REGLOG "$date|N|$member{'regusername'}||$user_ip\n";
-		fclose(REGLOG);
+		&write_DBorFILE(0,REGLOG,$vardir,'registration','log',(&read_DBorFILE(0,REGLOG,$vardir,'registration','log'),"$date|N|$member{'regusername'}||$user_ip\n"));
 
 		## send an e-mail to the user that registration is pending e-mail validation within the given timespan. ##
 		my $templanguage = $language;
@@ -843,6 +837,7 @@ sub Register2 {
 			&ext_saveprofile($reguser);
 		}
 		&UserAccount($reguser, "register");
+		${$uid.$reguser}{'mysql'} = 1 if $use_MySQL;
 		&MemberIndex("add", $reguser);
 		&FormatUserName($reguser);
 
@@ -850,9 +845,7 @@ sub Register2 {
 			# new format msg file:
 			# messageid|(from)user|(touser(s))|(ccuser(s))|(bccuser(s))|subject|date|message|(parentmid)|reply#|ip|messagestatus|flags|storefolder|attachment
 			$messageid = $^T . $$;
-			fopen(IM, ">$memberdir/$member{'regusername'}.msg", 1);
-			print IM "$messageid|$sendname|$member{'regusername'}|||$imsubject|$date|$imtext|$messageid|0|$ENV{'REMOTE_ADDR'}|s|u||\n";
-			fclose(IM);
+			&write_DBorFILE(0,'',$memberdir,$member{'regusername'},'msg',"$messageid|$sendname|$member{'regusername'}|||$imsubject|$date|$imtext|$messageid|0|$ENV{'REMOTE_ADDR'}|s|u||\n");
 		}
 		if ($new_member_notification) {
 			my $templanguage = $language;
@@ -934,24 +927,18 @@ sub user_activation {
 	$activationkey = $_[1] || $INFO{'activationkey'};
 	&fatal_error('wrong_id') unless $reguser;
 	if ($do_scramble_id) { $reguser = &decloak($reguser); }
-	if (!-e "$memberdir/$reguser.pre" && -e "$memberdir/$reguser.vars") { &fatal_error("already_activated"); }
-	if (!-e "$memberdir/$reguser.pre") { &fatal_error("prereg_expired"); }
+	if (!&checkfor_DBorFILE("$memberdir/$reguser.pre") && &checkfor_DBorFILE("$memberdir/$reguser.vars")) { &fatal_error("already_activated"); }
+	if (!&checkfor_DBorFILE("$memberdir/$reguser.pre")) { &fatal_error("prereg_expired"); }
 	# If a pre-registration list exists load it
-	if (-e "$memberdir/memberlist.inactive") {
-		fopen(INACT, "$memberdir/memberlist.inactive");
-		@reglist = <INACT>;
-		fclose(INACT);
+	if (&checkfor_DBorFILE("$memberdir/memberlist.inactive")) {
+		@reglist = &read_DBorFILE(0,'',$memberdir,'memberlist','inactive');
 	} else {
 		# add entry to registration log
-		fopen(REGLOG, ">>$vardir/registration.log", 1);
-		print REGLOG "$date|E|$reguser||$user_ip\n";
-		fclose(REGLOG);
+		&write_DBorFILE(0,REGLOG,$vardir,'registration','log',(&read_DBorFILE(0,REGLOG,$vardir,'registration','log'),"$date|E|$reguser||$user_ip\n"));
 		&fatal_error("prereg_expired");
 	}
-	if ($regtype == 1 && -e "$memberdir/memberlist.approve") {
-		fopen(APR, "$memberdir/memberlist.approve");
-		@aprlist = <APR>;
-		fclose(APR);
+	if ($regtype == 1 && &checkfor_DBorFILE("$memberdir/memberlist.approve")) {
+		@aprlist = &read_DBorFILE(0,'',$memberdir,'memberlist','approve');
 	}
 
 	# check if user is in pre-registration and check activation key
@@ -963,9 +950,8 @@ sub user_activation {
 		} else {
 			my $templanguage = $language;
 			if ($activationkey ne $testkey) {
-				fopen(REGLOG, ">>$vardir/registration.log", 1);
-				print REGLOG "$date|E|$reguser||$user_ip\n"; # add entry to registration log
-				fclose(REGLOG);
+				# add entry to registration log
+				&write_DBorFILE(0,REGLOG,$vardir,'registration','log',(&read_DBorFILE(0,REGLOG,$vardir,'registration','log'),"$date|E|$reguser||$user_ip\n"));
 				&fatal_error("wrong_code");
 
 			} elsif ($regtype == 1) {
@@ -976,9 +962,8 @@ sub user_activation {
 
 				# add entry to registration log
 				if ($iamadmin || $iamgmod) { $actuser = $username; } else { $actuser = $reguser; }
-				fopen(REGLOG, ">>$vardir/registration.log", 1);
-				print REGLOG "$date|W|$reguser|$actuser|$user_ip\n";
-				fclose(REGLOG);
+				# add entry to registration log
+				&write_DBorFILE(0,REGLOG,$vardir,'registration','log',(&read_DBorFILE(0,REGLOG,$vardir,'registration','log'),"$date|W|$reguser|$actuser|$user_ip\n"));
 
 				&LoadUser($reguser);
 				$language = ${$uid.$reguser}{'language'};
@@ -993,14 +978,16 @@ sub user_activation {
 				}
 
 				# user is in list and the keys match, so let him/her in
-				rename("$memberdir/$reguser.pre", "$memberdir/$reguser.vars");
+				if ($use_MySQL) {
+					&UserAccount($reguser); 
+					${$uid.$reguser}{'mysql'} = 1;
+					&delete_DBorFILE("$memberdir/$reguser.pre");
+				} else { rename("$memberdir/$reguser.pre", "$memberdir/$reguser.vars"); }
 				&MemberIndex("add", $reguser);
 
 				if ($iamadmin || $iamgmod) { $actuser = $username; } else { $actuser = $reguser; }
 				# add entry to registration log
-				fopen(REGLOG, ">>$vardir/registration.log", 1);
-				print REGLOG "$date|A|$reguser|$actuser|$user_ip\n";
-				fclose(REGLOG);
+				&write_DBorFILE(0,REGLOG,$vardir,'registration','log',(&read_DBorFILE(0,REGLOG,$vardir,'registration','log'),"$date|A|$reguser|$actuser|$user_ip\n"));
 
 				if ($emailpassword) {
 					chomp $regpassword;
@@ -1024,9 +1011,7 @@ sub user_activation {
 				# new format msg file:
 				# messageid|(from)user|(touser(s))|(ccuser(s))|(bccuser(s))|subject|date|message|(parentmid)|reply#|ip|messagestatus|flags|storefolder|attachment
 				$messageid = $^T . $$;
-				fopen(INBOX, ">$memberdir/$reguser.msg");
-				print INBOX "$messageid|$sendname|$reguser|||$imsubject|$date|$imtext|$messageid|0|$ENV{'REMOTE_ADDR'}|s|u||\n";
-				fclose(INBOX);
+				&write_DBorFILE(0,'',$memberdir,$reguser,'msg',"$messageid|$sendname|$reguser|||$imsubject|$date|$imtext|$messageid|0|$ENV{'REMOTE_ADDR'}|s|u||\n");
 			}
 			if ($new_member_notification) {
 				$language = $lang;
@@ -1040,20 +1025,14 @@ sub user_activation {
 
 	if ($changed) {
 		# if changed write new inactive list
-		fopen(INACT, ">$memberdir/memberlist.inactive");
-		print INACT @chnglist;
-		fclose(INACT);
+		&write_DBorFILE(0,'',$memberdir,'memberlist','inactive',@chnglist);
 		# update approval user list
 		if ($regtype == 1) {
-			fopen(APR, ">$memberdir/memberlist.approve");
-			print APR @aprlist;
-			fclose(APR);
+			&write_DBorFILE(0,'',$memberdir,'memberlist','approve',@aprlist);
 		}
 	} else {
 		# add entry to registration log
-		fopen(REGLOG, ">>$vardir/registration.log", 1);
-		print REGLOG "$date|E|$reguser|$user_ip\n";
-		fclose(REGLOG);
+		&write_DBorFILE(0,REGLOG,$vardir,'registration','log',(&read_DBorFILE(0,REGLOG,$vardir,'registration','log'),"$date|E|$reguser||$user_ip\n"));
 		&fatal_error("wrong_id");
 	}
 

@@ -293,7 +293,7 @@ sub EventCalSet {
      <tr>
        <td class="windowbg" width="24%" align="center"><input type="text" name="caliimg[$i]" value="$CalIconURL[$i]" /></td>
        <td class="windowbg" width="24%" align="center"><input type="text" name="calidescr[$i]" value="$CalIDescription[$i]" /></td>
-       <td class="windowbg" width="10%" align='center'><img src="$yyhtml_root/ModImages/EventCal/EventIcons/$CalIconURL[$i].gif" alt="" /></td>
+       <td class="windowbg" width="10%" align='center'><img src="$yyhtml_root/EventIcons/$CalIconURL[$i].gif" alt="" /></td>
        <td class="windowbg" width="6%" align="center"><input type="checkbox" name="calidelbox[$i]" value="1" /></td>
      </tr>~;
 		$i++
@@ -342,13 +342,11 @@ sub EventCalSet {
 
 sub EventCalSet2 {
 	&is_admin_or_gmod;
-
+die("SQLPORT: this still needs to be tested");#SQLPORT: TODO
 	if ($FORM{'rebuiltbd'} eq "$event_cal{'54'}") {
 		unlink("$vardir/eventcalbday.db");
 
-			fopen(FILE, "$memberdir/memberlist.txt");
-			@birthmembers = <FILE>;
-			fclose(FILE);
+			my @birthmembers = &read_DBorFILE(0,'',$memberdir,'memberinfo','txt');
 			fopen(FILE,">$vardir/eventcalbday.db");
 			foreach $user_name (@birthmembers) {
 			($user_xy, $dummy) = split(/	/, $user_name);
@@ -360,6 +358,7 @@ sub EventCalSet2 {
 					if ($user_month < 10 && length($user_month) == 1) { $user_month = "0$user_month"; }
 					if ($user_day < 10 && length($user_day) == 1) { $user_day = "0$user_day"; }
 					print FILE qq~$user_year|$user_month|$user_day|$user_xy\n~;
+					push(@eventcalbday, qq~$user_year|$user_month|$user_day|$user_xy\n~);
 
 				}
 			}
@@ -401,68 +400,8 @@ sub EventCalSet2 {
 		$CalEventMods        =~ s~^\s*,\s*|\s*,\s*$~~g;
 		$CalEventMods        =~ s~\s*,\s*~,~g;
 
-
-		my $filler  = q~                                                                               ~;
-		my $setfile = << "EOF";
-###############################################################################
-# CalEventSet.txt                                                             #
-###############################################################################
-
-# Standard Calendar Setting
-\$Show_EventCal = $Show_EventCal;
-\$Show_EventButton = $Show_EventButton;
-\$Show_EventBirthdays = $Show_EventBirthdays;
-\$Show_MiniCalIcons = $Show_MiniCalIcons;
-\$ShowSunday = $ShowSunday;
-\$Show_ColorLinks = $Show_ColorLinks;
-\$No_ShortUbbc = $No_ShortUbbc;
-\$Event_TodayColor = "$Event_TodayColor";
-\$Delete_EventsUntil = $Delete_EventsUntil;
-\$CalShortEvent = $CalShortEvent;
-\$CalEventPerms = qq~$CalEventPerms~;
-\$CalEventMods = qq~$CalEventMods~;
-\$CalEventPrivate = $CalEventPrivate;
-\$CalEventNoName = $CalEventNoName;
-\$Scroll_Events = $Scroll_Events;
-\$DisplayCalEvents = $DisplayCalEvents;
-\$DisplayEvents = $DisplayEvents;
-
-# Birthdaylist Setting
-\$Show_BirthdaysList = $Show_BirthdaysList;
-\$Show_BirthdayButton = $Show_BirthdayButton;
-\$Show_BirthdayDate = $Show_BirthdayDate;
-\$Show_BdColorLinks = $Show_BdColorLinks;
-
-1;
-EOF
-
-		# Fix a certain type of syntax error
-		$setfile =~ s~=\s+;~= 0;~g;
-
-		# Make it look nicely aligned. The comment starts after 50 Col
-		my $filler = ' ' x 50;
-		$setfile =~ s~(.+;)[ \t]+(#.+$)~ $1 . substr($filler,(length $1 < 50 ? length $1 : 49)) . $2 ~gem;
-		$setfile =~ s~\t+(#.+$)~$filler$1~gm;
-		$setfile =~ s~(.+)(#.+$)~ $1 . &cut_comment($1,$2) ~gem;
-
-		sub cut_comment { # line brake of too long comments
-			my ($comment,$length) = ('',120); # 120 Col is the max width of page
-			my $var_length = length($_[0]);
-			while ($length < $var_length) { $length += 120; }
-			foreach (split(/ +/, $_[1])) {
-				if (($var_length + length($comment) + length($_)) > $length) {
-					$comment =~ s/ $//;
-					$comment .= "\n$filler#  $_ ";
-					$length += 120;
-				} else { $comment .= "$_ "; }
-			}
-			$comment =~ s/ $//;
-			$comment; 
-		}
-
-		fopen(FILE, ">$vardir/eventcalset.txt");
-		print FILE $setfile;
-		fclose(FILE);
+		require "$admindir/NewSettings.pl";
+		&SaveSettingsTo('Settings.pl');
 
 		$yySetLocation = qq~$adminurl?action=eventcal_set~;
 		&redirectexit;
@@ -485,9 +424,7 @@ sub EventCalSet3 {
 		$tempA++;
 	}
 	push(@eventcalIcon, "1;");
-	fopen(FILE, ">$vardir/eventcalIcon.txt");
-	print FILE @eventcalIcon;
-	fclose(FILE);
+	&write_DBorFILE(0,'',$vardir,'eventcalIcon','txt',@eventcalIcon);
 
 	$yySetLocation = qq~$adminurl?action=eventcal_set~;
 	&redirectexit;

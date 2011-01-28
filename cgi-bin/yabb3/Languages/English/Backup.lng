@@ -30,7 +30,7 @@ $backuplngver = 'YaBB 3.0 Beta $Revision: 100 $';
 '8', '-- (contains all threads/topics and included posts)',
 '9', '-- (contains member profiles, member logs, and private messages)',
 '10', 'and stylesheets', # This one comes right after "Templates/ "
-'10a', '-- (contains all template files and images)',
+'10a', '-- (contains all template files <i>except</i> the images)',
 '11', '-- (contains all localized text and support files used by YaBB)',
 '12', '-- (contains the forum settings, preferences, and logs)',
 'and', 'and', # Odd name, yes, but could be useful in more than one place

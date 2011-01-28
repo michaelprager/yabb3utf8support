@@ -133,6 +133,7 @@ $extendedprofileslngver = 'YaBB 3.0 Beta $Revision: 100 $';
 'image_height_description' => 'Set a value if you want to limit the image height to a specific value. Leave blank to disable limit.',
 'allowed_extensions' => 'Allowed Extensions',
 'allowed_extensions_description' => 'Limit this field to specific file extensions by entering a list of extensions seperated by spaces. E.g. \'jpg jpeg gif png bmp\'. Leave blank to disable limit.',
+'converter_no_sql' => 'Conversion can\'t be run if you are using SQL Database. You must convert the Database back to file Database before you can run this converter. Then you can convert back to SQL Database again.',
 'converter_missing_vars' => 'Can\'t open the old Variables folder you specified. PLease make sure that your input is correct and that the permissions are set properly (777 for the folder and 666 for all its files).',
 'converter_missing_fields' => 'File extended_profiles_fields.txt does not exist in the folder you specified',
 'converter_missing_order' => 'File extended_profiles_order.txt does not exist in the folder you specified',

@@ -18,9 +18,7 @@ if ($action eq 'detailedversion') { return 1; }
 sub Attachments {
 	&is_admin_or_gmod;
 
-	fopen(AMS, "$vardir/attachments.txt");
-	my @attachments = <AMS>;
-	fclose(AMS);
+	my @attachments = &read_DBorFILE(1,'',$vardir,'attachments','txt');
 
 	my $attachment_space = 0;
 	foreach (@attachments) {
@@ -34,13 +32,9 @@ sub Attachments {
 		$remaining_space = ($dirlimit - $attachment_space) . " KB";
 	}
 
-	fopen(FILE, "$vardir/oldestattach.txt");
-	$maxdaysattach = <FILE>;
-	fclose(FILE);
+	$maxdaysattach = &read_DBorFILE(1,'',$vardir,'oldestattach','txt');
 
-	fopen(FILE, "$vardir/maxattachsize.txt");
-	$maxsizeattach = <FILE>;
-	fclose(FILE);
+	$maxsizeattach = &read_DBorFILE(1,'',$vardir,'maxattachsize','txt');
 
 	my $totalattachnum = @attachments;
 	$yymain .= qq~
@@ -105,20 +99,18 @@ sub RemoveOldAttachments {
 	&is_admin_or_gmod;
 
 	my $maxdaysattach = $FORM{'maxdaysattach'} || $INFO{'maxdaysattach'};
-	if ($maxdaysattach !~ /^[0-9]+$/) { &admin_fatal_error("only_numbers_allowed"); }
+	if ($maxdaysattach !~ /^[0-9]+$/) { &fatal_error("only_numbers_allowed"); }
 
 	# Set up the multi-step action
 	$time_to_jump = time() + $max_process_time;
 
 	&automaintenance('on');
 
-	opendir(ATT, $uploaddir) || &admin_fatal_error('cannot_open', "$uploaddir", 1);
+	opendir(ATT, $uploaddir) || &fatal_error('cannot_open', "$uploaddir", 1);
 	my @attachments = sort( grep(/\w+$/, readdir(ATT)) );
 	closedir(ATT);
 
-	fopen(AML, "$vardir/attachments.txt");
-	my @attachmentstxt = <AML>;
-	fclose(AML);
+	my @attachmentstxt = &read_DBorFILE(1,'',$vardir,'attachments','txt');
 
 	my (%att,@line);
 	foreach (@attachmentstxt) {
@@ -128,14 +120,12 @@ sub RemoveOldAttachments {
 
 	my $info;
 	if (!@attachments) {
-		fopen(ATT, ">$vardir/attachments.txt") || &admin_fatal_error("cannot_open","$vardir/attachments.txt", 1);
-		print ATT '';
-		fclose(ATT);
+		&write_DBorFILE(0,'',$vardir,'attachments','txt',(''));
 
 		$info = qq~<br /><i>$fatxt{'48'}.</i>~;
 
 	} else {
-		unlink("$vardir/rem_old_attach.tmp") unless exists $INFO{'next'};
+		&delete_DBorFILE("$vardir/rem_old_attach.tmp") unless exists $INFO{'next'};
 
 		my %rem_attachments;
 		for (my $a = ($INFO{'next'} || 0); $a < @attachments; $a++) {
@@ -152,9 +142,7 @@ sub RemoveOldAttachments {
 
 			if ($time_to_jump < time() && ($a + 1) < @attachments) { 
 				# save the $info of this run until the end of 'RemoveOldAttachments'
-				fopen(FILE, ">>$vardir/rem_old_attach.tmp") || &admin_fatal_error('cannot_open', "$vardir/rem_old_attach.tmp", 1);
-				print $info;
-				fclose(FILE);
+				&write_DBorFILE(0,FILE,$vardir,'rem_old_attach','tmp',(&read_DBorFILE(1,FILE,$vardir,'rem_old_attach','tmp'),$info));
 
 				$yySetLocation = qq~$adminurl?action=removeoldattachments;maxdaysattach=$maxdaysattach;next=~ . ($a + 1 - &RemoveAttachments(\%rem_attachments));
 				&redirectexit;
@@ -168,14 +156,10 @@ sub RemoveOldAttachments {
 
 	$yymain .= qq~<b>$fatxt{'32'} $maxdaysattach $fatxt{'58'}.</b><br />~;
 
-	fopen(FILE, "$vardir/rem_old_attach.tmp");
-	$yymain .= join('', <FILE>) . $info;
-	fclose(FILE);
-	unlink("$vardir/rem_old_attach.tmp");
+	$yymain .= join('', &read_DBorFILE(1,'',$vardir,'rem_old_attach','tmp')) . $info;
+	&delete_DBorFILE("$vardir/rem_old_attach.tmp");
 
-	fopen(FILE, ">$vardir/oldestattach.txt");
-	print FILE $maxdaysattach;
-	fclose(FILE);
+	&write_DBorFILE(0,'',$vardir,'oldestattach','txt',($maxdaysattach));
 
 	$yytitle     = "$fatxt{'34'} $maxdaysattach";
 	$action_area = "removeoldattachments";
@@ -186,20 +170,18 @@ sub RemoveBigAttachments {
 	&is_admin_or_gmod;
 
 	my $maxsizeattach = $FORM{'maxsizeattach'} || $INFO{'maxsizeattach'};
-	if ($maxsizeattach !~ /^[0-9]+$/) { &admin_fatal_error("only_numbers_allowed"); }
+	if ($maxsizeattach !~ /^[0-9]+$/) { &fatal_error("only_numbers_allowed"); }
 
 	# Set up the multi-step action
 	$time_to_jump = time() + $max_process_time;
 
 	&automaintenance('on');
 
-	opendir(ATT, $uploaddir) || &admin_fatal_error('cannot_open', "$uploaddir", 1);
+	opendir(ATT, $uploaddir) || &fatal_error('cannot_open', "$uploaddir", 1);
 	my @attachments = sort( grep(/\w+$/, readdir(ATT)) );
 	closedir(ATT);
 
-	fopen(FILE, "$vardir/attachments.txt");
-	@attachmentstxt = <FILE>;
-	fclose(FILE);
+	@attachmentstxt = &read_DBorFILE(1,'',$vardir,'attachments','txt');
 
 	my (%att,@line);
 	foreach (@attachmentstxt) {
@@ -209,14 +191,12 @@ sub RemoveBigAttachments {
 
 	my $info;
 	if (!@attachments) {
-		fopen(ATT, ">$vardir/attachments.txt") || &admin_fatal_error("cannot_open","$vardir/attachments.txt", 1);
-		print ATT '';
-		fclose(ATT);
+		&write_DBorFILE(0,'',$vardir,'attachments','txt',(''));
 
 		$info = qq~<br /><i>$fatxt{'48'}.</i>~;
 
 	} else {
-		unlink("$vardir/rem_big_attach.tmp") unless exists $INFO{'next'};
+		&delete_DBorFILE("$vardir/rem_big_attach.tmp") unless exists $INFO{'next'};
 
 		my (%rem_attachments,@line);
 		for ($a = ($INFO{'next'} || 0); $a < @attachments; $a++) {
@@ -232,9 +212,7 @@ sub RemoveBigAttachments {
 
 			if ($time_to_jump < time() && ($a + 1) < @attachments) { 
 				# save the $info of this run until the end of 'RemoveBigAttachments'
-				fopen(FILE, ">>$vardir/rem_big_attach.tmp") || &admin_fatal_error('cannot_open', "$vardir/rem_big_attach.tmp", 1);
-				print $info;
-				fclose(FILE);
+				&write_DBorFILE(0,FILE,$vardir,'rem_big_attach','tmp',(&read_DBorFILE(1,FILE,$vardir,'rem_big_attach','tmp'),$info));
 
 				$yySetLocation = qq~$adminurl?action=removebigattachments;maxsizeattach=$maxsizeattach;next=~ . ($a + 1 - &RemoveAttachments(\%rem_attachments));
 				&redirectexit;
@@ -246,14 +224,10 @@ sub RemoveBigAttachments {
 
 	$yymain .= qq~<b>$fatxt{'33'} $maxsizeattach KB.</b><br />~;
 
-	fopen(FILE, "$vardir/rem_big_attach.tmp");
-	$yymain .= join('', <FILE>) . $info;
-	fclose(FILE);
-	unlink("$vardir/rem_big_attach.tmp");
+	$yymain .= join('', &read_DBorFILE(1,'',$vardir,'rem_big_attach','tmp')) . $info;
+	&delete_DBorFILE("$vardir/rem_big_attach.tmp");
 
-	fopen(FILE, ">$vardir/maxattachsize.txt");
-	print FILE $maxsizeattach;
-	fclose(FILE);
+	&write_DBorFILE(0,'',$vardir,'maxattachsize','txt',($maxsizeattach));
 
 	&automaintenance('off');
 
@@ -265,9 +239,7 @@ sub RemoveBigAttachments {
 sub Attachments2 {
 	&is_admin_or_gmod;
 
-	fopen(AML, "$vardir/attachments.txt");
-	my @attachinput = <AML>;
-	fclose(AML);
+	my @attachinput = &read_DBorFILE(1,'',$vardir,'attachments','txt');
 	my $max = @attachinput;
 
 	my $action = $INFO{'action'};
@@ -459,7 +431,7 @@ sub FullRebuildAttachents {
 	unless (defined $INFO{'boardnum'}) {
 		&automaintenance('on');
 
-		unlink "$vardir/newattachments.tmp";
+		&delete_DBorFILE("$vardir/newattachments.tmp");
 		$yySetLocation = qq~$adminurl?action=rebuildattach;topicnum=0;boardnum=0~;
 		&redirectexit();
 	}
@@ -478,26 +450,20 @@ sub FullRebuildAttachents {
 	my %attachments;
 	if (-s "$vardir/attachments.txt" > 5) {
 		my ($atfile,$atcount);
-		fopen(ATM, "$vardir/attachments.txt");
-		while (<ATM>) {
+		foreach (&read_DBorFILE(0,'',$vardir,'attachments','txt')) {
 			(undef, undef, undef, undef, undef, undef, undef, $atfile, $atcount) =split(/\|/, $_);
 			chomp $atcount;
 			$attachments{$atfile} = $atcount;
 		}
-		fclose(ATM);
 	}
 
 	# Get the topic list.
-	fopen(BOARD, "$boardsdir/$curboard.txt");
-	my @topiclist = <BOARD>;
-	fclose(BOARD);
+	my @topiclist = &read_DBorFILE(0,'',$boardsdir,$curboard,"txt");
 
 	my ($topicnum,@newattachments,$mreplies,$msub, $mname, $mdate, $mfn, $nexttopic);
 	for (my $i = $INFO{'topicnum'}; $i < @topiclist; $i++) {
 		($topicnum, undef) = split(/\|/, $topiclist[$i], 2);
-		fopen(TOPIC, "$datadir/$topicnum.txt");
-		my @topic = <TOPIC>;
-		fclose(TOPIC);
+		my @topic = &read_DBorFILE(0,'',$datadir,$topicnum,'txt');
 		chomp(@topic);
 
 		$mreplies = 0;
@@ -519,9 +485,7 @@ sub FullRebuildAttachents {
 	}
 
 	if (@newattachments) {
-		fopen(NEWATM, ">>$vardir/newattachments.tmp") || &admin_fatal_error('cannot_open', "$vardir/newattachments.tmp", 1);
-		print NEWATM @newattachments;
-		fclose(NEWATM);
+		&write_DBorFILE(0,NEWATM,$vardir,'newattachments','tmp',(&read_DBorFILE(1,NEWATM,$vardir,'newattachments','tmp'),@newattachments));
 	}
 
 	# Prepare to continue...
@@ -530,14 +494,10 @@ sub FullRebuildAttachents {
 
 	my $numleft = @boardlist - $INFO{'boardnum'};
 	if ($numleft == 0) {
-		fopen(NEWATM, "$vardir/newattachments.tmp");
-		my @newattachments = <NEWATM>;
-		fclose(NEWATM);
+		my @newattachments = &read_DBorFILE(1,'',$vardir,'newattachments','tmp');
 
-		fopen (ATM, ">$vardir/attachments.txt");
-		print ATM sort( { (split /\|/,$a)[6] <=> (split /\|/,$b)[6] } @newattachments);
-		fclose (ATM);
-		unlink "$vardir/newattachments.tmp";
+		&write_DBorFILE(0,'',$vardir,"attachments","txt",sort( { (split /\|/,$a)[6] <=> (split /\|/,$b)[6] } @newattachments));
+		&delete_DBorFILE("$vardir/newattachments.tmp");
 
 		&automaintenance("off");
 		$yySetLocation = qq~$adminurl?action=remghostattach~;
@@ -580,9 +540,7 @@ sub RemoveGhostAttach {
 
 	$yymain .= qq~<b>$fatxt{'62'}</b><br /><br />~;
 
-	fopen(ATM, "$vardir/attachments.txt");
-	my @attachmentstxt = <ATM>;
-	fclose(ATM);
+	my @attachmentstxt = &read_DBorFILE(0,'',$vardir,'attachments','txt');
 
 	my %att;
 	foreach (@attachmentstxt) {
@@ -597,7 +555,7 @@ sub RemoveGhostAttach {
 
 	foreach my $fileinDIR (@filesDIR) {
 		if (!$att{$fileinDIR}) {
-			unlink "$uploaddir/$fileinDIR";
+			&delete_DBorFILE("$uploaddir/$fileinDIR");
 			$yymain .= qq~<br />$fatxt{'61b'}: $fileinDIR~;
 		}
 	}
@@ -615,12 +573,8 @@ sub RemoveAttachments { # remove single or multiple attachments stored in a hash
 
 	return $count if !%$ThreadHashref;
 
-	fopen(ATM, "+<$vardir/attachments.txt", 1) || &admin_fatal_error("cannot_open","$vardir/attachments.txt", 1);
-	seek ATM, 0, 0;
-	my @attachments = <ATM>;
-	truncate ATM, 0;
-	seek ATM, 0, 0;
-	my ($athreadnum, $afilename, %del_filename);
+	my @attachments = &read_DBorFILE(0,ATM,$vardir,'attachments','txt');
+	my ($athreadnum, $afilename, %del_filename, @new_attach);
 	foreach (@attachments) {
 		(undef, undef, undef, undef, undef, undef, undef, $afilename, undef) = split(/\|/, $_);
 		$del_filename{$afilename}++;
@@ -639,14 +593,14 @@ sub RemoveAttachments { # remove single or multiple attachments stored in a hash
 		}
 		if ($del) {
 			# deletes the file only if NO other entry for the same filename is in the attachments.txt
-			unlink("$uploaddir/$afilename") if $del_filename{$afilename} == 1;
+			&delete_DBorFILE("$uploaddir/$afilename") if $del_filename{$afilename} == 1;
 			$del_filename{$afilename}--;
 			$count++;
 		} else {
-			print ATM $attachments[$i];
+			push(@new_attach, $attachments[$i]);
 		}
 	}
-	fclose(ATM);
+	&write_DBorFILE(0,ATM,$vardir,'attachments','txt',@new_attach);
 
 	$count;
 }

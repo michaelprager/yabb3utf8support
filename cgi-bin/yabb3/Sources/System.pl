@@ -22,9 +22,7 @@ sub BoardTotals {
 	if (@updateboards) {
 		my @tags = qw(board threadcount messagecount lastposttime lastposter lastpostid lastreply lastsubject lasticon lasttopicstate);
 		if ($job eq "load") {
-			fopen(FORUMTOTALS, "$boardsdir/forum.totals") || &fatal_error('cannot_open', "$boardsdir/forum.totals", 1);
-			@lines = <FORUMTOTALS>;
-			fclose(FORUMTOTALS);
+			@lines = &read_DBorFILE(0,'',$boardsdir,'forum','totals');
 			chomp(@lines);
 			foreach $updateboard (@updateboards) {
 				foreach $line (@lines) {
@@ -39,50 +37,41 @@ sub BoardTotals {
 			}
 
 		} elsif ($job eq "update") {
-			fopen(FORUMTOTALS, "+<$boardsdir/forum.totals") || &fatal_error('cannot_open', "$boardsdir/forum.totals", 1);
-			@lines = <FORUMTOTALS>;
+			@lines = &read_DBorFILE(0,FORUMTOTALS,$boardsdir,'forum','totals');
 			for ($line = 0; $line < @lines; $line++) {
 				@boardvars = split(/\|/, $lines[$line]);
-				if (exists $board{ $boardvars[0] }) {
-					if ($boardvars[0] eq $updateboards[0]) {
-						$lines[$line] = "$updateboards[0]|";
-						chomp $boardvars[9];
-						for ($cnt = 1; $cnt < @tags; $cnt++) {
-							if (exists(${$uid.$boardvars[0]}{ $tags[$cnt] })) {
-								$lines[$line] .= ${$uid.$boardvars[0]}{ $tags[$cnt] };
-							} else {
-								$lines[$line] .= $boardvars[$cnt];
-							}
-							$lines[$line] .= $cnt < $#tags ? "|" : "\n";
+				if (exists $board{$boardvars[0]}) {
+					next if $boardvars[0] ne $updateboards[0];
+					$lines[$line] = "$updateboards[0]|";
+					chomp $boardvars[9];
+					for ($cnt = 1; $cnt < @tags; $cnt++) {
+						if (exists(${$uid.$boardvars[0]}{ $tags[$cnt] })) {
+							$lines[$line] .= ${$uid.$boardvars[0]}{ $tags[$cnt] };
+						} else {
+							$lines[$line] .= $boardvars[$cnt];
 						}
+						$lines[$line] .= $cnt < $#tags ? "|" : "\n";
 					}
 				} else {
 					$lines[$line] = '';
 				}
 			}
-			truncate FORUMTOTALS, 0;
-			seek FORUMTOTALS, 0, 0;
-			print FORUMTOTALS @lines;
-			fclose(FORUMTOTALS);
+			&write_DBorFILE(0,FORUMTOTALS,$boardsdir,'forum','totals',@lines);
 
 		} elsif ($job eq "delete") {
-			fopen(FORUMTOTALS, "+<$boardsdir/forum.totals") || &fatal_error('cannot_open', "$boardsdir/forum.totasl", 1);
-			@lines = <FORUMTOTALS>;
+			@lines = &read_DBorFILE(0,FORUMTOTALS,$boardsdir,'forum','totals');
 			for ($line = 0; $line < @lines; $line++) {
 				@boardvars = split(/\|/, $lines[$line], 2);
 				if ($boardvars[0] eq $updateboards[0] || !exists $board{$boardvars[0]}) {
 					$lines[$line] = '';
 				}
 			}
-			truncate FORUMTOTALS, 0;
-			seek FORUMTOTALS, 0, 0;
-			print FORUMTOTALS @lines;
-			fclose(FORUMTOTALS);
+			&write_DBorFILE(0,FORUMTOTALS,$boardsdir,'forum','totals',@lines);
 
 		} elsif ($job eq "add") {
-			fopen(FORUMTOTALS, ">>$boardsdir/forum.totals") || &fatal_error('cannot_open', "$boardsdir/forum.totals", 1);
-			foreach (@updateboards) { print FORUMTOTALS "$_|0|0|N/A|N/A||||\n"; }
-			fclose(FORUMTOTALS);
+			@lines = &read_DBorFILE(0,FORUMTOTALS,$boardsdir,'forum','totals');
+			foreach (@updateboards) { push(@lines, "$_|0|0|N/A|N/A||||\n"); }
+			&write_DBorFILE(0,FORUMTOTALS,$boardsdir,'forum','totals',@lines);
 		}
 	}
 }
@@ -92,9 +81,7 @@ sub BoardCountTotals {
 	unless ($cntboard) { return undef; }
 	my (@threads, $threadcount, $messagecount, $i, $threadline);
 
-	fopen(BOARD, "$boardsdir/$cntboard.txt") || &fatal_error('cannot_open', "$boardsdir/$cntboard.txt", 1);
-	@threads = <BOARD>;
-	fclose(BOARD);
+	@threads = &read_DBorFILE(0,'',$boardsdir,$cntboard,'txt');
 	$threadcount  = @threads;
 	$messagecount = $threadcount;
 	for ($i = 0; $i < @threads; $i++) {
@@ -120,9 +107,7 @@ sub BoardSetLastInfo {
 			($lastthreadid, undef, undef, undef, undef, undef, undef, undef, $lastthreadstate) = split(/\|/, $lastthread);
 			if ($lastthreadstate !~ /m/) {
 				chomp $lastthreadstate;
-				fopen(FILE, "$datadir/$lastthreadid.txt") || &fatal_error("cannot_open","$datadir/$lastthreadid.txt", 1);
-				@lastthreadmessages = <FILE>;
-				fclose(FILE);
+				@lastthreadmessages = &read_DBorFILE(0,'',$datadir,$lastthreadid,'txt');
 				@lastmessage = split(/\|/, $lastthreadmessages[$#lastthreadmessages], 7);
 				last;
 			}
@@ -148,19 +133,27 @@ sub MessageTotals {
 	chomp $updatethread;
 	return if !$updatethread;
 
+	# Changes here on @tag must also be done in Post.pl -> sub Post2 -> my @tag = ...
+	# and in Subs.pl in the SQL/File management block: my %db_table = (...
+	my @tag = qw(board replies views lastposter lastpostdate threadstatus repliers);
+
 	if ($job eq "update") {
-		if (${$updatethread}{'board'} eq "") { ## load if the variable is not already filled
+		if (${$updatethread}{'board'} eq "") { # load if the variable is not already filled
 			&MessageTotals("load",$updatethread);
 		}
 
 	} elsif ($job eq "load") {
-		if (${$updatethread}{'board'} ne "") { return; } ## skip load if the variable is already filled
-		fopen(CTB, "$datadir/$updatethread.ctb",1);
-		foreach (<CTB>) {
-			if ($_ =~ /^'(.*?)',"(.*?)"/) { ${$updatethread}{$1} = $2; }
+		return if ${$updatethread}{'board'} ne ""; # skip load if the variable is already filled
+
+		my $i = 0;
+		foreach (&read_DBorFILE(0,'',$datadir,$updatethread,'ctb')) {
+			if ($use_MySQL) { ${$updatethread}{$tag[$i]} = $_; $i++; }
+			else { if ($_ =~ /^'(.*?)',"(.*?)"/) { ${$updatethread}{$1} = $2; } }
 		}
-		fclose(CTB);
+
+		${$updatethread}{'mysql'} = ($use_MySQL && ${$updatethread}{'lastpostdate'}) ? 1 : 0;
 		@repliers = split(",", ${$updatethread}{'repliers'});
+
 		return;
 
 	} elsif ($job eq "incview") {
@@ -176,19 +169,15 @@ sub MessageTotals {
 		# storing thread status
 		my $threadstatus;
 		my $openboard = ${$updatethread}{'board'};
-		fopen(TESTBOARD, "$boardsdir/$openboard.txt") || &fatal_error('cannot_open', "$boardsdir/$openboard.txt", 1);
-		while ($ThreadLine = <TESTBOARD>) {
-			if ($updatethread == (split /\|/, $ThreadLine, 2)[0]) {
-				$threadstatus = (split /\|/, $ThreadLine)[8];
+		foreach (&read_DBorFILE(0,'',$boardsdir,$openboard,'txt')) {
+			if ($updatethread == (split /\|/, $_, 2)[0]) {
+				$threadstatus = (split /\|/, $_)[8];
 				chomp $threadstatus;
 				last;
 			}
 		}
-		fclose(TESTBOARD);
 		# storing thread other info
-		fopen(MSG, "$datadir/$updatethread.txt") || &fatal_error('cannot_open', "$datadir/$updatethread.txt", 1);
-		my @threaddata = <MSG>;
-		fclose(MSG);
+		my @threaddata = &read_DBorFILE(0,'',$datadir,$updatethread,'txt');
 		my @lastinfo = split(/\|/, $threaddata[$#threaddata]);
 		my $lastpostdate = sprintf("%010d", $lastinfo[3]);
 		my $lastposter = $lastinfo[4] eq 'Guest' ? qq~Guest-$lastinfo[1]~ : $lastinfo[4];
@@ -204,31 +193,17 @@ sub MessageTotals {
 		return;
 	}
 
-	## trap writing false ctb files on forged num= actions ##
-	if (-e "$datadir/$updatethread.txt") {
-		my $format = 'SDT, DD MM YYYY HH:mm:ss zzz'; # The format
-		# Save their old format
-		my $timeformat = ${$uid.$username}{'timeformat'};
-		my $timeselect = ${$uid.$username}{'timeselect'};
-		# Override their settings
-		${$uid.$username}{'timeformat'} = $format;
-		${$uid.$username}{'timeselect'} = 7;
-		# Do the work
-		my $newtime = &timeformat($date, 1,"rfc");
-		# And restore their settings
-		${$uid.$username}{'timeformat'} = $timeformat;
-		${$uid.$username}{'timeselect'} = $timeselect;
-
+	if (&checkfor_DBorFILE("$datadir/$updatethread.txt")) { # trap writing false ctb files on forged num= actions
 		${$updatethread}{'repliers'} = join(",", @repliers);
 
-		# Changes here on @tag must also be done in Post.pl -> sub Post2 -> my @tag = ...
-		my @tag = qw(board replies views lastposter lastpostdate threadstatus repliers);
-		fopen(UPDATE_CTB, ">$datadir/$updatethread.ctb",1) || &fatal_error('cannot_open', "$datadir/$updatethread.ctb", 1);
-		print UPDATE_CTB qq~### ThreadID: $updatethread, LastModified: $newtime ###\n\n~;
-		for (my $cnt = 0; $cnt < @tag; $cnt++) {
-			print UPDATE_CTB qq~'$tag[$cnt]',"${$updatethread}{$tag[$cnt]}"\n~;
+		if ($use_MySQL) {
+			@tag = map { ${$updatethread}{$_} } @tag;
+		} else {
+			@tag = map { qq~'$_',"${$updatethread}{$_}"\n~ } @tag;
+			unshift(@tag, "### ThreadID: $updatethread ###\n\n");
 		}
-		fclose(UPDATE_CTB);
+
+		&write_DBorFILE(${$updatethread}{'mysql'},'',$datadir,$updatethread,'ctb',@tag);
 	}
 }
 
@@ -254,81 +229,86 @@ sub UserAccount {
 	} elsif ($action eq "register") {
 		$userext = "vars";
 	} elsif ($action eq "delete") {
-		unlink "$memberdir/$user.vars";
+		&delete_DBorFILE("$memberdir/$user.vars");
 		return;
 	} else { $userext = "vars"; }
 
 	# using sequential tag writing as hashes do not sort the way we like them to
-	my @tags = qw(realname password position addgroups email hidemail regdate regtime regreason location bday gender userpic usertext signature template language stealth webtitle weburl icq aim yim skype myspace facebook msn gtalk timeselect timeformat timeoffset dsttimeoffset dynamic_clock postcount lastonline lastpost lastim im_ignorelist im_popup im_imspop pmmessprev pmviewMess pmactprev notify_me board_notifications thread_notifications favorites buddylist cathide pageindex reversetopic postlayout sesquest sesanswer session lastips onlinealert offlinestatus awaysubj awayreply awayreplysent spamcount spamtime numberformat);
+	# This array must be exactly the same as in Admin/Database.pl!!!
+	# If you want to add Mods, don't add your variables here. See 7 lines below.
+	my @tags = qw(realname password position addgroups email hidemail regdate regtime regreason location bday gender userpic usertext signature template language stealth webtitle weburl icq aim yim skype myspace facebook msn gtalk timeselect timeformat timeoffset dsttimeoffset dynamic_clock postcount lastonline lastpost lastim im_ignorelist im_popup im_imspop pmmessprev pmviewMess pmactprev notify_me board_notifications thread_notifications favorites buddylist cathide pageindex reversetopic postlayout sesquest sesanswer session lastips onlinealert offlinestatus awaysubj awayreply awayreplysent spamcount spamtime hide_avatars hide_user_text hide_attach_img hide_signat hide_smilies_row numberformat);
+	my @additional_tags;
 	if ($extendedprofiles) {
 		require "$sourcedir/ExtendedProfiles.pl";
-		push(@tags, &ext_get_fields_array());
+		push(@additional_tags, &ext_get_fields_array());
 	}
-	fopen(UPDATEUSER, ">$memberdir/$user.$userext",1) || &fatal_error('cannot_open', "$memberdir/$user.$userext", 1);
-	print UPDATEUSER "### User variables for ID: $user ###\n\n";
-	for (my $cnt = 0; $cnt < @tags; $cnt++) {
-		print UPDATEUSER qq~'$tags[$cnt]',"${$uid.$user}{$tags[$cnt]}"\n~;
+	# Add here something like this for Mods:
+	# push(@additional_tags, 'name_of_mod_variable_1' [, 'name_of_mod_variable_2' , 'name_of_mod_variable_3' , ... ]);
+	# Dont't use the variable name 'additional_variables' or one
+	# of the names from @tags above, nor one beginning with 'ext_'!
+
+	if ($use_MySQL && $userext eq 'vars') {
+		${$uid.$user}{'additional_variables'} = join('', map { qq~'$_',\\"${$uid.$user}{$_}\\"\n~ } @additional_tags);
+	} else {
+		@tags = map { qq~'$_',"${$uid.$user}{$_}"\n~ } (@tags,@additional_tags);
+		unshift(@tags, "### User variables for ID: $user ###\n\n");
 	}
-	fclose(UPDATEUSER);
+	&write_DBorFILE(${$uid.$user}{'mysql'},'',$memberdir,$user,$userext,@tags);
 }
 
 sub MemberIndex {
-	my ($memaction, $user) = @_;
+	my ($memaction, $user, $actual_username) = @_;
+	return if $user eq '';
 	if ($memaction eq "add" && &LoadUser($user)) {
-		$theregdate = &stringtotime(${$uid.$user}{'regdate'});
-		$theregdate = sprintf("%010d", $theregdate);
 		if (!${$uid.$user}{'postcount'}) { ${$uid.$user}{'postcount'} = 0; }
 		if (!${$uid.$user}{'position'})  { ${$uid.$user}{'position'}  = &MemberPostGroup(${$uid.$user}{'postcount'}); }
-		&ManageMemberlist("add", $user, $theregdate);
-		&ManageMemberinfo("add", $user, ${$uid.$user}{'realname'}, ${$uid.$user}{'email'}, ${$uid.$user}{'position'}, ${$uid.$user}{'postcount'});
+		&ManageMemberinfo("add", $user, sprintf("%010d", &stringtotime(${$uid.$user}{'regdate'})), ${$uid.$user}{'realname'}, ${$uid.$user}{'email'}, ${$uid.$user}{'position'}, ${$uid.$user}{'postcount'},${$uid.$user}{'bday'});
 
-		fopen(TTL, "$memberdir/members.ttl") || &fatal_error('cannot_open', "$memberdir/members.ttl", 1);
-		$buffer = <TTL>;
-		fclose(TTL);
+		$members_total++;
+		$last_member = $user;
 
-		($membershiptotal, undef) = split(/\|/, $buffer);
-		$membershiptotal++;
+		require "$admindir/NewSettings.pl";
+		&SaveSettingsTo('Settings.pl');
 
-		fopen(TTL, ">$memberdir/members.ttl") || &fatal_error('cannot_open', "$memberdir/members.ttl", 1);
-		print TTL qq~$membershiptotal|$user~;
-		fclose(TTL);
 		return 0;
 
-	} elsif ($memaction eq "remove" && $user) {
-		&ManageMemberlist("delete", $user);
+	} elsif ($memaction eq "remove") {
 		&ManageMemberinfo("delete", $user);
 
 		require "$sourcedir/Notify.pl";
 		&removeNotifications($user);
 
-		fopen(MEMLIST, "$memberdir/memberlist.txt") || &fatal_error('cannot_open', "$memberdir/memberlist.txt", 1);
-		@memberlt = <MEMLIST>;
-		fclose(MEMLIST);
+		my @memberlt = &read_DBorFILE(0,'',$memberdir,'memberinfo','txt');
 
-		my $membershiptotal = @memberlt;
-		my ($lastuser, undef) = split(/\t/, $memberlt[$#memberlt], 2);
+		$members_total = @memberlt;
+		($last_member, undef) = split(/\t/, $memberlt[$#memberlt]);
 
-		fopen(TTL, ">$memberdir/members.ttl") || &fatal_error('cannot_open', "$memberdir/members.ttl", 1);
-		print TTL qq~$membershiptotal|$lastuser~;
-		fclose(TTL);
+		require "$admindir/NewSettings.pl";
+		&SaveSettingsTo('Settings.pl');
+
 		return 0;
 
-	} elsif ($memaction eq "check_exist" && $user) {
+	} elsif ($memaction eq "check_exist") {
 		&ManageMemberinfo("load");
-		while (($curmemb, $value) = each(%memberinf)) {
-			($curname, $curmail, $curposition, $curpostcnt) = split(/\|/, $value);
-			if    (lc $user eq lc $curmemb) { undef %memberinf; return $curmemb; }
-			elsif (lc $user eq lc $curmail) { undef %memberinf; return $curmail; }
-			elsif (lc $user eq lc $curname) { undef %memberinf; return $curname; }
+		my ($curname, $curmail);
+		foreach (keys %memberinf) {
+			(undef, $curname, $curmail, undef) = split(/\|/, $memberinf{$_}, 4);
+			if (($name_cannot_be_userid || $actual_username eq '' || (!$name_cannot_be_userid && lc $actual_username ne lc $user)) && lc $user eq lc $_) { 
+				undef %memberinf; return $_;
+			} elsif (lc $user eq lc $curmail) {
+				undef %memberinf; return $curmail;
+			} elsif (lc $user eq lc $curname) {
+				undef %memberinf; return $curname;
+			}
 		}
+		undef %memberinf;
 
-	} elsif ($memaction eq "who_is" && $user) {
+	} elsif ($memaction eq "who_is") {
 		&ManageMemberinfo("load");
-		while (($curmemb, $value) = each(%memberinf)) {
-			($curname, $curmail, $curposition, $curpostcnt) = split(/\|/, $value);
-			if    (lc $user eq lc $curmemb) { undef %memberinf; return $curmemb; }
-			if    (lc $user eq lc $curmail) { undef %memberinf; return $curmemb; }
-			elsif (lc $user eq lc $curname) { undef %memberinf; return $curmemb; }
+		my ($curname, $curmail);
+		foreach (keys %memberinf) {
+			(undef, $curname, $curmail, undef) = split(/\|/, $memberinf{$_}, 4);
+			if (lc $user eq lc $curmail || lc $user eq lc $curname) { undef %memberinf; return $_; }
 		}
 	}
 	# if ($memaction eq "rebuild") { ... Deleted! Don't rebuild
@@ -346,28 +326,6 @@ sub MemberPostGroup {
 		}
 	}
 	return $grtitle;
-}
-
-sub MembershipCountTotal {
-	fopen(MEMBERLISTREAD, "$memberdir/memberlist.txt") || &fatal_error('cannot_open', "$memberdir/memberlist.txt", 1);
-	my @num = <MEMBERLISTREAD>;
-	fclose(MEMBERLISTREAD);
-	($latestmember, $meminfo) = split(/\t/, $num[$#num]);
-	my $membertotal = @num;
-	undef @num;
-
-	fopen(MEMTTL, ">$memberdir/members.ttl") || &fatal_error('cannot_open', "$memberdir/members.ttl", 1);
-	print MEMTTL qq~$membertotal|$latestmember~;
-	fclose(MEMTTL);
-
-	if (wantarray()) {
-		&ManageMemberinfo("load");
-		($latestrealname, undef) = split(/\|/, $memberinf{$latestmember}, 2);
-		undef %memberinf;
-		return ($membertotal, $latestmember, $latestrealname);
-	} else {
-		return $membertotal;
-	}
 }
 
 sub RegApprovalCheck {
@@ -398,35 +356,24 @@ sub RegApprovalCheck {
 }
 
 sub activation_check {
-	my ($changed,$regtime,$regmember);
+	my ($regtime,$regmember,@outlist);
 	my $timespan = $preregspan * 3600;
-	fopen(INACT, "$memberdir/memberlist.inactive");
-	my @actlist = <INACT>;
-	fclose(INACT);
 
 	# check if user is in pre-registration and check activation key
-	foreach (@actlist) {
+	foreach (&read_DBorFILE(0,INACT,$memberdir,'memberlist','inactive')) {
 		($regtime, undef, $regmember, undef) = split(/\|/, $_, 4);
 		if ($date - $regtime > $timespan) {
-			$changed = 1;
-			unlink "$memberdir/$regmember.pre";
+			&delete_DBorFILE("$memberdir/$regmember.pre");
 
 			# add entry to registration log
-			fopen(REGLOG, ">>$vardir/registration.log", 1);
-			print REGLOG "$date|T|$regmember|\n";
-			fclose(REGLOG);
+			&write_DBorFILE(0,REGLOG,$vardir,'registration','log',(&read_DBorFILE(0,REGLOG,$vardir,'registration','log'),"$date|T|$regmember||$user_ip\n"));
 		} else {
 			# update non activate user list
 			# write valid registration to the list again
 			push(@outlist, $_);
 		}
 	}
-	if ($changed) {
-		# re-open inactive list for update if changed
-		fopen(INACT, ">$memberdir/memberlist.inactive", 1);
-		print INACT @outlist;
-		fclose(INACT);
-	}
+	&write_DBorFILE(0,INACT,$memberdir,'memberlist','inactive',@outlist);
 }
 
 sub MakeStealthURL {

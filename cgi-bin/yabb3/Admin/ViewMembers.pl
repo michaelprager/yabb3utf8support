@@ -19,7 +19,7 @@ if ($action eq 'detailedversion') { return 1; }
 
 &is_admin_or_gmod;
 
-my ($sortmode, $sortorder, $spages);
+my ($sortmode, $sortorder, $spages, $memrealname, $memposts);
 
 $MembersPerPage = $TopAmmount;
 $maxbar         = 100;
@@ -30,8 +30,8 @@ sub Ml {
 	if ($barmaxdepend == 1) {
 		$barmax = 1;
 		&ManageMemberinfo("load");
-		while (($key, $value) = each(%memberinf)) {
-			(undef, undef, undef, $memposts) = split(/\|/, $value);
+		foreach (keys %memberinf) {
+			(undef, undef, undef, undef, $memposts, undef) = split(/\|/, $memberinf{$_}, 6);
 			if ($memposts > $barmax) { $barmax = $memposts; }
 		}
 		undef %memberinf;
@@ -76,7 +76,7 @@ sub MLByLetter {
 	$i      = 0;
 	&ManageMemberinfo("load");
 	foreach $membername (sort { lc $memberinf{$a} cmp lc $memberinf{$b} } keys %memberinf) {
-		($memrealname, $mememail, undef, undef) = split(/\|/, $memberinf{$membername});
+		(undef, $memrealname, undef) = split(/\|/, $memberinf{$membername}, 3);
 		if ($letter) {
 			$SearchName = lc(substr($memrealname, 0, 1));
 			if ($SearchName eq $letter) { $ToShow[$i] = $membername; $i++; }
@@ -90,8 +90,8 @@ sub MLByLetter {
 
 	$memcount = @ToShow;
 	if (!$memcount && $letter) {
-		$pageindex1 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.gif" border="0" alt="" style="vertical-align: middle;" /></span>~;
-		$pageindex2 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.gif" border="0" alt="" style="vertical-align: middle;" /></span>~;
+		$pageindex1 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.png" border="0" alt="" style="vertical-align: middle;" /></span>~;
+		$pageindex2 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.png" border="0" alt="" style="vertical-align: middle;" /></span>~;
 	} else {
 		&buildIndex;
 	}
@@ -119,10 +119,10 @@ sub MLTop {
 	%top_list = ();
 
 	&ManageMemberinfo("load");
-	while (($membername, $value) = each(%memberinf)) {
-		($memrealname, undef, undef, $memposts) = split(/\|/, $value);
+	foreach (keys %memberinf) {
+		(undef, $memrealname, undef, undef, $memposts, undef) = split(/\|/, $memberinf{$_}, 6);
 		$memposts = sprintf("%06d", (999999 - $memposts));
-		$top_list{$membername} = qq~$memposts|$memrealname~;
+		$top_list{$_} = qq~$memposts|$memrealname~;
 	}
 	undef %memberinf;
 	my @toplist = sort { lc $top_list{$a} cmp lc $top_list{$b} } keys %top_list;
@@ -154,7 +154,7 @@ sub MLPosition {
 
 	&ManageMemberinfo("load");
 	while (($membername, $value) = each(%memberinf)) {
-		($memberrealname, undef, $memposition, $memposts) = split(/\|/, $value);
+		(undef, $memberrealname, undef, $memposition, $memposts, undef) = split(/\|/, $value, 6);
 		$pstsort    = 99999999 - $memposts;
 		$sortgroups = "";
 		foreach my $key (keys %Group) {
@@ -201,9 +201,7 @@ sub MLPosition {
 }
 
 sub MLDate {
-	fopen(MEMBERLISTREAD, "$memberdir/memberlist.txt");
-	@tempmemlist = <MEMBERLISTREAD>;
-	fclose(MEMBERLISTREAD);
+	my @tempmemlist = &read_DBorFILE(0,'',$memberdir,'memberinfo','txt');
 	if ($FORM{'reversed'} || $INFO{'reversed'}) {
 		@tempmemlist = reverse @tempmemlist;
 	}
@@ -328,7 +326,7 @@ sub showRows {
 sub buildIndex {
 	unless ($memcount == 0) {
 
-		($dummy, $dummy, $usermemberpage) = split(/\|/, ${$uid.$username}{'pageindex'});
+		(undef, undef, $usermemberpage, undef) = split(/\|/, ${$uid.$username}{'pageindex'},4);
 
 		# Build the page links list.
 		my ($pagetxtindex, $pagetextindex, $pagedropindex1, $pagedropindex2, $all, $allselected);
@@ -353,12 +351,12 @@ sub buildIndex {
 		else { $endpage = $memcount }
 		$lastpn     = int(($memcount - 1) / $MembersPerPage) + 1;
 		$lastptn    = ($lastpn - 1) * $MembersPerPage;
-		$pageindex1 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.gif" border="0" alt="" style="vertical-align: middle;" /> $ml_txt{'139'}: $pagenumb</span>~;
-		$pageindex2 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.gif" border="0" alt="" style="vertical-align: middle;" /> $ml_txt{'139'}: $pagenumb</span>~;
+		$pageindex1 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.png" border="0" alt="" style="vertical-align: middle;" /> $ml_txt{'139'}: $pagenumb</span>~;
+		$pageindex2 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.png" border="0" alt="" style="vertical-align: middle;" /> $ml_txt{'139'}: $pagenumb</span>~;
 		if ($pagenumb > 1 || $all) {
 
 			if ($usermemberpage == 1) {
-				$pagetxtindexst = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><a href="$scripturl?action=memberpagedrop;from=admin;sort=$INFO{'sort'};letter=$INFO{'letter'};start=$INFO{'start'}$sortorder"><img src="$imagesdir/index_togl.gif" border="0" alt="$ml_txt{'19'}" title="$ml_txt{'19'}" style="vertical-align: middle;" /></a> $ml_txt{'139'}: ~;
+				$pagetxtindexst = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><a href="$scripturl?action=memberpagedrop;from=admin;sort=$INFO{'sort'};letter=$INFO{'letter'};start=$INFO{'start'}$sortorder"><img src="$imagesdir/index_togl.png" border="0" alt="$ml_txt{'19'}" title="$ml_txt{'19'}" style="vertical-align: middle;" /></a> $ml_txt{'139'}: ~;
 				if ($startpage > 0) { $pagetxtindex = qq~<a href="$adminurl?action=ml;sort=$FORM{'sortform'};letter=$letter$sortorder" style="font-weight: normal;">1</a>&nbsp;...&nbsp;~; }
 				if ($startpage == $MembersPerPage) { $pagetxtindex = qq~<a href="$adminurl?action=ml;sort=$FORM{'sortform'};letter=$letter$sortorder" style="font-weight: normal;">1</a>&nbsp;~; }
 				for ($counter = $startpage; $counter < $endpage; $counter += $MembersPerPage) {
@@ -372,7 +370,7 @@ sub buildIndex {
 				$pageindex2 = qq~$pagetxtindexst$pagetxtindex</span>~;
 			} else {
 				$pagedropindex1 = qq~<span style="float: left; width: 350px; margin: 0px; margin-top: 2px; border: 0px;">~;
-				$pagedropindex1 .= qq~<span style="float: left; height: 21px; margin: 0; margin-right: 4px;"><a href="$scripturl?action=memberpagetext;from=admin;sort=$INFO{'sort'};letter=$INFO{'letter'};start=$INFO{'start'}$sortorder"><img src="$imagesdir/index_togl.gif" border="0" alt="$ml_txt{'19'}" title="$ml_txt{'19'}" /></a></span>~;
+				$pagedropindex1 .= qq~<span style="float: left; height: 21px; margin: 0; margin-right: 4px;"><a href="$scripturl?action=memberpagetext;from=admin;sort=$INFO{'sort'};letter=$INFO{'letter'};start=$INFO{'start'}$sortorder"><img src="$imagesdir/index_togl.png" border="0" alt="$ml_txt{'19'}" title="$ml_txt{'19'}" /></a></span>~;
 				$pagedropindex2 = $pagedropindex1;
 				$tstart         = $start;
 				if (substr($INFO{'start'}, 0, 3) eq "all") { ($tstart, $start) = split(/\-/, $INFO{'start'}); }
@@ -644,10 +642,10 @@ sub MLLastPost {
 	%TopMembers = ();
 
 	&ManageMemberinfo("load");
-	while (($membername, $value) = each(%memberinf)) {
-		&LoadUser($membername);
-		$TopMembers{$membername} = ${$uid.$membername}{'lastpost'};
-		undef %{ $uid . $membername };
+	foreach (keys %memberinf) {
+		&LoadUser($_);
+		$TopMembers{$_} = ${$uid.$_}{'lastpost'};
+		undef %{ $uid . $_ };
 	}
 	undef %memberinf;
 
@@ -682,10 +680,10 @@ sub MLLastIm {
 	%TopMembers = ();
 
 	&ManageMemberinfo("load");
-	while (($membername, $value) = each(%memberinf)) {
-		&LoadUser($membername);
-		$TopMembers{$membername} = ${$uid.$membername}{'lastim'};
-		undef %{ $uid . $membername };
+	foreach (keys %memberinf) {
+		&LoadUser($_);
+		$TopMembers{$_} = ${$uid.$_}{'lastim'};
+		undef %{ $uid . $_ };
 	}
 	undef %memberinf;
 
@@ -720,10 +718,10 @@ sub MLLastOnline {
 	%TopMembers = ();
 
 	&ManageMemberinfo("load");
-	while (($membername, $value) = each(%memberinf)) {
-		&LoadUser($membername);
-		$TopMembers{$membername} = ${$uid.$membername}{'lastonline'};
-		undef %{ $uid . $membername };
+	foreach (keys %memberinf) {
+		&LoadUser($_);
+		$TopMembers{$_} = ${$uid.$_}{'lastonline'};
+		undef %{ $uid . $_ };
 	}
 	undef %memberinf;
 

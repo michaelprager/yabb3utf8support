@@ -437,15 +437,12 @@ sub update_htaccess {
 	my ($action, $value) = @_;
 	my ($htheader, $htfooter, @denies, @htout);
 	if (!$action) { return 0; }
-	fopen(HTA, ".htaccess");
-	my @htlines = <HTA>;
-	fclose(HTA);
 
 	# header to determine only who has access to the main script, not the admin script
 	$htheader = qq~<Files YaBB*>~;
 	$htfooter = qq~</Files>~;
 	$start = 0;
-	foreach (@htlines) {
+	foreach (&read_DBorFILE(1,'',".",'','htaccess')) {
 		chomp $_;
 		if ($_ eq $htheader) { $start = 1; }
 		if ($start == 0 && $_ !~ m/#/ && $_ ne "") { push(@htout, "$_\n"); }
@@ -455,18 +452,17 @@ sub update_htaccess {
 		}
 	}
 	if ($use_htaccess && ($action eq "add" || $action eq "remove")) {
-		fopen(HTA, ">.htaccess");
-		print HTA "# Last modified by The Guardian: " . &timeformat($date, 1) . " #\n\n";
-		print HTA @htout;
+		my $htaccess  = "# Last modified by The Guardian: " . &timeformat($date, 1) . " #\n\n";
+		$htaccess    .= "@htout";
 		if ($value) {
-			print HTA "\n$htheader\n";
+			$htaccess .= "\n$htheader\n";
 			foreach (@denies) {
-				if ($_ ne $value) { print HTA "Deny from $_\n"; }
+				if ($_ ne $value) { $htaccess .= "Deny from $_\n"; }
 			}
-			if ($action eq "add") { print HTA "Deny from $value\n"; }
-			print HTA "$htfooter\n";
+			if ($action eq "add") { $htaccess .= "Deny from $value\n"; }
+			$htaccess .= "$htfooter\n";
 		}
-		fclose(HTA);
+		&write_DBorFILE(0,'',".",'','htaccess',($htaccess));
 	}
 }
 

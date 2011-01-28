@@ -41,9 +41,7 @@ if ($action eq 'detailedversion') { return 1; }
 sub SaveSettings {
 	my %settings = @_;
 
-	if ($settings{'maintenance'} != 1) {
-		unlink "$vardir/maintenance.lock" || &admin_fatal_error('cannot_open_dir', "$vardir/maintenance.lock");
-	}
+	&delete_DBorFILE("$vardir/maintenance.lock") if $settings{'maintenance'} != 1;
 
 	SaveSettingsTo('Settings.pl', %settings);
 }

@@ -211,7 +211,7 @@ $eventcallngver = 'YaBB 3.0 Beta $Revision: 100 $';
 '30' => 'Add new Calendar Event-Icons here',
 '31' => 'Save Event Calendar Setting',
 '32' => 'Save Event-Icon Setting',
-'33' => "This section allows you to customize your Calendar Events by using your own Event Icons. First you must upload the images to the <span class=\"small\">($yyhtml_root/EventCalIcons)</span> folder.<br />Images should be no larger than 25 X 25 px, (or whatever is a good size) must be in .gif format only, and must be uploaded in Binary transfer mode.",
+'33' => "This section allows you to customize your Calendar Events by using your own Event Icons. First you must upload the images to the <span class=\"small\">($yyhtml_root/EventIcons)</span> folder.<br />Images should be no larger than 25 X 25 px, (or whatever is a good size) must be in .gif format only, and must be uploaded in Binary transfer mode.",
 '34' => 'List upcoming events for __ days next to the Event Calendar',
 '35' => '(0 = All events for current month)',
 '36' => 'First day of week (mini calendar)?',

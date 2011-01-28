@@ -33,7 +33,7 @@ $debuglngver = 'YaBB 3.0 Beta $Revision: 100 $';
 'trace' => 'debug tracer',
 'check' => 'File Check on Open/Close',
 'filehandles' => 'Filehandle/Files Opened',
-'filehandleslegend' => 'opened FILEHANDLE (time) &nbsp; &nbsp; <i>MODE</i>filepathname &nbsp; &nbsp; closed FILEHANDLE (time)<br />[package, scriptpathname, line]',
+'filehandleslegend' => 'opened FILEHANDLE (time) &nbsp; &nbsp; <i>MODE</i>filepathname &nbsp; &nbsp; closed FILEHANDLE (time)<br />[scriptpathname, line, package::subroutine]',
 'filesloaded' => 'Files loaded by',
 );
 

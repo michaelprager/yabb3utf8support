@@ -16,11 +16,20 @@ $printpageplver = 'YaBB 3.0 Beta $Revision: 100 $';
 if ($action eq 'detailedversion') { return 1; }
 
 sub Print_IM {
-	if    ($INFO{'caller'} == 1) { fopen(THREADS, "$memberdir/$username.msg")    || &donoopen; $boxtitle = "$maintxt{'316'}"; $type = "$maintxt{'318'}" }
-	elsif ($INFO{'caller'} == 2) { fopen(THREADS, "$memberdir/$username.outbox") || &donoopen; $boxtitle = "$maintxt{'320'}"; $type = "$maintxt{'324'}"; }
-	else { fopen(THREADS, "$memberdir/$username.imstore") || &donoopen; $boxtitle = "$load_imtxt{'46'}"; $type = "$maintxt{'318'}/$maintxt{'324'}"; }
-	@threads = <THREADS>;
-	fclose(THREADS);
+	my (@threads,$boxtitle,$type);
+	if ($INFO{'caller'} == 1) {
+		@threads = &read_DBorFILE(0,'',$memberdir,$username,'msg');
+		$boxtitle = $maintxt{'316'};
+		$type = $maintxt{'318'};
+	} elsif ($INFO{'caller'} == 2) {
+		@threads = &read_DBorFILE(0,'',$memberdir,$username,'outbox');
+		$boxtitle = $maintxt{'320'};
+		$type = $maintxt{'324'};
+	} else {
+		@threads = &read_DBorFILE(0,'',$memberdir,$username,'imstore');
+		$boxtitle = $load_imtxt{'46'};
+		$type = "$maintxt{'318'}/$maintxt{'324'}";
+	}
 
 	### Lets output all that info. ###
 	$output = qq~<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -134,7 +143,7 @@ sub Print {
 		$ishidden = 1;
 	}
 
-	if ($ishidden && !$iammod && !$iamadmin && !$iamgmod) { &fatal_error("no_access"); }
+	if ($ishidden && !$staff) { &fatal_error("no_access"); }
 
 	# Figure out the name of the category
 	unless ($mloaded == 1) { require "$boardsdir/forum.master"; }
@@ -146,9 +155,7 @@ sub Print {
 
 	# Lets open up the thread file itself
 	unless (ref($thread_arrayref{$num})) {
-		fopen(THREADS, "$datadir/$num.txt") || &donoopen;
-		@{$thread_arrayref{$num}} = <THREADS>;
-		fclose(THREADS);
+		&donoopen if !(@{$thread_arrayref{$num}} = &read_DBorFILE(1,'',$datadir,$num,'txt'));
 	}
 	$cat =~ s/\n//g;
 
@@ -251,12 +258,10 @@ function do_images() {
 			# store all downloadcounts in variable
 			if (!%attach_count) {
 				my ($atfile,$atcount);
-				fopen(ATM, "$vardir/attachments.txt");
-				while (<ATM>) {
+				foreach (&read_DBorFILE(1,'',$vardir,'attachments','txt')) {
 					(undef, undef, undef, undef, undef, undef, undef, $atfile, $atcount) =split(/\|/, $_);
 					$attach_count{$atfile} = $atcount;
 				}
-				fclose(ATM);
 				$attach_count{'no_attachments'} = 1 if !%attach_count;
 			}
 
@@ -372,7 +377,7 @@ sub do_print {
 	$threadpost =~ s~\[highlight(.*?)\](.*?)\[/highlight\]~$2~isg;
 	$threadpost =~ s~\[code\]\n*(.+?)\n*\[/code\]~<br /><b>Code:</b><br /><table cellspacing="1"><tr><td><table cellpadding="2" cellspacing="0"><tr><td><font face="Courier" size="1">$1</font></td></tr></table></td></tr></table>~isg;
 	$threadpost =~ s~\[code\s*(.+?)\]\n*(.+?)\n*\[/code\]~<br /><b>Code ($1):</b><br /><table cellspacing="1"><tr><td><table cellpadding="2" cellspacing="0"><tr><td><font face="Courier" size="1">$2</font></td></tr></table></td></tr></table>~isg;
-	
+
 	$threadpost =~ s~\[([^\]]{0,30})\n([^\]]{0,30})\]~\[$1$2\]~g;
 	$threadpost =~ s~\[/([^\]]{0,30})\n([^\]]{0,30})\]~\[/$1$2\]~g;
 	$threadpost =~ s~(\w+://[^<>\s\n\"\]\[]+)\n([^<>\s\n\"\]\[]+)~$1\n$2~g;
@@ -558,9 +563,9 @@ sub do_print {
 
 		if ($author) { # out of YaBBC.pl -> sub quotemsg {
 			&ToChars($author);
-			if (!-e "$memberdir/$author.vars"){ # if the file is there it is an unencrypted user ID
+			if (!&checkfor_DBorFILE("$memberdir/$author.vars")) { # if the file is there it is an unencrypted user ID
 				$author = &decloak($author); # if not, decrypt it and see if it is a regged user
-				if (!-e "$memberdir/$author.vars"){ # if still not found probably the author is a screen name
+				if (!&checkfor_DBorFILE("$memberdir/$author.vars")) { # if still not found probably the author is a screen name
 					$testauthor = &MemberIndex("who_is", "$author"); # check if this name exists in the memberlist
 					if ($testauthor ne ""){ # if it is, load the user id returned
 						$author = $testauthor;

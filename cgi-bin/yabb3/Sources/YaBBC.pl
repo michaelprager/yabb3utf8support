@@ -72,9 +72,9 @@ sub quotemsg {
 	if ($qauthor) {
 		$usernames_life_quote{'temp_quote_autor'} = $qauthor; # for display names in Quotes in LivePreview
 		&ToChars($qauthor);
-		if (!-e "$memberdir/$qauthor.vars"){ # if the file is there it is an unencrypted user ID
+		if (!&checkfor_DBorFILE("$memberdir/$qauthor.vars")) { # if the file is there it is an unencrypted user ID
 			$qauthor = &decloak($qauthor); # if not, decrypt it and see if it is a regged user
-			if (!-e "$memberdir/$qauthor.vars"){ # if still not found probably the author is a screen name
+			if (!&checkfor_DBorFILE("$memberdir/$qauthor.vars")) { # if still not found probably the author is a screen name
 				$testauthor = &MemberIndex("who_is", "$qauthor"); # check if this name exists in the memberlist
 				if ($testauthor ne ""){ # if it is, load the user id returned
 					$qauthor = $testauthor;
@@ -105,7 +105,7 @@ sub quotemsg {
 	elsif ($qlink eq 'impost') {
 		$_ = $daytxt ? $post_txt{'600a_d'} : $post_txt{'600a'};
 		$_ =~ s~AUTHOR2~$scripturl?action=viewprofile;username=$useraccount{$qauthor}~g; }
-	elsif ($GLOBAL::ACTION ne 'imshow' && $GLOBAL::ACTION ne 'imsend' && $GLOBAL::ACTION ne 'imsend2') { $_ = $daytxt ? $post_txt{'600_d'} : $post_txt{'600'}; }
+	elsif ($action ne 'imshow' && $action ne 'imsend' && $action ne 'imsend2') { $_ = $daytxt ? $post_txt{'600_d'} : $post_txt{'600'}; }
 	else  { $_ = $daytxt ? $post_txt{'599_d'} : $post_txt{'599'}; }
 	$_ =~ s~AUTHOR~$fqauthor~g;
 	$_ =~ s~QUOTELINK~$scripturl?num=$qlink~g;

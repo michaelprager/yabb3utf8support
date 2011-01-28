@@ -22,7 +22,6 @@ sub get_cal_ssi {
 
 	## EventCal SSI Check START ##
 	my $curcaldisplay;
-	if(-e "$vardir/eventcalset.txt") { require "$vardir/eventcalset.txt"; }
 	if ($Show_EventCal) {
 		if (!$iamguest || $Show_EventCal == 2) {
 			require "$sourcedir/EventCal.pl";

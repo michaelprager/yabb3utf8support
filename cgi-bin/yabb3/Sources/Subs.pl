@@ -53,6 +53,11 @@ if ($user_ip eq "127.0.0.1") {
 	elsif ($ENV{'HTTP_X_FORWARDED_FOR'} && $ENV{'HTTP_X_FORWARDED_FOR'} ne "127.0.0.1") { $user_ip = $ENV{'HTTP_X_FORWARDED_FOR'}; }
 }
 
+# comment out (#) the next line if you have problems with
+# 'Reverse DNS lookup timeout causes slow page loads'
+# Search Engine identification and display will be turned off
+$user_host = (gethostbyaddr(pack("C4", split(/\./, $user_ip)), 2))[0];
+
 if (-e "$yyexec.cgi") { $yyext = "cgi"; }
 else { $yyext = "pl"; }
 if (-e "AdminIndex.cgi") { $yyaext = "cgi"; }
@@ -62,34 +67,16 @@ sub automaintenance {
 	my $maction = $_[0];
 	my $mreason = $_[1];
 	if (lc($maction) eq "on") {
-		fopen (MAINT, ">$vardir/maintenance.lock");
-		print MAINT qq~Remove this file if your board is in maintenance for no reason\n~;
-		fclose (MAINT);
+		&write_DBorFILE(0,'',$vardir,'maintenance','lock',(qq~Remove this file if your board is in maintenance for no reason\n~));
 		if ($mreason eq "low_disk"){ 
 			&LoadLanguage('Error');
 			&alertbox($error_txt{'low_diskspace'}); 
 		}
 		$maintenance = 2 if !$maintenance;
 	} elsif (lc($maction) eq "off") {
-		unlink "$vardir/maintenance.lock" || &admin_fatal_error("cannot_open_dir","$vardir/maintenance.lock");
+		&delete_DBorFILE("$vardir/maintenance.lock") || &fatal_error("cannot_open_dir","$vardir/maintenance.lock");
 		$maintenance = 0 if $maintenance == 2;
 	}
-}
-
-sub getnewid {
-	my $newid = $date;
-	while (-e "$datadir/$newid.txt") { ++$newid; }
-	return $newid;
-}
-
-sub undupe {
-	my (@out,$duped,$check);
-	foreach $check (@_) {
-		$duped = 0;
-		foreach (@out) { if ($_ eq $check) { $duped = 1; last; } }
-		if (!$duped) { push(@out, $check); }
-	}
-	return @out;
 }
 
 sub exit {
@@ -181,10 +168,6 @@ sub redirectinternal {
 	}
 }
 
-sub ImgLoc {
-	return (!-e "$forumstylesdir/$useimages/$_[0]" ? qq~$forumstylesurl/default/$_[0]~ : qq~$imagesdir/$_[0]~);
-}
-
 sub template {
 	&print_output_header;
 
@@ -212,21 +195,15 @@ $yysyntax_js = qq~
 <script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_php.js"></script>
 <script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/shjs/sh_sql.js"></script>
 <script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/YaBB.js"></script>
-<script language="JavaScript1.2" type="text/javascript" src="$yyhtml_root/ajax.js"></script>
 ~;
 
 	# add 'back to top' Button on the end of each page
 	$yynavback .= qq~<img src="$imagesdir/tabsep211.png" border="0" alt="" style="vertical-align: middle;" />~ if !$yynavback;
 	$yynavback .= qq~ <a href="#pagetop" class="nav">$img_txt{'102'}</a> <img src="$imagesdir/tabsep211.png" border="0" alt="" style="vertical-align: middle;" />~;
 
-	if (!$usehead) { $usehead = qq~default~; }
-	$yytemplate = "$templatesdir/$usehead/$usehead.html";
-	$result = fopen(TEMPLATE, $yytemplate);
-	if ($result) {
-		$output = join('', <TEMPLATE>);
-		fclose(TEMPLATE);
-	}
-else {
+	if (!$usehead) { $usehead = "default"; }
+	$output = join('', &read_DBorFILE(1,'',"$templatesdir/$usehead",$usehead,'html'));
+	if ($output eq '') {
 		$output = "$maintxt{'23'}: $yytemplate";
 		&print_HTML_output_and_finish;
 	}
@@ -251,7 +228,7 @@ else {
 		$a =~ s/<.+?>//g;
 		$b = ' ' if $mytimeselected == 6;
 		$yytime = qq~&nbsp;<script language="javascript" type="text/javascript">\n<!--\nWriteClock('yabbclock','$a','$b');\n//-->\n</script>~;
-		$yyjavascript .= qq~\n\nvar OurTime = ~ . ($date + (3600 * $toffs)) . qq~000;\nvar YaBBTime = new Date();\nvar TimeDif = YaBBTime.getTime() - (YaBBTime.getTimezoneOffset() * 60000) - OurTime - 1000; // - 1000 compromise to transmission time~;
+		$yyjavascript .= qq~\n\nvar OurTime = ~ . sprintf("%d", ($date + (3600 * $toffs))) . qq~000;\nvar YaBBTime = new Date();\nvar TimeDif = YaBBTime.getTime() - (YaBBTime.getTimezoneOffset() * 60000) - OurTime - 1000; // - 1000 compromise to transmission time~;
 	}
 
 	$yyjavascript .= qq~
@@ -293,12 +270,11 @@ else {
 			$yymenu .= qq~$menusep<a href="$scripturl?action=ml">$img{'memberlist'}</a>~;
 		}
 		# EventCal START
-		if (-e "$vardir/eventcalset.txt") { require "$vardir/eventcalset.txt"; }
 		if ($Show_EventButton == 2 || (!$iamguest && $Show_EventButton == 1)) {
-				$yymenu .= qq~$menusep<a href="$scripturl?action=get_cal;calshow=1">$img{'eventcal'}</a>~;
+			$yymenu .= qq~$menusep<a href="$scripturl?action=get_cal;calshow=1">$img{'eventcal'}</a>~;
 		}
 		if ($Show_BirthdayButton == 2 || (!$iamguest && $Show_BirthdayButton == 1)) {
-				$yymenu .= qq~$menusep<a href="$scripturl?action=cal_birthdaylist">$img{'birthdaylist'}</a>~;
+			$yymenu .= qq~$menusep<a href="$scripturl?action=cal_birthdaylist">$img{'birthdaylist'}</a>~;
 		}
 		# EventCal END
 
@@ -376,7 +352,7 @@ else {
 			my ($usermonth, $userday, $useryear) = split(/\//, ${$uid.$username}{'bday'});
 			if ($usermonth == $mon_num && $userday == $mday) { $wmessage = $maintxt{'247bday'}; }
 		}
-		$yyuname = ($PM_level == 0 || ($PM_level == 2 && !$iamadmin && !$iamgmod && !$iammod) || ($PM_level == 3 && !$iamadmin && !$iamgmod)) ? "$wmessage ${$uid.$username}{'realname'}" : "$wmessage ${$uid.$username}{'realname'}, ";
+		$yyuname = ($PM_level == 0 || ($PM_level == 2 && !$staff) || ($PM_level == 3 && !$iamadmin && !$iamgmod)) ? "$wmessage ${$uid.$username}{'realname'}" : "$wmessage ${$uid.$username}{'realname'}, ";
 	}
 
 	# Add new notifications if allowed
@@ -411,9 +387,8 @@ else {
 	# We don't want to require since it's an error and trying to do anything extra for an error could be bad
 	if ($output =~ m~<yabb copyright>~ || $output =~ m~{yabb copyright}~) { $yycopyin = 1; } ## new template style in also
 	$yysearchbox = '';
-	unless ($iamguest && $guestaccess == 0) {
-		if ($maxsearchdisplay > -1) {
-			$yysearchbox = qq~
+	if ((!$iamguest || $guestaccess != 0) && $maxsearchdisplay > -1) {
+		$yysearchbox = qq~
 		<script language="JavaScript1.2" src="$yyhtml_root/ubbc.js" type="text/javascript"></script>
 		<form action="$scripturl?action=search2" method="post">
 		<input type="hidden" name="searchtype" value="allwords" />
@@ -428,12 +403,11 @@ else {
 		<input type="image" src="$imagesdir/search.png" style="border: 0; background-color: transparent; margin-right: 5px; vertical-align: middle;" />
 		</form>
 		~;
-		}
 	}
+
+	# show news
 	if ($enable_news && -s "$vardir/news.txt" > 5) {
-		fopen(NEWS, "$vardir/news.txt");
-		my @newsmessages = <NEWS>;
-		fclose(NEWS);
+		my @newsmessages = &read_DBorFILE(0,'',$vardir,'news','txt');
 		chomp(@newsmessages);
 		my $startnews = int(rand(@newsmessages));
 		my $newstitle = qq~<b>$maintxt{'102'}:</b>~;
@@ -562,19 +536,31 @@ else {
 	} else {
 		$yynews = '&nbsp;';
 	}
-	# Moved this down here so it shows more
-	##  pushed to own file for flexibility
-	if ($debug == 1 or ($debug == 2 && $iamadmin)) { require "$sourcedir/Debug.pl"; &Debug; }
-	$yyurl      = $scripturl;
-	## new and old tag template style decoding ##
+
+	# Debug display
+	if ($debug == 1 || ($debug == 2 && $iamadmin)) { require "$sourcedir/Debug.pl"; &Debug; }
+
+	$yyurl = $scripturl;
+	my $copyright = $output =~ m~(<|{)yabb copyright(}|>)~ ? 1 : 0;
+	# new and old tag template style decoding
 	while ($output =~ s~(<|{)yabb\s+(\w+)(}|>)~${"yy$2"}~g) {}
-	$output =~ s~(a href=\S+?action=viewprofile;username=.+?)>~$1 rel="nofollow">~isg;
+
+	# check if image exists, otherwise use the default template image
 	if ($imagesdir ne $defaultimagesdir) {
-		$output =~ s~img(.*?)src=(\\*"|')$imagesdir/(.+?)(\2)~ "img$1src=$2" . &ImgLoc($3) . $4 ~eisg;
-		$output =~ s~\.src='$imagesdir/(.+?)'~ ".src='" . &ImgLoc($1) . "'" ~eisg; # For Javascript generated images
-		$output =~ s~input type="image" src="$imagesdir/(.+?)"~ 'input type="image" src="' . &ImgLoc($1) . '"' ~eisg; # For input images
-		$output =~ s~option value="$imagesdir/(.+?)"~ 'option value="' . &ImgLoc($1) . '"' ~eisg; # For the post page
+		my %img_locs;
+		sub ImgLoc {
+			if (exists $img_locs{$_[0]}) {
+				$img_locs{$_[0]};
+			} elsif (-e "$forumstylesdir/$useimages/$_[0]") {
+				$img_locs{$_[0]} = qq~$imagesdir/$_[0]~;
+			} else {
+				$img_locs{$_[0]} = qq~$defaultimagesdir/$_[0]~;
+			}
+		}
+		$output =~ s~(src|value|url)(=|\()("|'| )$imagesdir/([^'" ]+).~ "$1$2$3" . &ImgLoc($4) . $3 ~eisg;
 	}
+
+	# add formsession to each <form ..>-tag
 	$output =~ s~</form>~<input type="hidden" name="formsession" value="$formsession" /></form>~g;
 
 	&image_resize;
@@ -587,7 +573,7 @@ else {
 	# sub URL_modify { my $x = shift; $x =~ s/;/&/g; $x; }
 	# End of workaround
 
-	if ($yycopyin == 0) {
+	if (!$copyright) {
 		$output = q~<center><h1><b>Sorry, the copyright tag <yabb copyright> must be in the template.<br />Please notify this forum's administrator that this site is using an ILLEGAL copy of YaBB!</b></h1></center>~;
 	}
 
@@ -658,48 +644,14 @@ sub image_resize {
 	}
 }
 
-sub fatal_error_logging {
-	my $tmperror = $_[0];
-
-	# This flaw was brought to our attention by S M <savy91@msn.com> Italy
-	# Thanks! We couldn't make YaBB successful without the help from the bug testers.
-	&ToHTML($action);
-	&ToHTML($INFO{'num'});
-	&ToHTML($currentboard);
-
-	$tmperror =~ s/\n//ig;
-	fopen(ERRORLOG, "+<$vardir/errorlog.txt");
-	seek ERRORLOG, 0, 0;
-	my @errorlog = <ERRORLOG>;
-	truncate ERRORLOG, 0;
-	seek ERRORLOG, 0, 0;
-	chomp @errorlog;
-	$errorcount = @errorlog;
-
-	if ($elrotate) {
-		while ($errorcount >= $elmax) {
-			shift @errorlog;
-			$errorcount = @errorlog;
-		}
-	}
-
-	foreach my $formdata (keys %FORM) {
-		chomp $FORM{$formdata};
-		$FORM{$formdata} =~ s/\n//ig;
-	}
-
-	if ($iamguest) {
-		push @errorlog, int(time()) . "|$date|$user_ip|$tmperror|$action|$INFO{'num'}|$currentboard|$FORM{'username'}|$FORM{'passwrd'}";
-	} else {
-		push @errorlog, int(time()) . "|$date|$user_ip|$tmperror|$action|$INFO{'num'}|$currentboard|$username|$FORM{'passwrd'}";
-	}
-	foreach (@errorlog) {
-		chomp;
-		if ($_ ne "") {
-			print ERRORLOG $_ . "\n";
-		}
-	}
-	fclose(ERRORLOG);
+sub get_caller {
+	# Gets filename and line where fatal_error/debug was called.
+	# Need to go further back to get correct subroutine name,
+	# otherwise will print fatal_error/debug as current subroutine!
+	my ($filename, $line, $subroutine);
+	(undef, $filename, $line) = caller(1);
+	(undef, undef, undef, $subroutine) = caller(2);
+	($filename, $line, $subroutine);
 }
 
 sub fatal_error {
@@ -708,13 +660,8 @@ sub fatal_error {
 	&LoadLanguage('Error');
 	my $errormessage = "$error_txt{$_[0]} $_[1]";
 
-	# Gets filename and line where fatal_error was called.
-	# Need to go further back to get correct subroutine name,
-	# otherwise will print fatal_error as current subroutine!
-	(undef, $e_filename, $e_line) = caller(0);
-	(undef, undef, undef, $e_subroutine) = caller(1);
-	(undef, $e_subroutine) = split(/::/, $e_subroutine);
-	if (($debug == 1 || ($debug == 2 && $iamadmin)) && ($e_filename || $e_line || $e_subroutine)) { $errormessage .= "<br />$maintxt{'error_location'}: $e_filename<br />$maintxt{'error_line'}: $e_line<br />$maintxt{'error_subroutine'}: $e_subroutine"; }
+	my ($filename, $line, $subroutine) = &get_caller;
+	if (($debug == 1 || ($debug == 2 && $iamadmin)) && ($filename || $line || $subroutine)) { $errormessage .= "<br />$maintxt{'error_location'}: $filename<br />$maintxt{'error_line'}: $line<br />$maintxt{'error_subroutine'}: $subroutine"; }
 
 	if ($_[2]) { $errormessage .= "<br />$maintxt{'error_verbose'}: $verbose"; }
 
@@ -724,12 +671,6 @@ sub fatal_error {
 	if ($no_error_page) {
 		print "Content-type: text/plain\n\nerror$errormessage";
 		CORE::exit; # This is here only to avoid server error log entries!
-	}
-	
-	if ($_[0] =~ /no_access|members_only|no_perm/) {
-		$headerstatus = "403 Forbidden";
-	} elsif ($_[0] =~ /cannot_open|no.+_found/) {
-		$headerstatus = "404 Not Found";
 	}
 
 	$yymain .= qq~
@@ -749,40 +690,50 @@ sub fatal_error {
 ~;
 
 	$yytitle = "$maintxt{'error_description'}";
-	&template;
+
+	if ($adminscreen) {
+		&AdminTemplate;
+	} else {
+		if ($_[0] =~ /no_access|members_only|no_perm/) {
+			$headerstatus = "403 Forbidden";
+		} elsif ($_[0] =~ /cannot_open|no.+_found/) {
+			$headerstatus = "404 Not Found";
+		}
+		&template;
+	}
 }
 
-sub admin_fatal_error {
-	my $verbose = $!;
+sub fatal_error_logging {
+	my $tmperror = $_[0];
 
-	&LoadLanguage('Error');
-	my $errormessage = "$error_txt{$_[0]} $_[1]";
+	# This flaw was brought to our attention by S M <savy91@msn.com> Italy
+	# Thanks! We couldn't make YaBB successful without the help from the bug testers.
+	&ToHTML($action);
+	&ToHTML($INFO{'num'});
+	&ToHTML($currentboard);
 
-	# Gets filename and line where fatal_error was called.
-	# Need to go further back to get correct subroutine name,
-	# otherwise will print fatal_error as current subroutine!
-	(undef, $e_filename, $e_line) = caller(0);
-	(undef, undef, undef, $e_subroutine) = caller(1);
-	(undef, $e_subroutine) = split(/::/, $e_subroutine);
-	if (($debug == 1 || ($debug == 2 && $iamadmin)) && ($e_filename || $e_line || $e_subroutine)) { $errormessage .= "<br />$maintxt{'error_location'}: $e_filename<br />$maintxt{'error_line'}: $e_line<br />$maintxt{'error_subroutine'}: $e_subroutine"; }
+	$tmperror =~ s/\n//ig;
+	my @errorlog = &read_DBorFILE(0,ERRORLOG,$vardir,'errorlog','txt');
+	$errorcount = @errorlog;
 
-	if ($_[2]) { $errormessage .= "<br />$maintxt{'error_verbose'}: $verbose"; }
+	if ($elrotate) {
+		while ($errorcount >= $elmax) {
+			shift @errorlog;
+			$errorcount = @errorlog;
+		}
+	}
 
-	if ($elenable) { &fatal_error_logging($errormessage); }
+	foreach my $formdata (keys %FORM) {
+		chomp $FORM{$formdata};
+		$FORM{$formdata} =~ s/\n//ig;
+	}
 
-	$yymain .= qq~
-<table border="0" width="80%" cellspacing="1" class="bordercolor" align="center" cellpadding="4">
-	<tr>
-		<td class="titlebg"><span class="text1"><b>$maintxt{'error_description'}</b></span></td>
-	</tr><tr>
-		<td class="windowbg"><br /><span class="text1">$errormessage</span><br /><br /></td>
-	</tr>
-</table>
-<center><br /><a href="javascript:history.go(-1)">$admin_txt{'193'}</a></center>
-~;
-
-	$yytitle = "$maintxt{'error_description'}";
-	&AdminTemplate;
+	if ($iamguest) {
+		push @errorlog, int(time()) . "|$date|$user_ip|$tmperror|$action|$INFO{'num'}|$currentboard|$FORM{'username'}|$FORM{'passwrd'}\n";
+	} else {
+		push @errorlog, int(time()) . "|$date|$user_ip|$tmperror|$action|$INFO{'num'}|$currentboard|$username|$FORM{'passwrd'}\n";
+	}
+	&write_DBorFILE(0,ERRORLOG,$vardir,'errorlog','txt',@errorlog);
 }
 
 sub FindPermalink {
@@ -796,9 +747,9 @@ sub FindPermalink {
 	## get date/time/board/topic from permalink
 
 	($permyear, $permmonth, $permday, $permboard, $permnum) = split (/\//, $old_env);
-	if(-e "$boardsdir/$permboard.txt") {
+	if (&checkfor_DBorFILE("$boardsdir/$permboard.txt")) {
 		$permboardfound = 1;
-		if($permnum ne "" && -e "$datadir/$permnum.txt") {
+		if ($permnum ne "" && &checkfor_DBorFILE("$datadir/$permnum.txt")) {
 			$new_env = qq~num=$permnum~;
 			$permtopicfound = 1;
 		} else { $new_env = qq~board=$permboard~; }
@@ -924,12 +875,10 @@ sub readform {
 }
 
 sub getlog {
-	return if defined %yyuserlog || $iamguest || !$max_log_days_old || !-e "$memberdir/$username.log";
+	return if defined %yyuserlog || $iamguest || !$max_log_days_old || !&checkfor_DBorFILE("$memberdir/$username.log");
 
 	%yyuserlog = ();
-	fopen(GETLOG, "$memberdir/$username.log");
-	my @logentries = <GETLOG>;
-	fclose(GETLOG);
+	my @logentries = &read_DBorFILE(0,'',$memberdir,$username,'log');
 	chomp(@logentries);
 
 	my ($name,$thistime);
@@ -947,16 +896,15 @@ sub dumplog {
 		$yyuserlog{$_[0]} = $_[1] || $date;
 	}
 	if (defined %yyuserlog) {
-		my $name;
+		my ($name,@dumplog);
 		$date2 = $date;
-		fopen(DUMPLOG, ">$memberdir/$username.log");
 		while (($name,$date1) = each(%yyuserlog)) {
 			&calcdifference; # output => $result
 			if ($result <= $max_log_days_old) {
-				print DUMPLOG qq~$name|$date1\n~;
+				push(@dumplog, qq~$name|$date1\n~);
 			}
 		}
-		fclose(DUMPLOG);
+		&write_DBorFILE(1,'',$memberdir,$username,'log',@dumplog);
 	}
 }
 
@@ -979,7 +927,7 @@ sub jumpto {
 	## as guests don't have these, why show them?
 	if (!$iamguest) {
 		$selecthtml .= qq~
-	<option value="action=im" class="forumjumpcatm">$jumpto_txt{'mess'}</option>~ if $PM_level == 1 || ($PM_level == 2 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && ($iamadmin || $iamgmod));
+	<option value="action=im" class="forumjumpcatm">$jumpto_txt{'mess'}</option>~ if $PM_level == 1 || ($PM_level == 2 && ($staff)) || ($PM_level == 3 && ($iamadmin || $iamgmod));
 		$selecthtml .= qq~
 	<option value="action=shownotify" class="forumjumpcatmf">$jumpto_txt{'note'}</option>
 	<option value="action=favorites" class="forumjumpcatm">$jumpto_txt{'fav'}</option>~;
@@ -991,11 +939,11 @@ sub jumpto {
 	<option value="action=recenttopics;display=10">$recent_txt{'recenttopic'}</option>\n~;
 
 	unless ($mloaded == 1) { require "$boardsdir/forum.master"; }
-	foreach $catid (@categoryorder) {
-		@bdlist = split(/,/, $cat{$catid});
-		($catname, $catperms) = split(/\|/, $catinfo{"$catid"});
+	foreach my $catid (@categoryorder) {
+		my @bdlist = split(/,/, $cat{$catid});
+		my ($catname, $catperms) = split(/\|/, $catinfo{"$catid"});
 
-		$cataccess = &CatAccess($catperms);
+		my $cataccess = &CatAccess($catperms);
 		if (!$cataccess) { next; }
 		&ToChars($catname);
 		## I've removed the dashed bands and css handles the cat highlighting.
@@ -1005,11 +953,11 @@ sub jumpto {
 		&jump_subboards(@bdlist);
 		sub jump_subboards {
 			$indent += 2;
-			foreach $board (@_) {
+			foreach my $board (@_) {
 				my $dash;
 				if($indent > 0) { $dash = "-"; }
 				
-				($boardname, $boardperms, $boardview) = split(/\|/, $board{"$board"});
+				my ($boardname, $boardperms, $boardview) = split(/\|/, $board{"$board"});
 				&ToChars($boardname);
 				my $access = &AccessCheck($board, '', $boardperms);
 				if (!$iamadmin && $access ne "granted" && $boardview != 1) { next; }
@@ -1036,27 +984,23 @@ sub dojump {
 }
 
 sub spam_protection {
-	unless ($timeout) { return; }
-	my ($time, $flood_ip, $flood_time, $flood, @floodcontrol);
+	return if !$timeout || $iamadmin;
+	my ($flood_ip, $flood_time, $flood, @floodcontrol);
 
-	if (-e "$vardir/flood.txt") {
-		fopen(FLOOD, "$vardir/flood.txt");
+	if (&checkfor_DBorFILE("$vardir/flood.txt")) {
 		push(@floodcontrol, "$user_ip|$date\n");
-		while (<FLOOD>) {
-			chomp($_);
+		foreach (&read_DBorFILE(0,'',$vardir,'flood','txt')) {
 			($flood_ip, $flood_time) = split(/\|/, $_);
+			chomp($flood_time);
 			if ($user_ip eq $flood_ip && $date - $flood_time <= $timeout) { $flood = 1; }
-			elsif ($date - $flood_time < $timeout) { push(@floodcontrol, "$_\n"); }
+			elsif ($date - $flood_time < $timeout) { push(@floodcontrol, $_); }
 		}
-		fclose(FLOOD);
 	}
-	if ($flood && !$iamadmin && $action eq 'post2') { &Preview("$maintxt{'409'} $timeout $maintxt{'410'}"); }
-	if ($flood && !$iamadmin) {
+	if ($flood) {
+		if ($action eq 'post2') { &Preview("$maintxt{'409'} $timeout $maintxt{'410'}"); }
 		&fatal_error("post_flooding","$timeout $maintxt{'410'}");
 	}
-	fopen(FLOOD, ">$vardir/flood.txt", 1);
-	print FLOOD @floodcontrol;
-	fclose(FLOOD);
+	&write_DBorFILE(0,'',$vardir,'flood','txt',@floodcontrol);
 }
 
 sub CountChars {
@@ -1233,8 +1177,8 @@ sub ToHTML {
 	$_[0] =~ s/\|/&#124;/g;
 	$_[0] =~ s/>/&gt;/g;
 	$_[0] =~ s/</&lt;/g;
-	$_[0] =~ s/   / &nbsp; /g;
-	$_[0] =~ s/  / &nbsp;/g;
+	$_[0] =~ s/   /&nbsp; &nbsp;/g;
+	$_[0] =~ s/  /&nbsp; /g;
 	$_[0] =~ s/"/&quot;/g;
 }
 
@@ -1276,9 +1220,7 @@ sub Split_Splice_Move {
 		return (qq~<b>$maintxt{'160c'}</b> <a href="$scripturl?num=$dest"><i><b>$maintxt{'160d'}</b></i></a><b> $maintxt{'525'} <i>${$uid.$mover}{'realname'}</i></b>~,$dest);
 
 	} elsif ($s_s_m =~ /^\[m\]/) { # Old style topic that was moved/spliced before this code
-		fopen(MOVEDFILE, "$datadir/$_[1].txt");
-		(undef, undef, undef, undef, undef, undef, undef, undef, $s_s_m, undef) = split(/\|/, <MOVEDFILE>, 10);
-		fclose(MOVEDFILE);
+		(undef, undef, undef, undef, undef, undef, undef, undef, $s_s_m, undef) = split(/\|/, (&read_DBorFILE(0,'',$datadir,$_[1],'txt'))[0], 10);
 		&ToChars($s_s_m);
 		$ssm = 1;
 	}
@@ -1353,244 +1295,6 @@ sub wrap2 {
 	$message =~ s#<a href=(\S*?)(\s[^>]*)?>(\S*?)</a># my ($mes,$out,$i) = ($3,"",1); { while ($mes ne "") { if ($mes =~ s/^(<.+?>)//) { $out .= $1; } elsif ($mes =~ s/^(&.+?;|\[ch\d{3,}\]|.)//) { last if $i > $linewrap; $i++; $out .= $1; if ($mes eq "") { $i--; last; } } } } "<a href=$1$2>$out" . ($i > $linewrap ? "..." : "") . "</a>" #eig;
 }
 
-sub MembershipGet {
-	if (fopen(FILEMEMGET, "$memberdir/members.ttl")) {
-		$_ = <FILEMEMGET>;
-		chomp;
-		fclose(FILEMEMGET);
-		return split(/\|/, $_);
-	} else {
-		my @ttlatest = &MembershipCountTotal;
-		return @ttlatest;
-	}
-}
-
-{
-	my %yyOpenMode = (
-		'+>>' => 5,
-		'+>'  => 4,
-		'+<'  => 3,
-		'>>'  => 2,
-		'>'   => 1,
-		'<'   => 0,
-		''    => 0,
-	);
-
-	# fopen: opens a file. Allows for file locking and better error-handling.
-	sub fopen ($$;$) {
-		my ($pack, $file, $line) = caller;
-		$file_open++;
-		my ($filehandle, $filename, $usetmp) = @_;
-		## make life easier - spot a file that's not closed!
-		if ($debug) { $openfiles .= qq~$filehandle (~ . sprintf("%.4f", (time - $START_TIME)) . qq~)     $filename~; }
-		my ($flockCorrected, $cmdResult, $openMode, $openSig);
-
-		$serveros = "$^O";
-		if ($serveros =~ m/Win/ && substr($filename, 1, 1) eq ":") {
-			$filename =~ s~\\~\\\\~g; # Translate windows-style \ slashes to windows-style \\ escaped slashes.
-			$filename =~ s~/~\\\\~g;  # Translate unix-style / slashes to windows-style \\ escaped slashes.
-		} else {
-			$filename =~ tr~\\~/~;    # Translate windows-style \ slashes to unix-style / slashes.
-		}
-		$LOCK_EX     = 2;                 # You can probably keep this as it is set now.
-		$LOCK_UN     = 8;                 # You can probably keep this as it is set now.
-		$LOCK_SH     = 1;                 # You can probably keep this as it is set now.
-		$usetempfile = 0;                 # Write to a temporary file when updating large files.
-
-		# Check whether we want write, append, or read.
-		$filename =~ m~\A([<>+]*)(.+)~;
-		$openSig  = $1                    || '';
-		$filename = $2                    || $filename;
-		$openMode = $yyOpenMode{$openSig} || 0;
-
-		$filename =~ s~[^/\\0-9A-Za-z#%+\,\-\ \.\:@^_]~~g;    # Remove all inappropriate characters.
-
-		if ($filename =~ m~/\.\./~) { &fatal_error("cannot_open","$filename. $maintxt{'609'}"); }
-
-		# If the file doesn't exist, but a backup does, rename the backup to the filename
-		if (!-e $filename && -e "$filename.bak") { rename("$filename.bak", "$filename"); }
-		if (-z $filename && -e "$filename.bak") { rename("$filename.bak", "$filename"); }
-
-		$testfile = $filename;
-		if ($use_flock == 2 && $openMode) {
-			my $count;
-			while ($count < 15) {
-				if (-e $filehandle) { sleep 2; }
-				else { last; }
-				++$count;
-			}
-			unlink($filehandle) if ($count == 15);
-			local *LFH;
-			CORE::open(LFH, ">$filehandle");
-			$yyLckFile{$filehandle} = *LFH;
-		}
-
-		if ($use_flock && $openMode == 1 && $usetmp && $usetempfile && -e $filename) {
-			$yyTmpFile{$filehandle} = $filename;
-			$filename .= '.tmp';
-		}
-
-		if ($use_flock == 3) { # use NFSLock method for locking
-			my $lockmode = LOCK_EX; # by default do an exclusive lock on the file before opening/clobbering it
-			if ($openMode == 0) { # we're opening read-only, so a shared lock is sufficient
-				$lockmode = LOCK_SH;
-			}
-			if ($openMode > 0 && !(-e $filename)) {
-				# if we're trying to write-open a non-existing file, make sure it exists before we try to lock it using hard links
-				$cmdResult = CORE::open($filehandle, ">$filename");
-				if (!$cmdResult) {
-					return 0;
-				}
-				CORE::close($filehandle);
-			}
-			if (-e $filename) {
-				$yyLckFile{$filehandle} = File::NFSLock->new($filename,$lockmode,10,30*60);
-				if (!$yyLckFile{$filehandle}) {
-					if ($debug) { $openfiles .= qq~ [Error: $File::NFSLock::errstr] ~; }
-					#&fatal_eirror("file_lock_failed","$File::NFSLock::errstr");
-					# NOTE: we can't use the usual error subroutine as an file locking error might occure in the template subroutine, resulting in an endless loop
-					&LoadLanguage('Error');
-					$output = "$error_txt{'file_lock_failed'}: $File::NFSLock::errstr<br /><br />$openfiles";
-					&print_output_header;
-					&print_HTML_output_and_finish;
-				}
-			}
-			$cmdResult = CORE::open($filehandle, "$openSig$filename");
-			if (!$cmdResult) {
-				# free the lock if something went wrong
-			if (exists $yyLckFile{$filehandle} && $yyLckFile{$filehandle} ) {
-					$yyLckFile{$filehandle}->unlock();
-					delete $yyLckFile{$filehandle};
-				}
-				return 0;
-			}
-		}
-		else {
-		if ($openMode > 2) {
-			if ($openMode == 5) { $cmdResult = CORE::open($filehandle, "+>>$filename"); }
-			elsif ($use_flock == 1) {
-				if ($openMode == 4) {
-					if (-e $filename) {
-
-						# We are opening for output and file locking is enabled...
-						# read-open() the file rather than write-open()ing it.
-						# This is to prevent open() from clobbering the file before
-						# checking if it is locked.
-						$flockCorrected = 1;
-						$cmdResult = CORE::open($filehandle, "+<$filename");
-					} else {
-						$cmdResult = CORE::open($filehandle, "+>$filename");
-					}
-				} else {
-					$cmdResult = CORE::open($filehandle, "+<$filename");
-				}
-			} elsif ($openMode == 4) {
-				$cmdResult = CORE::open($filehandle, "+>$filename");
-			} else {
-				$cmdResult = CORE::open($filehandle, "+<$filename");
-			}
-		} elsif ($openMode == 1 && $use_flock == 1) {
-			if (-e $filename) {
-
-				# We are opening for output and file locking is enabled...
-				# read-open() the file rather than write-open()ing it.
-				# This is to prevent open() from clobbering the file before
-				# checking if it is locked.
-				$flockCorrected = 1;
-				$cmdResult = CORE::open($filehandle, "+<$filename");
-			} else {
-				$cmdResult = CORE::open($filehandle, ">$filename");
-			}
-		} elsif ($openMode == 1) {
-			$cmdResult = CORE::open($filehandle, ">$filename");    # Open the file for writing
-		} elsif ($openMode == 2) {
-			$cmdResult = CORE::open($filehandle, ">>$filename");    # Open the file for append
-		} elsif ($openMode == 0) {
-			$cmdResult = CORE::open($filehandle, $filename);        # Open the file for input
-		}
-		unless ($cmdResult)      { return 0; }
-		if     ($flockCorrected) {
-
-			# The file was read-open()ed earlier, and we have now verified an exclusive lock.
-			# We shall now clobber it.
-			flock($filehandle, $LOCK_EX);
-			if ($faketruncation) {
-				CORE::open(OFH, ">$filename");
-				unless ($cmdResult) { return 0; }
-				print OFH '';
-				CORE::close(OFH);
-			} else {
-				truncate(*$filehandle, 0) || &fatal_error("truncation_error","$filename");
-			}
-			seek($filehandle, 0, 0);
-		} elsif ($use_flock == 1) {
-			if ($openMode) { flock($filehandle, $LOCK_EX); }
-			else { flock($filehandle, $LOCK_SH); }
-		}
-		}
-		return 1;
-	}
-
-	# fclose: closes a file, using Windows 95/98/ME-style file locking if necessary.
-	sub fclose ($) {
-		my ($pack, $file, $line) = caller;
-		$file_close++;
-		my $filehandle = $_[0];
-		if ($debug) { $openfiles .= qq~     $filehandle (~ . sprintf("%.4f", (time - $START_TIME)) . qq~)\n[$pack, $file, $line]\n\n~; }
-		CORE::close($filehandle);
-		if ($use_flock == 2) {
-			if (exists $yyLckFile{$filehandle} && -e $filehandle) {
-				CORE::close($yyLckFile{$filehandle});
-				unlink($filehandle);
-				delete $yyLckFile{$filehandle};
-			}
-		}
-		elsif ($use_flock == 3) {
-			if (exists $yyLckFile{$filehandle} && $yyLckFile{$filehandle} ) {
-				$yyLckFile{$filehandle}->unlock();
-				delete $yyLckFile{$filehandle};
-			}
-		}
-		if ($yyTmpFile{$filehandle}) {
-			my $bakfile = $yyTmpFile{$filehandle};
-			if ($use_flock == 1) {
-
-				# Obtain an exclusive lock on the file.
-				# ie: wait for other processes to finish...
-				local *FH;
-				CORE::open(FH, $bakfile);
-				flock(FH, $LOCK_EX);
-				CORE::close(FH);
-			}
-			elsif ($use_flock == 3) {
-				local *FH;
-				$yyLckFile{FH} = File::NFSLock->new($bakfile,LOCK_EX,10,30*60);
-				if (!$yyLckFile{FH}) {
-					if ($debug) { $openfiles .= qq~ [Error: $File::NFSLock::errstr] ~; }
-					# NOTE: we can't use the usual error subroutine as an file locking error might occure in the template subroutine, resulting in an endless loop
-					&LoadLanguage('Error');
-					$output = "$error_txt{'file_lock_failed'}: $File::NFSLock::errstr<br /><br />$openfiles";
-					&print_output_header;
-					&print_HTML_output_and_finish;
-				}
-				$yyLckFile{FH}->unlock();
-				delete $yyLckFile{FH};
-			}
-
-			# Switch the temporary file with the original.
-			unlink("$bakfile.bak") if (-e "$bakfile.bak");
-			rename($bakfile, "$bakfile.bak");
-			rename("$bakfile.tmp", $bakfile);
-			delete $yyTmpFile{$filehandle};
-			if (-e $bakfile) {
-				unlink("$bakfile.bak");    # Delete the original file to save space.
-			}
-		}
-		return 1;
-	}
-
-}	# / my %yyOpenMode
-
 sub KickGuest {
 	require "$sourcedir/LogInOut.pl";
 	$sharedLogin_title = "$maintxt{'633'}";
@@ -1600,60 +1304,93 @@ sub KickGuest {
 	&template;
 }
 
+# - gets, writes/removes old data (username/ip,date,hostname#HTTP_USER_AGENT)
+#   from recently visiting users into/from log.txt/log-DB.
+# - writes/removes old data (username/ip,date,REQUEST_URI,HTTP_REFERER,HTTP_USER_AGENT)
+#   into/from the clicklog.txt.
 sub WriteLog {
-	# comment out (#) the next line if you have problems with
-	# 'Reverse DNS lookup timeout causes slow page loads'
-	# (http://www.yabbforum.com/community/YaBB.pl?num=1199991357)
-	# Search Engine identification and display will be turned off
-	my $user_host = (gethostbyaddr(pack("C4", split(/\./, $user_ip)), 2))[0];
-
 	my ($name, $logtime, @new_log);
+	my $onlinetime = $date - ($OnlineLogTime * 60);
 	my $field = $username;
 	if ($field eq "Guest") { if ($guestaccess) { $field = $user_ip; } else { return; } }
 
-	my $onlinetime = $date - ($OnlineLogTime * 60);
-	fopen(LOG, "+<$vardir/log.txt");
-	@logentries = <LOG>; # Global variable
-	foreach (@logentries) {
-		($name, $logtime, undef) = split(/\|/, $_, 3);
-		if ($name ne $user_ip && $name ne $field && $logtime >= $onlinetime) { push(@new_log, $_); }
+	@logentries = &read_DBorFILE(0,LOG,$vardir,'log','txt'); # @logentries is a global variable
+
+	@new_log = ("$field|$date|$user_ip|$user_host#$ENV{'HTTP_USER_AGENT'}|\n");
+	if (!$use_MySQL) {
+		foreach (@logentries) {
+			($name, $logtime, undef) = split(/\|/, $_, 3);
+			if ($name ne $user_ip && $name ne $field && $logtime >= $onlinetime) { push(@new_log, $_); }
+		}
 	}
-	seek LOG, 0, 0;
-	truncate LOG, 0;
-	print LOG ("$field|$date|$user_ip|$user_host#$ENV{'HTTP_USER_AGENT'}\n", @new_log);
-	fclose(LOG);
+
+	&delete_DB($vardir,'log','txt',($user_ip,$field,$onlinetime));
+	&write_DBorFILE(0,LOG,$vardir,'log','txt',@new_log);
 
 	if (!$action && $enableclicklog == 1) {
 		$onlinetime = $date - ($ClickLogTime * 60);
-		fopen(LOG, "+<$vardir/clicklog.txt", 1);
-		@new_log = <LOG>;
-		seek LOG, 0, 0;
-		truncate LOG, 0;
+		@new_log = &read_DBorFILE(0,LOG,$vardir,'clicklog','txt');
 		print LOG "$field|$date|$ENV{'REQUEST_URI'}|" . ($ENV{'HTTP_REFERER'} =~ m~$boardurl~i ? '' : $ENV{'HTTP_REFERER'}) . "|$ENV{'HTTP_USER_AGENT'}\n";
 		foreach (@new_log) { if ((split(/\|/, $_, 3))[1] >= $onlinetime) { print LOG $_; } }
-		fclose(LOG);
+		&write_DBorFILE(0,LOG,$vardir,'clicklog','txt',());
 	}
 }
 
 sub RemoveUserOnline {
 	my $user = shift;
-	fopen(LOG, "+<$vardir/log.txt", 1);
-	@logentries = <LOG>; # Global variable
-	seek LOG, 0, 0;
-	truncate LOG, 0;
-	if ($user) {
-		my $x = -1;
-		for (my $i = 0; $i < @logentries; $i++) {
-			if ((split(/\|/, $logentries[$i], 2))[0] ne $user) { print LOG $logentries[$i]; }
-			elsif ($user eq $username) { $logentries[$i] =~ s/^$user\|/$user_ip\|/; print LOG $logentries[$i]; }
-			else { $x = $i; }
+	if ($use_MySQL) {
+		if ($user) {
+			if ($user eq $username) {
+				&mysql_process(0,'do',qq~UPDATE `$db_user_log_table` SET `$db_user_log_key`="$user_ip" WHERE `$db_user_log_key`="$user"~) if $db_user_log_table;
+				&mysql_process(0,'do',qq~UPDATE `$db_prefix\_log` SET `yabbuserlogname`="$user_ip" WHERE `yabbuserlogname`="$user"~);
+			} else {
+				&mysql_process(0,'do',"DELETE FROM `$db_prefix\_log`" . ($db_user_log_table ? ",`$db_user_log_table`" : "") . " USING `$db_prefix\_log`" . ($db_user_log_table ? ",`$db_user_log_table`" : "") . qq~ WHERE `yabbuserlogname`="$user"~ . ($db_user_log_table ? qq~ OR `$db_user_log_key`="$user"~ : ""));
+			}
+			my $x = -1;
+			for (my $i = 0; $i < @logentries; $i++) {
+				next if (split(/\|/, $logentries[$i], 2))[0] ne $user;
+				if ($user eq $username) { $logentries[$i] =~ s/^$user\|/$user_ip\|/; last; }
+				else { $x = $i; last; }
+			}
+			splice(@logentries,$x,1) if $x > -1;
+		} else {
+			&mysql_process(0,'do',"TRUNCATE TABLE `$db_user_log_table`") if $db_user_log_table;
+			&mysql_process(0,'do',"TRUNCATE TABLE `$db_prefix\_log`");
+			@logentries = ();
 		}
-		splice(@logentries,$x,1) if $x > -1;
+
 	} else {
-		print LOG '';
-		@logentries = ();
+		@logentries = &read_DBorFILE(0,LOG,$vardir,'log','txt'); # @logentries is a global variable
+		if ($user) {
+			my $x = -1;
+			for (my $i = 0; $i < @logentries; $i++) {
+				next if (split(/\|/, $logentries[$i], 2))[0] ne $user;
+				if ($user eq $username) { $logentries[$i] =~ s/^$user\|/$user_ip\|/; last; }
+				else { $x = $i; last; }
+			}
+			splice(@logentries,$x,1) if $x > -1;
+		} else {
+			print LOG '';
+			@logentries = ();
+		}
+		&write_DBorFILE(0,LOG,$vardir,'log','txt',@logentries);
 	}
-	fclose(LOG);
+}
+
+my (@all_bots,%bot_name);
+sub GetBotlist {
+	my @botlist = &read_DBorFILE(1,'',$vardir,'bots','hosts');
+	chomp(@botlist);
+	foreach (@botlist) {
+		$_ =~ /(.*?)\|(.*)/;
+		push(@all_bots, $1);
+		$bot_name{$1} = $2;
+	}
+}
+
+sub Is_Bot {
+	my $bothost = $_[0];
+	foreach (@all_bots){ return $bot_name{$_} if $bothost =~ /$_/i; }
 }
 
 sub freespace {
@@ -1760,10 +1497,7 @@ sub referer_check {
 	my $refererdomain = substr($ENV{HTTP_REFERER}, 7, (index($ENV{HTTP_REFERER}, "/", 7)) - 7);
 	if ($refererdomain !~ /$referencedomain/ && $ENV{QUERY_STRING} ne "" && length($refererdomain) > 0) {
 		my $goodaction = 0;
-		fopen(ALLOWED, "$vardir/allowed.txt");
-		my @allowed = <ALLOWED>;
-		fclose(ALLOWED);
-		foreach my $allow (@allowed) {
+		foreach my $allow (&read_DBorFILE(0,'',$vardir,'allowed','txt')) {
 			chomp $allow;
 			if ($action eq $allow) { $goodaction = 1; last; }
 		}
@@ -1805,17 +1539,13 @@ sub LoadLanguage {
 sub Recent_Load {
 	my $who_to_load = $_[0];
 	undef %recent;
-	if (-e "$memberdir/$who_to_load.rlog") {
-		fopen(RLOG, "$memberdir/$who_to_load.rlog");
-		my %r = map /(.*)\t(.*)/, <RLOG>;
-		fclose(RLOG);
-		map{ @{$recent{$_}} = split(/,/, $r{$_}); } keys %r;
+	if (&checkfor_DBorFILE("$memberdir/$who_to_load.rlog")) {
+		my %r = map { /(.*)\t(.*)/ } &read_DBorFILE(0,'',$memberdir,$who_to_load,'rlog');
+		map { @{$recent{$_}} = split(/,/, $r{$_}) } keys %r;
 	} elsif (-e "$memberdir/$who_to_load.wlog") {
-		require "$memberdir/$who_to_load.wlog";
-		fopen(RLOG, ">$memberdir/$who_to_load.rlog");
-		print RLOG map "$_\t$recent{$_}\n", keys %recent;
-		fclose(RLOG);
-		unlink "$memberdir/$who_to_load.wlog";
+		require "$memberdir/.wlog";
+		&write_DBorFILE(0,'',$memberdir,$who_to_load,'rlog',(map "$_\t$recent{$_}\n", keys %recent));
+		&delete_DBorFILE("$memberdir/$who_to_load.wlog");
 		&Recent_Load($who_to_load); 
 	}
 }
@@ -1837,23 +1567,19 @@ sub Recent_Write {
 sub Recent_Save {
 	my $who_to_save = $_[0];
 	if (!%recent) {
-		unlink("$memberdir/$who_to_save.rlog");
+		&delete_DBorFILE("$memberdir/$who_to_save.rlog");
 		return;
 	}
-	fopen(RLOG, ">$memberdir/$who_to_save.rlog");
-	print RLOG map "$_\t" . join(',', @{$recent{$_}}) . "\n", keys %recent;
-	fclose(RLOG);
+	&write_DBorFILE(1,'',$memberdir,$who_to_save,'rlog', map { "$_\t" . join(',', @{$recent{$_}}) . "\n" } keys %recent);
 }
 
 sub save_moved_file {
 	# This sub saves the hash for the moved files: key == old id, value == new id
-	fopen(MOVEDFILE, ">$datadir/movedthreads.cgi") || &fatal_error("cannot_open",">$datadir/movedthreads.cgi", 1);
-	print MOVEDFILE "%moved_file = (" . join(',', map { qq~"$_","$moved_file{$_}"~ } grep { ($_ > 0 && $moved_file{$_} > 0 && $_ != $moved_file{$_}) } keys %moved_file) . ");\n1;";
-	fclose(MOVEDFILE);
+	&write_DBorFILE(0,'',$datadir,'movedthreads','cgi',("%moved_file = (" . join(',', map { qq~"$_","$moved_file{$_}"~ } grep { ($_ > 0 && $moved_file{$_} > 0 && $_ != $moved_file{$_}) } keys %moved_file) . ");\n1;"));
 }
 
 sub Write_ForumMaster {
-	fopen(FORUMMASTER, ">$boardsdir/forum.master", 1);
+	&read_DBorFILE(0,FORUMMASTER,$boardsdir,'forum','master');
 	print FORUMMASTER qq~\$mloaded = 1;\n~;
 	@catorder = &undupe(@categoryorder);
 	print FORUMMASTER qq~\@categoryorder = qw(@catorder);\n~;
@@ -1894,8 +1620,7 @@ sub Write_ForumMaster {
 			print FORUMMASTER qq~\$subboard{'$key'} = qq\~$value\~;\n~;
 		}
 	}
-	print FORUMMASTER qq~\n1;~;
-	fclose(FORUMMASTER);
+	&write_DBorFILE(0,FORUMMASTER,$boardsdir,'forum','master',("\n1;"));
 }
 
 sub dirsize {
@@ -1907,8 +1632,7 @@ sub dirsize {
 }
 
 sub MemberPageindex {
-	my ($msindx, $trindx, $mbindx, $pmindx);
-	($msindx, $trindx, $mbindx, $pmindx) = split(/\|/, ${$uid.$username}{'pageindex'});
+	my ($msindx, $trindx, $mbindx, $pmindx) = split(/\|/, ${$uid.$username}{'pageindex'});
 	if ($INFO{'action'} eq "memberpagedrop") {
 		${$uid.$username}{'pageindex'} = qq~$msindx|$trindx|0|$pmindx~;
 	}
@@ -1929,74 +1653,58 @@ sub MemberPageindex {
 	&redirectexit;
 }
 
-#changed sub for improve perfomance, code from Zoo
+sub undupe {
+	my (@out,$duped,$check);
+	foreach $check (@_) {
+		$duped = 0;
+		foreach (@out) { if ($_ eq $check) { $duped = 1; last; } }
+		if (!$duped) { push(@out, $check); }
+	}
+	return @out;
+}
+
+sub getnewid {
+	my $newid = $date;
+	while (&checkfor_DBorFILE("$datadir/$newid.txt")) { ++$newid; }
+	return $newid;
+}
+
+#changed sub for improve perfomance
 sub check_existence {
 	my ($dir, $filename) = @_;
 
 	$filename =~ /(\S+?)(\.\S+$)/;
 	my $origname = $1;
 	my $filext = $2;
-	my $numdelim = "_";
 	my $filenumb = 0;
-	while (-e "$dir/$filename") {
+	while (&checkfor_DBorFILE("$dir/$filename")) {
 			$filenumb = sprintf("%03d", ++$filenumb);
-			$filename = qq~$origname$numdelim$filenumb$filext~;
+			$filename = qq~$origname\_$filenumb$filext~;
 	}
 	return ($filename);
 }
 
-sub ManageMemberlist {
-	my $todo    = $_[0];
-	my $user    = $_[1];
-	my $userreg = $_[2];
-	if ($todo eq "load" || $todo eq "update" || $todo eq "delete" || $todo eq "add") {
-		fopen(MEMBLIST, "$memberdir/memberlist.txt");
-		%memberlist = map /(.*)\t(.*)/, <MEMBLIST>;
-		fclose(MEMBLIST);
-	}
-	if ($todo eq "add") {
-		$memberlist{$user} = "$userreg";
-
-	} elsif ($todo eq "update") {
-		$memberlist{$user} = $userreg ? $userreg : $memberlist{$user};
-
-	} elsif ($todo eq "delete") {
-		if ($user =~ /,/) {    # been sent a list to kill, not a single
-			my @oldusers = split(',', $user);
-			foreach my $user (@oldusers) {
-				delete($memberlist{$user});
-				unlink("$vardir/eventcalbday.db"); # EventCal Mod
-			}
-		}
-		else	{delete($memberlist{$user});}
-	}
-	if ($todo eq "save" || $todo eq "update" || $todo eq "delete" || $todo eq "add") {
-		fopen(MEMBLIST, ">$memberdir/memberlist.txt");
-		print MEMBLIST map "$_\t$memberlist{$_}\n", sort { $memberlist{$a} <=> $memberlist{$b} } keys %memberlist;
-		fclose(MEMBLIST);
-		undef %memberlist;
-	}
-}
-
-## deal with basic member data in memberinfo.txt
+# deal with basic member data in memberinfo.txt
 sub ManageMemberinfo {
 	my $todo       = $_[0];
 	my $user       = $_[1];
-	my $userdisp   = $_[2];
-	my $usermail   = $_[3];
-	my $usergrp    = $_[4];
-	my $usercnt    = $_[5];
-	my $useraddgrp = $_[6];
+	my $userreg    = $_[2];
+	my $userdisp   = $_[3];
+	my $usermail   = $_[4];
+	my $usergrp    = $_[5];
+	my $usercnt    = $_[6];
+	my $useraddgrp = $_[7];
+	my $userbday   = $_[8];
 	## pull hash of member name + other data
 	if ($todo eq "load" || $todo eq "update" || $todo eq "delete" || $todo eq "add") {
-		fopen(MEMBINFO, "$memberdir/memberinfo.txt");
-		%memberinf = map /(.*)\t(.*)/, <MEMBINFO>;
-		fclose(MEMBINFO);
+		return if %memberinf && $todo eq "load";
+		%memberinf = map /(.*)\t(.*)/, &read_DBorFILE(0,'',$memberdir,'memberinfo','txt');
 	}
-	if ($todo eq "add") {
-		$memberinf{$user} = "$userdisp|$usermail|$usergrp|$usercnt|$useraddgrp";
+	if      ($todo eq "add") {
+		$memberinf{$user} = "$userreg|$userdisp|$usermail|$usergrp|$usercnt|$useraddgrp|$userbday";
 	} elsif ($todo eq "update") {
-		($memrealname, $mememail, $memposition, $memposts, $memaddgrp) = split(/\|/, $memberinf{$user});
+		my ($regdate, $memrealname, $mememail, $memposition, $memposts, $memaddgrp, $membday) = split(/\|/, $memberinf{$user});
+		if ($userreg) { $regdate = $userreg; }
 		if ($userdisp) { $memrealname = $userdisp; }
 		if ($usermail) { $mememail = $usermail; }
 		if ($usergrp) { $memposition = $usergrp; }
@@ -2005,20 +1713,13 @@ sub ManageMemberinfo {
 			if ($useraddgrp =~ /###blank###/) { $useraddgrp = ''; }
 			$memaddgrp = $useraddgrp;
 		}
-		$memberinf{$user} = "$memrealname|$mememail|$memposition|$memposts|$memaddgrp";
+		if ($userbday) { $membday = $userbday ne '-' ? $userbday : ''; }
+		$memberinf{$user} = "$regdate|$memrealname|$mememail|$memposition|$memposts|$memaddgrp|$membday";
 	} elsif ($todo eq "delete") {
-		if ($user =~ /,/) {    # been sent a list to kill, not a single
-			my @oldusers = split(',', $user);
-			foreach my $user (@oldusers) {
-				delete($memberinf{$user});
-			}
-		}	
-		delete($memberinf{$user});
+		foreach (split(/,/, $user)) { delete $memberinf{$_}; } # been sent a single or a list to kill
 	}
 	if ($todo eq "save" || $todo eq "update" || $todo eq "delete" || $todo eq "add") {
-		fopen(MEMBINFO, ">$memberdir/memberinfo.txt");
-		print MEMBINFO map "$_\t$memberinf{$_}\n", keys %memberinf;
-		fclose(MEMBINFO);
+		&write_DBorFILE(0,'',$memberdir,'memberinfo','txt',(map "$_\t$memberinf{$_}\n", sort { $memberinf{$a} cmp $memberinf{$b} } keys %memberinf));
 		undef %memberinf;
 	}
 }
@@ -2048,11 +1749,9 @@ sub MailList {
 	} else {
 		$delmailline = $INFO{'delmail'};
 	}
-	if (-e ("$vardir/maillist.dat")) {
-		fopen(FILE, "$vardir/maillist.dat");
-		@maillist = <FILE>;
-		fclose(FILE);
-		fopen(FILE, ">$vardir/maillist.dat");
+	if (&checkfor_DBorFILE("$vardir/maillist.dat")) {
+		my @maillist = &read_DBorFILE(0,FILE,$vardir,'maillist','dat');
+
 		if (!$INFO{'delmail'}) {
 			print FILE "$mailline\n";
 		}
@@ -2063,11 +1762,9 @@ sub MailList {
 				print FILE "$curmail\n";
 			}
 		}
-		fclose(FILE);
+		&write_DBorFILE(0,FILE,$vardir,'maillist','dat',(''));
 	} else {
-		fopen(FILE, ">$vardir/maillist.dat");
-		print FILE "$mailline\n";
-		fclose(FILE);
+		&write_DBorFILE(0,'',$vardir,'maillist','dat',("$mailline\n"));
 	}
 	if ($INFO{'delmail'}) {
 		$yySetLocation = qq~$adminurl?action=mailing~;
@@ -2170,8 +1867,8 @@ sub guestLangSel {
 			$lngsel = "";
 			if ($filesanddirs eq $language) { $lngsel = qq~ selected="selected"~; }
 			my $displang = $filesanddirs;
-            $displang =~ s~(.+?)\_(.+?)$~$1 ($2)~gi;
-            $langopt .= qq~<option value="$filesanddirs"$lngsel>$displang</option>~;
+			$displang =~ s~(.+?)\_(.+?)$~$1 ($2)~gi;
+			$langopt .= qq~<option value="$filesanddirs"$lngsel>$displang</option>~;
 			$morelang++;
 		}
 	}
@@ -2188,20 +1885,18 @@ sub setGuestLang {
 		&redirectexit;
 	}
 	# otherwise, grab the selected language from the form and redirect to load it.
-	$guestLang = $FORM{'guestlang'};
-	$language = $guestLang;
+	$yySetCookies1 = &write_cookie(
+		-name    => "guestlanguage",
+		-value   => $FORM{'guestlang'},
+		-path    => '/',
+		-expires => "Sunday, 17-Jan-2038 00:00:00 GMT");
 	$yySetLocation = qq~$scripturl~;
 	&redirectexit;
 }
 
 ##  check for locked post bypass status - user must be at least mod and bypass lock must be set right.
 sub checkUserLockBypass {
-	my $canbypass;
-	## work down the levels
-	if ($bypass_lock_perm eq "fa" && $iamadmin) { $canbypass = 1; }
-	elsif ($bypass_lock_perm eq "gmod" && ($iamadmin || $iamgmod)) { $canbypass = 1; }
-	elsif ($bypass_lock_perm eq "mod" && ($iamadmin || $iamgmod || $iammod)) { $canbypass = 1; } 
-	$canbypass;
+	return 1 if ($staff && (($bypass_lock_perm eq "fa" && $iamadmin) || ($bypass_lock_perm eq "gmod" && ($iamadmin || $iamgmod)) || $bypass_lock_perm eq "mod"));
 }
 
 sub alertbox {
@@ -2295,5 +1990,780 @@ sub CheckUserPM_Level {
 		}
 	}
 }
+
+# Block for File and SQL management START
+{
+
+	# BE CAREFUL what you add, especially if this file is renamed somewhere in the
+	# the code! There is no routine for thie in SQL at the moment!!!
+	# key = folder.['extension of the file'] OR
+	# key = folder.['variable in file/colum in table'] OR
+	# key = folder.[name of the file].['extension of the file']
+	# values = ['name of the table','key of the table',[qw[colums to get/be update]]]
+	my %db_table = (
+		#$boardsdir."control" =>
+		#[
+		#	"",
+		#	'',
+		#	[qw[]],
+		#],
+		#$boardsdir."mail" =>
+		#[
+		#	"",
+		#	'',
+		#	[qw[]],
+		#],
+		#$boardsdir."master" =>
+		#[
+		#	"",
+		#	'',
+		#	[qw[]],
+		#],
+		#$boardsdir."totals" =>
+		#[
+		#	"",
+		#	'',
+		#	[qw[]],
+		#],
+
+		# Changes here on @{$db_table{$datadir."ctb"}}[2] must also be done
+		# in exactly the same order in:
+		# System.pl -> sub MessageTotals -> my @tag = ... and in
+		# Post.pl -> sub Post2 -> my @tag = ...
+		$datadir."ctb" =>
+		[
+			"$db_prefix\_ctb",
+			'threadnum',
+			[qw[board replies views lastposter lastpostdate threadstatus repliers]],
+		],
+		$datadir."mail" =>
+		[
+			"$db_prefix\_ctb",
+			'threadnum',
+			[qw[mail]],
+		],
+		$datadir."poll" =>
+		[
+			"$db_prefix\_ctb",
+			'threadnum',
+			[qw[poll]],
+		],
+		$datadir."polled" =>
+		[
+			"$db_prefix\_ctb",
+			'threadnum',
+			[qw[polled]],
+		],
+		$datadir."txt" =>
+		[
+			"$db_prefix\_messages",
+			'mess_threadnum',
+			[qw[subject displayname email date username icon post_number user_ip message no_smilies modified_date modified_by attachments]],
+		],
+
+		$memberdir."vars" =>
+		[ # setting are in Settings.pl
+			"$db_prefix\_vars",
+			'yabbusername',
+			[qw[yabbusername realname]],
+		],
+		$memberdir."lastonline" =>
+		[
+			($db_vars_laston_table || "$db_prefix\_vars"),
+			($db_vars_laston_table ? $db_user_vars_key : 'yabbusername'),
+			[($db_vars_laston || 'lastonline')],
+		],
+		$memberdir."imdraft" =>
+		[
+			"$db_prefix\_vars",
+			'yabbusername',
+			[qw[imdraft]],
+		],
+		$memberdir."ims" =>
+		[
+			"$db_prefix\_vars",
+			'yabbusername',
+			[qw[ims]],
+		],
+		$memberdir."imstore" =>
+		[
+			"$db_prefix\_vars",
+			'yabbusername',
+			[qw[imstore]],
+		],
+		$memberdir."log" =>
+		[
+			"$db_prefix\_vars",
+			'yabbusername',
+			[qw[log]],
+		],
+		$memberdir."msg" =>
+		[
+			"$db_prefix\_vars",
+			'yabbusername',
+			[qw[msg]],
+		],
+		$memberdir."outbox" =>
+		[
+			"$db_prefix\_vars",
+			'yabbusername',
+			[qw[outbox]],
+		],
+		$memberdir."rlog" =>
+		[
+			"$db_prefix\_vars",
+			'yabbusername',
+			[qw[rlog]],
+		],
+
+		$vardir."log"."txt" =>
+		[ # setting are in Settings.pl
+			"---",
+			'---',
+			[qw[---]],
+		],
+	);
+
+	# check if file/row entry exists
+	my %check_sth;
+	sub checkfor_DBorFILE {
+		my $file = $_[0];
+		if ($use_MySQL) {
+			$file =~ /(.*)\/(.*)\.(.*?)$/;
+			my ($folder,$name,$ext) = ($1,$2,$3);
+			if ($db_table{$folder.$ext}[0] || $db_table{$folder.$name.$ext}[0]) {
+				my $DBfile = $db_table{$folder.$ext}[0] ? $folder.$ext : $folder.$name.$ext;
+				unless ($check_sth{$DBfile.$db_table{$DBfile}[0]}) {
+					$check_sth{$DBfile.$db_table{$DBfile}[0]} = &mysql_process(0,'prepare',"SELECT `" . join('`,`', @{$db_table{$DBfile}[2]}) . "` FROM `$db_table{$DBfile}[0]` WHERE `$db_table{$DBfile}[1]`=?");
+				}
+				&mysql_process($check_sth{$DBfile.$db_table{$DBfile}[0]},'execute',$name);
+				return (&mysql_process($check_sth{$DBfile.$db_table{$DBfile}[0]},'fetchrow_array',0,1) ? 1 : 0);
+			}
+		}
+
+		return (-e $file ? 1 : 0);
+	}
+
+	# get array with all member names
+	sub get_members_array {
+		map { $$_[0] } @{&mysql_process(0,'selectall_arrayref',qq~SELECT `yabbusername` FROM `$db_prefix\_vars`~)};
+	}
+	# get array with all thread numbers from table messages
+	sub get_messages_array {
+		map { $$_[0] } @{&mysql_process(0,'selectall_arrayref',qq~SELECT `mess_threadnum` FROM `$db_prefix\_messages` WHERE `post_number`=0 ORDER BY `mess_threadnum` ASC~)};
+	}
+	# get array with all thread numbers from table ctb
+	sub get_ctb_array {
+		map { $$_[0] } @{&mysql_process(0,'selectall_arrayref',qq~SELECT `threadnum` FROM `$db_prefix\_ctb`~)};
+	}
+	# get array with all thread numbers from table ctb with mail entrys
+	sub get_mail_array {
+		map { $$_[0] } @{&mysql_process(0,'selectall_arrayref',qq~SELECT `threadnum` FROM `$db_prefix\_ctb` WHERE `mail`<>''~)};
+	}
+
+	# read from DB or file
+	sub read_DBorFILE {
+		# $ignore_error: 1 -> ignore error message when open file; 0 -> write error message on error
+		# $LOCKHANDLE: File handle if read and write in same file == Lock table if read and write from/in same table
+		# $folder: foldername of file == table name
+		# $name: name of file == name searched in table key
+		# $ext: file extension == table colum name
+		# return value is always array or ref to array
+		my ($ignore_error, $LOCKHANDLE, $folder, $name, $ext) = @_;
+
+		if ($debug) {
+			my ($file, $line, $sub) = &get_caller;
+			$openfiles .= qq~\n[$file, $line, $sub]~;
+		}
+
+		if ($use_MySQL && ($db_table{$folder.$ext}[0] || $db_table{$folder.$name.$ext}[0])) {
+			my $DBfile = $db_table{$folder.$ext}[0] ? $folder.$ext : $folder.$name.$ext;
+			if      ($folder eq $boardsdir) {
+				&boards_DB_r($LOCKHANDLE, $name, $DBfile);
+			} elsif ($folder eq $datadir) {
+				&threads_DB_r($LOCKHANDLE, $name, $DBfile);
+			} elsif ($folder eq $memberdir) {
+				&members_DB_r($LOCKHANDLE, $name, $DBfile);
+			} elsif ($folder eq $vardir) {
+				&variables_DB_r($LOCKHANDLE, $name, $DBfile);
+			} else {
+				&fatal_error("cannot_open","$folder/$name.$ext");
+			}
+
+		} elsif ($LOCKHANDLE) {
+			if (fopen($LOCKHANDLE, "+<$folder/$name.$ext")) {
+				@_ = <$LOCKHANDLE>;
+				seek $LOCKHANDLE, 0, 0;
+				truncate *$LOCKHANDLE, 0;
+				@_;
+			} else {
+				fopen($LOCKHANDLE, "+>$folder/$name.$ext");
+				return;
+			}
+
+		} else {
+			fopen(READ, "$folder/$name.$ext") || ($ignore_error ? return () : &fatal_error('cannot_open', "$folder/$name.$ext", 1));
+			@_ = <READ>;
+			fclose(READ);
+			@_;
+		}
+	}
+
+	# write in DB or file
+	sub write_DBorFILE {
+		# $update_DB: if SQL-DB is enabled: 1 = UPDATE; 0 or '' = INSERT
+		# $LOCKHANDLE: File handle if read and write in same file == Lock table if read and write from/in same table
+		# $folder: foldername of file == table name
+		# $name: name of file == name searched in table key
+		# $ext: file extension == table colum name
+		# @data: data to write in the DB or file
+		my ($update_DB, $LOCKHANDLE, $folder, $name, $ext, @data) = @_;
+
+		if ($debug && (!$LOCKHANDLE || $use_MySQL)) {
+			my ($file, $line, $sub) = &get_caller;
+			$openfiles .= qq~\n[$file, $line, $sub]~;
+		}
+
+		if ($use_MySQL && ($db_table{$folder.$ext}[0] || $db_table{$folder.$name.$ext}[0])) {
+			my $DBfile = $db_table{$folder.$ext}[0] ? $folder.$ext : $folder.$name.$ext;
+			if      ($folder eq $boardsdir) {
+				&boards_DB_w($update_DB, $name, $DBfile, ref($data[0]) ? $data[0] : \@data);
+			} elsif ($folder eq $datadir) {
+				&threads_DB_w($update_DB, $name, $DBfile, ref($data[0]) ? $data[0] : \@data);
+			} elsif ($folder eq $memberdir) {
+				&members_DB_w($update_DB, $name, $DBfile, ref($data[0]) ? $data[0] : \@data);
+			} elsif ($folder eq $vardir) {
+				&variables_DB_w($update_DB, $name, $DBfile, ref($data[0]) ? $data[0] : \@data);
+			} else {
+				&fatal_error("cannot_open","$folder/$name.$ext");
+			}
+			&mysql_process(0,'do',"UNLOCK TABLES") if $LOCKHANDLE;
+
+		} elsif ($LOCKHANDLE) {
+			print $LOCKHANDLE (ref($data[0]) ? @{$data[0]} : @data);
+			fclose($LOCKHANDLE);
+			chmod(0666, "$folder/$name.$ext");
+
+		} else {
+			fopen(WRITE, ">$folder/$name.$ext") || &fatal_error('cannot_open', "$folder/$name.$ext", 1);
+			print WRITE (ref($data[0]) ? @{$data[0]} : @data);
+			fclose(WRITE);
+			chmod(0666, "$folder/$name.$ext");
+		}
+	}
+
+	# delete from DB; no effect if forum is on file-DB
+	sub delete_DB {
+		# $folder: foldername of original file
+		# $name: ---
+		# $ext: extension of original file
+		# @where: what to delete (key values)
+		# no return value
+		my ($folder, $name, $ext, @where) = @_;
+
+		if ($use_MySQL && ($db_table{$folder.$ext}[0] || $db_table{$folder.$name.$ext}[0])) {
+			if ($debug && (!$LOCKHANDLE || $use_MySQL)) {
+				my ($file, $line, $sub) = &get_caller;
+				$openfiles .= qq~\n[$file, $line, $sub]~;
+			}
+
+			my $DBfile = $db_table{$folder.$ext}[0] ? $folder.$ext : $folder.$name.$ext;
+
+			if ($DBfile eq $vardir."log"."txt") { # only for Variables/log.txt
+				&mysql_process(0,'do',"DELETE FROM `$db_prefix\_log`" . ($db_user_log_table ? ",`$db_user_log_table` WHERE `yabbuserlogname`=`$db_user_log_key` AND" : " WHERE") . qq~ (`yabbuserlogname`="$where[0]" OR `yabbuserlogname`="$where[1]" OR $db_log_date<$where[2])~);
+
+			} else {
+				&mysql_process(0,'do',qq~DELETE FROM `$db_table{$DBfile}[0]` WHERE `$db_table{$DBfile}[1]`="~ . join('" OR `$db_table{$DBfile}[1]`="', @where) . qq~"~);
+			}
+
+		}
+	}
+
+
+	my (%sth_r,%sth_w);
+	# read
+	sub boards_DB_r {
+		my ($LOCKHANDLE, $name, $DBfile) = @_;
+
+		&fatal_error('', "No table for .../Boards/... jet!!!", 1);
+		&mysql_process(0,'do',"LOCK TABLES `$db_table{$DBfile}[0]` WRITE") if $LOCKHANDLE;
+	}
+
+	sub threads_DB_r {
+		my ($LOCKHANDLE, $name, $DBfile) = @_;
+
+		&mysql_process(0,'do',"LOCK TABLES `$db_table{$DBfile}[0]` WRITE") if $LOCKHANDLE;
+
+		if ($DBfile eq $datadir."txt") { # for Messages/[threadnumber].txt
+			if (!$sth_r{$DBfile.$db_table{$DBfile}[0]}) {
+				$sth_r{$DBfile.$db_table{$DBfile}[0]} = 
+					&mysql_process(0,'prepare',qq~SELECT CONCAT_WS('|', `~ . join('`,`', @{$db_table{$DBfile}[2]}) . qq~`) FROM `$db_table{$DBfile}[0]` WHERE `$db_table{$DBfile}[1]`=? ORDER BY `post_number` ASC~);
+			}
+			&mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'execute',$name);
+			return map { $$_[0] } @{&mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'fetchall_arrayref',0,1)};
+
+		} else { # for Messages/[threadnumber].[ctb|mail|poll|polled]
+			if (!$sth_r{$DBfile.$db_table{$DBfile}[0]}) {
+				$sth_r{$DBfile.$db_table{$DBfile}[0]} = 
+					&mysql_process(0,'prepare',qq~SELECT `~ . join('`,`', @{$db_table{$DBfile}[2]}) . qq~` FROM `$db_table{$DBfile}[0]` WHERE `$db_table{$DBfile}[1]`=?~);
+			}
+			&mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'execute',$name);
+			if (@{$db_table{$DBfile}[2]} > 1) {
+				return &mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'fetchrow_array',0,1);
+			} else {
+				return split(/^/m, &mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'fetchrow_array',0,1));
+			}
+		}
+	}
+
+	sub members_DB_r {
+		my ($LOCKHANDLE, $name, $DBfile) = @_;
+
+		&mysql_process(0,'do',"LOCK TABLES `" . ($db_user_vars_table ? "$db_user_vars_table` WRITE, `$db_prefix\_vars" : "$db_prefix\_vars") . "` WRITE") if $LOCKHANDLE;
+
+		if (!$sth_r{$DBfile.$db_table{$DBfile}[0]}) {
+			if (@{$db_table{$DBfile}[2]} > 1) {
+				$sth_r{$DBfile.$db_table{$DBfile}[0]} = 
+					&mysql_process(0,'prepare',"SELECT $db_vars_order FROM `" .
+						($db_user_vars_table ? "$db_user_vars_table`,`$db_prefix\_vars" : "$db_prefix\_vars") .
+						"` WHERE " .
+						($db_user_vars_table ? qq~`$db_user_vars_key`=`yabbusername` AND ~ : "") . qq~`yabbusername`=?~);
+			} else {
+				$sth_r{$DBfile.$db_table{$DBfile}[0]} = 
+					&mysql_process(0,'prepare',"SELECT `${$db_table{$DBfile}[2]}[0]` FROM `$db_prefix\_vars` WHERE `yabbusername`=?");
+			}
+		}
+		&mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'execute',$name);
+		if (@{$db_table{$DBfile}[2]} > 1) {
+			return &mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'fetchrow_array',0,1);
+		} else {
+			return split(/^/m, &mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'fetchrow_array',0,1));
+		}
+	}
+
+	sub variables_DB_r {
+		my ($LOCKHANDLE, $name, $DBfile) = @_;
+
+		if ($DBfile eq $vardir."log"."txt") { # only for Variables/log.txt
+			&mysql_process(0,'do',"LOCK TABLES `$db_prefix\_log` WRITE" . ($db_user_log_table ? ",`$db_user_log_table` WRITE" : "")) if $LOCKHANDLE;
+
+			return map { $$_[0] } @{&mysql_process(0,'selectall_arrayref',qq~SELECT CONCAT_WS('|', ~ . join(',', split(/,/, $db_log_order)) . qq~) FROM `$db_prefix\_log`~ . ($db_user_log_table ? ",`$db_user_log_table` WHERE `yabbuserlogname`=`$db_user_log_key`" : "") . " ORDER BY $db_log_date DESC")};
+
+		} else {
+			&mysql_process(0,'do',"LOCK TABLES `$db_table{$DBfile}[0]` WRITE") if $LOCKHANDLE;
+
+			# to be done
+		}
+	}
+
+
+	# write
+	sub boards_DB_w {
+		my ($update_DB, $name, $DBfile, $data) = @_;
+
+	}
+
+	sub threads_DB_w {
+		my ($update_DB, $name, $DBfile, $data) = @_;
+
+		if ($update_DB) { # UPDATE table
+			if ($DBfile eq $datadir."txt") { # for Messages/[threadnumber].txt
+				&fatal_error('', "No DB-UPDATE for '$FORM{'db_prefix'}_messages'-table!!!", 1);
+
+			} else { # for Messages/[threadnumber].[ctb|mail|poll|polled]
+				if (!$sth_w{$DBfile.$db_table{$DBfile}[0]}) {
+					$sth_w{$DBfile.$db_table{$DBfile}[0]} = 
+						&mysql_process(0,'prepare',qq~UPDATE `$db_table{$DBfile}[0]` SET ~ . join(",", map { "`$_`=?" } @{$db_table{$DBfile}[2]}) . qq~ WHERE `$db_table{$DBfile}[1]`=?~);
+				}
+				if (@{$db_table{$DBfile}[2]} > 1) {
+					&mysql_process($sth_w{$DBfile.$db_table{$DBfile}[0]},'execute',(map { s/"/\\"/g; $_; } @$data,$name));
+				} else {
+					&mysql_process($sth_w{$DBfile.$db_table{$DBfile}[0]},'execute',(join('', map { s/"/\\"/g; $_; } @$data),$name));
+				}
+			}
+
+		} else { # INSERT table
+			if ($DBfile eq $datadir."txt") { # for Messages/[threadnumber].txt
+				if (!$sth_w{$DBfile.$db_table{$DBfile}[0]}) {
+					$sth_w{$DBfile.$db_table{$DBfile}[0]} = 
+						&mysql_process(0,'prepare',qq~INSERT INTO `$db_table{$DBfile}[0]` (`$db_table{$DBfile}[1]`,`~ . join('`,`', @{$db_table{$DBfile}[2]}) . qq~`) VALUES (?,~ . join(',', map { '?' } @{$db_table{$DBfile}[2]}) . qq~)~);
+				}
+				&mysql_process(0,'do',qq~DELETE FROM `$db_table{$DBfile}[0]` WHERE `$db_table{$DBfile}[1]`="$name"~); # must delete all old entries first because there is no update!
+				foreach (@$data) {
+					&mysql_process($sth_w{$DBfile.$db_table{$DBfile}[0]},'execute',($name,(map { s/"/\\"/g; $_; } split(/\|/, $_))));
+				}
+
+			} else { # for Messages/[threadnumber].ctb; mail,poll,polled are empty here
+				&mysql_process(0,'do',qq~DELETE FROM `$db_table{$DBfile}[0]` WHERE `$db_table{$DBfile}[1]`="$name"~); # delete old entries first to avoid error because of double
+				&mysql_process(0,'do',qq~INSERT INTO `$db_table{$DBfile}[0]` VALUES ("$name","~ . join('","', (map { s/"/\\"/g; $_; } @$data)) . qq~","","","")~);
+			}
+		}
+	}
+
+	sub members_DB_w {
+		my ($update_DB, $name, $DBfile, $data) = @_;
+
+		if ($update_DB) { # UPDATE table(s)
+			if ($DBfile ne $memberdir."vars") { # update single colums in .vars table
+				&mysql_process(0,'do',qq~UPDATE `$db_table{$DBfile}[0]` SET `${$db_table{$DBfile}[2]}[0]`="~ . join('', map { s/"/\\"/g; $_; } @$data) . qq~" WHERE `$db_table{$DBfile}[1]`="$name"~);
+
+			} else { # update all .vars colums
+				&mysql_process(0,'do',"UPDATE `$db_user_vars_table` SET " . join(',', map { qq~`$_`="${$uid.$name}{ $db_user_vars_col{$_} }"~; } keys %db_user_vars_col) . qq~ WHERE `$db_user_vars_key`="$name"~) if $db_user_vars_table;
+				&mysql_process(0,'do',"UPDATE `$db_prefix\_vars` SET " . join(',', map { qq~`$_`="${$uid.$name}{ $_ }"~ } keys %db_vars_col) . qq~ WHERE `yabbusername`="$name"~);
+			}
+
+		} else { # INSERT table(s)
+				my @keys;
+				# INSERT new values into `$db_user_vars_table` if no key with same name exists
+				if ($db_user_vars_table && !&mysql_process(0,'selectrow_array',qq~SELECT `$db_user_vars_key` FROM `$db_user_vars_table` WHERE `$db_user_vars_key`="$name"~)) {
+					@keys = keys %db_user_vars_col;
+					&mysql_process(0,'do',"INSERT INTO `$db_user_vars_table` (`$db_user_vars_key`,`" . join('`,`', @keys) . qq~`) VALUES ("$name","~ . join('","', map { ${$uid.$name}{ $db_user_vars_col{$_} } } @keys) . '")');
+				}
+				# INSERT new values into `$db_prefix\_vars`
+				@keys = keys %db_vars_col;
+				&mysql_process(0,'do',"INSERT INTO `$db_prefix\_vars` (`yabbusername`,`" . join('`,`', @keys) . qq~`) VALUES ("$name","~ . join('","', map { ${$uid.$name}{ $_ } } @keys) . '")');
+		}
+	}
+
+	sub variables_DB_w {
+		my ($update_DB, $name, $DBfile, $data) = @_;
+
+		if ($DBfile eq $vardir."log"."txt") { # only for Variables/log.txt
+			my @temp_array = split(/\|/, $$data[0]);
+			&mysql_process(0,'do',qq~INSERT INTO `$db_user_log_table` (`$db_user_log_key`,`$db_user_log_col`) VALUES ("$name","~ . join('","', map { $temp_array[$_] } @db_user_log_array_order) . qq~")~) if $db_user_log_table;
+			&mysql_process(0,'do',qq~INSERT INTO `$db_prefix\_log` (`$db_log_col`) VALUES ("~ . join('","', map { $temp_array[$_] } @db_log_array_order) . qq~")~);
+
+		} else {
+			# to be done
+		}
+	}
+
+
+	# Do the file management (open and close) START
+	my %yyOpenMode = (
+		'+>>' => 5,
+		'+>'  => 4,
+		'+<'  => 3,
+		'>>'  => 2,
+		'>'   => 1,
+		'<'   => 0,
+		''    => 0,
+	);
+
+	# fopen: opens a file. Allows for file locking and better error-handling.
+	sub fopen ($$;$) {
+		my ($filehandle, $filename, $usetmp) = @_;
+		## make life easier - spot a file that's not closed!
+		if ($debug) {
+			my ($file, $line, $sub) = &get_caller;
+			$openfiles .= qq~\n[$file, $line, $sub]\n$filehandle (~ . sprintf("%.4f", (time - $START_TIME)) . qq~)     $filename~;
+		}
+		my ($flockCorrected, $cmdResult, $openMode, $openSig);
+
+		$serveros = "$^O";
+		if ($serveros =~ m/Win/ && substr($filename, 1, 1) eq ":") {
+			$filename =~ s~\\~\\\\~g; # Translate windows-style \ slashes to windows-style \\ escaped slashes.
+			$filename =~ s~/~\\\\~g;  # Translate unix-style / slashes to windows-style \\ escaped slashes.
+		} else {
+			$filename =~ tr~\\~/~;    # Translate windows-style \ slashes to unix-style / slashes.
+		}
+		$LOCK_EX     = 2;                 # You can probably keep this as it is set now.
+		$LOCK_UN     = 8;                 # You can probably keep this as it is set now.
+		$LOCK_SH     = 1;                 # You can probably keep this as it is set now.
+		$usetempfile = 0;                 # Write to a temporary file when updating large files.
+
+		# Check whether we want write, append, or read.
+		$filename =~ m~\A([<>+]*)(.+)~;
+		$openSig  = $1                    || '';
+		$filename = $2                    || $filename;
+		$openMode = $yyOpenMode{$openSig} || 0;
+
+		$filename =~ s~[^/\\0-9A-Za-z#%+\,\-\ \.\:@^_]~~g;    # Remove all inappropriate characters.
+
+		if ($filename =~ m~/\.\./~) { &fatal_error("cannot_open","$filename. $maintxt{'609'}"); }
+
+		# If the file doesn't exist, but a backup does, rename the backup to the filename
+		if (!-e $filename && -e "$filename.bak") { rename("$filename.bak", "$filename"); }
+		if (-z $filename && -e "$filename.bak") { rename("$filename.bak", "$filename"); }
+
+		$testfile = $filename;
+		if ($use_flock == 2 && $openMode) {
+			my $count;
+			while ($count < 15) {
+				if (-e $filehandle) { sleep 2; }
+				else { last; }
+				++$count;
+			}
+			unlink($filehandle) if ($count == 15);
+			local *LFH;
+			CORE::open(LFH, ">$filehandle");
+			$yyLckFile{$filehandle} = *LFH;
+		}
+
+		if ($use_flock && $openMode == 1 && $usetmp && $usetempfile && -e $filename) {
+			$yyTmpFile{$filehandle} = $filename;
+			$filename .= '.tmp';
+		}
+
+		if ($use_flock == 3) { # use NFSLock method for locking
+			my $lockmode = LOCK_EX; # by default do an exclusive lock on the file before opening/clobbering it
+			if ($openMode == 0) { # we're opening read-only, so a shared lock is sufficient
+				$lockmode = LOCK_SH;
+			}
+			if ($openMode > 0 && !(-e $filename)) {
+				# if we're trying to write-open a non-existing file, make sure it exists before we try to lock it using hard links
+				$cmdResult = CORE::open($filehandle, ">$filename");
+				if (!$cmdResult) {
+					return 0;
+				}
+				CORE::close($filehandle);
+			}
+			if (-e $filename) {
+				$yyLckFile{$filehandle} = File::NFSLock->new($filename,$lockmode,10,30*60);
+				if (!$yyLckFile{$filehandle}) {
+					if ($debug) { $openfiles .= qq~ [Error: $File::NFSLock::errstr] ~; }
+					#&fatal_eirror("file_lock_failed","$File::NFSLock::errstr");
+					# NOTE: we can't use the usual error subroutine as an file locking error might occure in the template subroutine, resulting in an endless loop
+					&LoadLanguage('Error');
+					$output = "$error_txt{'file_lock_failed'}: $File::NFSLock::errstr<br /><br />$openfiles";
+					&print_output_header;
+					&print_HTML_output_and_finish;
+				}
+			}
+			$cmdResult = CORE::open($filehandle, "$openSig$filename");
+			if (!$cmdResult) {
+				# free the lock if something went wrong
+			if (exists $yyLckFile{$filehandle} && $yyLckFile{$filehandle} ) {
+					$yyLckFile{$filehandle}->unlock();
+					delete $yyLckFile{$filehandle};
+				}
+				return 0;
+			}
+		} else {
+			if ($openMode > 2) {
+				if ($openMode == 5) { $cmdResult = CORE::open($filehandle, "+>>$filename"); }
+				elsif ($use_flock == 1) {
+					if ($openMode == 4) {
+						if (-e $filename) {
+
+							# We are opening for output and file locking is enabled...
+							# read-open() the file rather than write-open()ing it.
+							# This is to prevent open() from clobbering the file before
+							# checking if it is locked.
+							$flockCorrected = 1;
+							$cmdResult = CORE::open($filehandle, "+<$filename");
+						} else {
+							$cmdResult = CORE::open($filehandle, "+>$filename");
+						}
+					} else {
+						$cmdResult = CORE::open($filehandle, "+<$filename");
+					}
+				} elsif ($openMode == 4) {
+					$cmdResult = CORE::open($filehandle, "+>$filename");
+				} else {
+					$cmdResult = CORE::open($filehandle, "+<$filename");
+				}
+			} elsif ($openMode == 1 && $use_flock == 1) {
+				if (-e $filename) {
+
+					# We are opening for output and file locking is enabled...
+					# read-open() the file rather than write-open()ing it.
+					# This is to prevent open() from clobbering the file before
+					# checking if it is locked.
+					$flockCorrected = 1;
+					$cmdResult = CORE::open($filehandle, "+<$filename");
+				} else {
+					$cmdResult = CORE::open($filehandle, ">$filename");
+				}
+			} elsif ($openMode == 1) {
+				$cmdResult = CORE::open($filehandle, ">$filename");    # Open the file for writing
+			} elsif ($openMode == 2) {
+				$cmdResult = CORE::open($filehandle, ">>$filename");    # Open the file for append
+			} elsif ($openMode == 0) {
+				$cmdResult = CORE::open($filehandle, $filename);        # Open the file for input
+			}
+			unless ($cmdResult)      { return 0; }
+			if     ($flockCorrected) {
+
+				# The file was read-open()ed earlier, and we have now verified an exclusive lock.
+				# We shall now clobber it.
+				flock($filehandle, $LOCK_EX);
+				if ($faketruncation) {
+					CORE::open(OFH, ">$filename");
+					unless ($cmdResult) { return 0; }
+					print OFH '';
+					CORE::close(OFH);
+				} else {
+					truncate(*$filehandle, 0) || &fatal_error("truncation_error","$filename");
+				}
+				seek($filehandle, 0, 0);
+			} elsif ($use_flock == 1) {
+				if ($openMode) { flock($filehandle, $LOCK_EX); }
+				else { flock($filehandle, $LOCK_SH); }
+			}
+		}
+		$file_open++;
+		return 1;
+	}
+
+	# fclose: closes a file, using Windows 95/98/ME-style file locking if necessary.
+	sub fclose ($) {
+		my $filehandle = $_[0];
+		if ($debug) {
+			$openfiles .= qq~     $filehandle (~ . sprintf("%.4f", (time - $START_TIME)) . qq~)\n~;
+		}
+		CORE::close($filehandle);
+		if ($use_flock == 2) {
+			if (exists $yyLckFile{$filehandle} && -e $filehandle) {
+				CORE::close($yyLckFile{$filehandle});
+				unlink($filehandle);
+				delete $yyLckFile{$filehandle};
+			}
+		} elsif ($use_flock == 3) {
+			if (exists $yyLckFile{$filehandle} && $yyLckFile{$filehandle} ) {
+				$yyLckFile{$filehandle}->unlock();
+				delete $yyLckFile{$filehandle};
+			}
+		}
+
+		if ($yyTmpFile{$filehandle}) {
+			my $bakfile = $yyTmpFile{$filehandle};
+			if ($use_flock == 1) {
+
+				# Obtain an exclusive lock on the file.
+				# ie: wait for other processes to finish...
+				local *FH;
+				CORE::open(FH, $bakfile);
+				flock(FH, $LOCK_EX);
+				CORE::close(FH);
+			} elsif ($use_flock == 3) {
+				local *FH;
+				$yyLckFile{FH} = File::NFSLock->new($bakfile,LOCK_EX,10,30*60);
+				if (!$yyLckFile{FH}) {
+					if ($debug) { $openfiles .= qq~ [Error: $File::NFSLock::errstr] ~; }
+					# NOTE: we can't use the usual error subroutine as an file locking error might occure in the template subroutine, resulting in an endless loop
+					&LoadLanguage('Error');
+					$output = "$error_txt{'file_lock_failed'}: $File::NFSLock::errstr<br /><br />$openfiles";
+					&print_output_header;
+					&print_HTML_output_and_finish;
+				}
+				$yyLckFile{FH}->unlock();
+				delete $yyLckFile{FH};
+			}
+
+			# Switch the temporary file with the original.
+			unlink("$bakfile.bak") if -e "$bakfile.bak";
+			rename($bakfile, "$bakfile.bak");
+			rename("$bakfile.tmp", $bakfile);
+			delete $yyTmpFile{$filehandle};
+			if (-e $bakfile) {
+				unlink("$bakfile.bak");    # Delete the original file to save space.
+			}
+		}
+		$file_close++;
+		return 1;
+	}
+	# Do the file management (open and close) END
+
+
+	# Do the SQL-DB management START
+	sub mysql_process { # Module DBI is added by "use" in Variables/Settings.pl
+		my (@ary,%hash);
+
+		my ($sth,$method,@statement) = @_;
+
+		if ($debug) { $openfiles .= qq~\n(~ . sprintf("%.4f", (time - $START_TIME)) . qq~) MySQL ~; }
+
+		unless (($sth || $vari{"dbh"}) && $vari{"dbh"}->FETCH('Active')) {
+			my $socket = qq*;mysql_socket=$db_socket* if $db_socket;
+			my %attr = ( AutoCommit  => 1,
+				     HandleError => 0, # The HandleError attribute provide alternative behaviour in case of errors
+				     PrintError  => 0, # 1 => on error: warn("$class $method failed: $DBI::errstr")
+				     RaiseError  => 0, # 1 => on error:  die("$class $method failed: $DBI::errstr")
+				     );
+			$vari{"dbh"} = DBI->connect(qq*DBI:mysql:$db:$db_server:$db_port;mysql_compression=1$socket*, $db_username, $db_password, \%attr);
+
+			&fatal_error('', qq*No DBI conection:<br>DBI->connect("DBI:mysql:$db:$db_server:$db_port;mysql_compression=1$socket", $db_username, $db_password, %attr)<br>DBI::errstr:<br>* . $DBI::errstr, 1) if $DBI::errstr;
+		}
+
+		if (!$method) {
+			$vari{"dbh"}->{HandleError} = sub { &db_error($_[0]) };
+			return $vari{"dbh"};
+		} else {
+			$vari{"dbh"}->{HandleError} = 0;
+		}
+		return if !@statement;
+
+		if ($sth) {
+			@ary = $statement[0] ? $sth->$method(@statement) : $sth->$method;
+		} else {
+			@ary = $statement[0] ? $vari{"dbh"}->$method(@statement) : $vari{"dbh"}->$method;
+		}
+		unless ($vari{"dbh"}->errstr || (!$ary[0] and $method eq 'do')) {
+			if ($debug) {
+				my ($file, $line, $sub) = &get_caller;
+				$openfiles .= qq~(~ . sprintf("%.4f", (time - $START_TIME)) . qq~)\n$method(@statement)\n[$file, $line, $sub]\n~;
+			}
+			if (!$ary[0] and $method =~ /ref$/) {
+				return ($method =~ /hash/ ? \%hash : \@ary);
+			} else {
+				return (@ary > 1 ? @ary : $ary[0]);
+			}
+		}
+
+		&db_error(qq*\$method = '$method',<br>\@statement = ('* . join("','", @statement) . qq*'),<br>DBI::errstr = '* . $vari{"dbh"}->errstr . "'");
+	}
+	# Do the SQL-DB management END
+
+
+	sub db_error {
+		&fatal_error('', qq~<u>DBI::errstr:</u><br /><pre style="overflow:scroll;">$_[0]</pre>~, 1);
+	}
+
+	sub delete_DBorFILE {
+		my $file = shift;
+		if (!$use_MySQL) { return unlink($file); }
+
+		# the return value sometimes is required (0|'' or something)
+		if ($file =~ /$datadir\/([^\/]+)\.txt$/) {
+			&mysql_process(0,'do',qq~DELETE FROM `$db_prefix\_messages` WHERE `mess_threadnum`='$1'~);
+		} elsif ($file =~ /$datadir\/([^\/]+)\.mail$/) {
+			&mysql_process(0,'do',qq~UPDATE `$db_prefix\_ctb` SET `mail`='' WHERE `threadnum`="$1"~);
+		} elsif ($file =~ /$datadir\/([^\/]+)\.poll$/) {
+			&mysql_process(0,'do',qq~UPDATE `$db_prefix\_ctb` SET `poll`='' WHERE `threadnum`="$1"~);
+		} elsif ($file =~ /$datadir\/([^\/]+)\.polled$/) {
+			&mysql_process(0,'do',qq~UPDATE `$db_prefix\_ctb` SET `polled`='' WHERE `threadnum`="$1"~);
+		} elsif ($file =~ /(\d+)\.ctb$/) {
+			&mysql_process(0,'do',"DELETE FROM `$db_prefix\_ctb` WHERE `threadnum`='$1'");
+
+		} elsif ($file =~ /$memberdir\/([^\/]+)\.vars$/) {
+			&mysql_process(0,'do',qq~DELETE FROM `$db_user_vars_table` WHERE `$db_user_vars_key`="$1"~) if $db_user_vars_table;
+			&mysql_process(0,'do',qq~DELETE FROM `$db_prefix\_vars` WHERE `yabbusername`="$1"~);
+		} elsif ($file =~ /$memberdir\/([^\/]+)\.msg$/) {
+			&mysql_process(0,'do',qq~UPDATE `$db_prefix\_vars` SET `msg`='' WHERE `yabbusername`="$1"~);
+		} elsif ($file =~ /$memberdir\/([^\/]+)\.ims$/) {
+			&mysql_process(0,'do',qq~UPDATE `$db_prefix\_vars` SET `ims`='' WHERE `yabbusername`="$1"~);
+		} elsif ($file =~ /$memberdir\/([^\/]+)\.imstore$/) {
+			&mysql_process(0,'do',qq~UPDATE `$db_prefix\_vars` SET `imstore`='' WHERE `yabbusername`="$1"~);
+		} elsif ($file =~ /$memberdir\/([^\/]+)\.imdraft$/) {
+			&mysql_process(0,'do',qq~UPDATE `$db_prefix\_vars` SET `imdraft`='' WHERE `yabbusername`="$1"~);
+		} elsif ($file =~ /$memberdir\/([^\/]+)\.log$/) {
+			&mysql_process(0,'do',qq~UPDATE `$db_prefix\_vars` SET `log`='' WHERE `yabbusername`="$1"~);
+		} elsif ($file =~ /$memberdir\/([^\/]+)\.outbox$/) {
+			&mysql_process(0,'do',qq~UPDATE `$db_prefix\_vars` SET `outbox`='' WHERE `yabbusername`="$1"~);
+		} elsif ($file =~ /$memberdir\/([^\/]+)\.rlog$/) {
+			&mysql_process(0,'do',qq~UPDATE `$db_prefix\_vars` SET `rlog`='' WHERE `yabbusername`="$1"~);
+
+		#} elsif ($file =~ /\/([^\/]+)\.$/) {
+		#	&mysql_process(0,'do',qq~DELETE FROM `` WHERE ``="$1"~);
+		#}
+
+		} else {
+			return unlink($file);
+		}
+	}
+
+}
+# Block for File and SQL management END
 
 1;

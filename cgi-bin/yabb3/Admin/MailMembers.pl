@@ -15,7 +15,7 @@
 $mailmembersplver = 'YaBB 3.0 Beta $Revision: 100 $';
 if ($action eq 'detailedversion') { return 1; }
 
-if ($iamguest) { &admin_fatal_error("no_access"); }
+if ($iamguest) { &fatal_error("no_access"); }
 
 &LoadLanguage('Main');
 &LoadLanguage('MemberList');
@@ -23,7 +23,7 @@ if ($iamguest) { &admin_fatal_error("no_access"); }
 $reused = 0;
 
 sub Mailing {
-	if ($iamguest) { &admin_fatal_error("no_access"); }
+	if ($iamguest) { &fatal_error("no_access"); }
 	$yymain .= qq~
 <div style="padding: 0px; width: 99%; margin-left: 0px; margin-right: auto;">
 	<table border="0" width="100%" cellspacing="1" cellpadding="3" class="bordercolor">
@@ -137,8 +137,8 @@ sub Mailing {
 	</td>
 	</tr>~;
 
-		if (-e "$vardir/yabbaddress.csv") {
-		$yymain .= qq~
+		if (&checkfor_DBorFILE("$vardir/yabbaddress.csv")) {
+			$yymain .= qq~
 	<tr>
 	<td class="windowbg2" align="center" valign="top">
 		<input type="button" value="$amv_txt{'51'}" class="button" onclick="MailListWin('$adminurl?action=mailing3');" />
@@ -162,14 +162,11 @@ sub Mailing {
 
 	<div class="windowbg2" style="float: left; width: 50%; height: 145px; margin: 1%; border: 1px #cccccc solid; overflow: auto;">
 	~;
-		if (-e ("$vardir/maillist.dat")) {
-			fopen(FILE, "$vardir/maillist.dat");
-			@maillist = <FILE>;
-			fclose(FILE);
+		if (&checkfor_DBorFILE("$vardir/maillist.dat")) {
 			$yymain .= qq~
 		<table border="0" width="99%" cellspacing="0" cellpadding="3" align="center" class="windowbg2">
 		~;
-			foreach $curmail (@maillist) {
+			foreach my $curmail (&read_DBorFILE(0,'',$vardir,'maillist','dat')) {
 				chomp $curmail;
 				($otime, $osubject, $otext, $osender) = split(/\|/, $curmail);
 				&LoadUser($osender);
@@ -256,7 +253,7 @@ sub Mailing2 {
 	$i = 0;
 	my ($emailsubject,$emailtext);
 	foreach my $user (keys %memberinf) {
-		($memrealname, $mememail, $memposition, $memposts, $memaddgrp) = split(/\|/, $memberinf{$user}, 7);
+		(undef, $memrealname, $mememail, $memposition, $memposts, $memaddgrp, undef) = split(/\|/, $memberinf{$user}, 7);
 		&FromHTML($memrealname);
 
 		if ($FORM{'mailsend'} && $FORM{'emailtext'} ne '') {
@@ -289,12 +286,9 @@ sub Mailing2 {
 	}
 	undef %memberinf;
 	if (@convlist) {
-		fopen(ADDRESSLIST, ">$vardir/yabbaddress.csv", 1);
-		print ADDRESSLIST "Name\;E-mail Address\n";
-		print ADDRESSLIST @convlist;
-		fclose(ADDRESSLIST);
+		&write_DBorFILE(0,'',$vardir,'yabbaddress','csv',("Name\;E-mail Address\n",@convlist));
 	} elsif ($FORM{'convert'}) {
-		unlink "$vardir/yabbaddress.csv"
+		&delete_DBorFILE("$vardir/yabbaddress.csv");
 	}
 
 	$yySetLocation = qq~$adminurl?action=mailing~;
@@ -302,11 +296,8 @@ sub Mailing2 {
 }
 
 sub Mailing3 {
-	fopen(FILE, "$vardir/yabbaddress.csv");
-	@addlist = <FILE>;
-	fclose(FILE);
 	print qq~Content-disposition: inline; filename=yabbaddress.csv\n\n~;
-	foreach $curadd (@addlist) {
+	foreach $curadd (&read_DBorFILE(1,'',$vardir,'yabbaddress','csv')) {
 		chomp $curadd;
 		print qq~$curadd\n~;
 	}
@@ -323,7 +314,7 @@ sub MailingMembers {
 	if    ($INFO{'sort'}     ne "") { $sortmode = ";sort=" . $INFO{'sort'}; }
 	elsif ($FORM{'sortform'} ne "") { $sortmode = ";sort=" . $FORM{'sortform'}; }
 
-	if ($iamguest) { &admin_fatal_error("no_access"); }
+	if ($iamguest) { &fatal_error("no_access"); }
 	$yymain .= qq~
 <div style="padding: 0px; width: 99%; margin-left: 0px; margin-right: auto;">
 	<table border="0" width="100%" cellspacing="1" cellpadding="3" class="bordercolor">
@@ -359,8 +350,8 @@ sub MailingMembers {
 	%TopMembers = ();
 
 	&ManageMemberinfo("load");
-	while (($membername, $value) = each(%memberinf)) {
-		($memberrealname, undef, $memposition, $memposts) = split(/\|/, $value);
+	foreach my $membername (keys %memberinf) {
+		(undef, $memberrealname, undef, $memposition, $memposts, undef) = split(/\|/, $memberinf{$membername}, 6);
 		$pstsort    = 99999999 - $memposts;
 		$sortgroups = "";
 		$j          = 0;
@@ -403,7 +394,7 @@ sub MailingMembers {
 	while (($numshown < $memcount)) {
 		$user = $toplist[$b];
 
-		($memrealname, $mememail, $memposition, $memposts) = split(/\|/, $memberinf{$user});
+		(undef, $memrealname, $mememail, $memposition, $memposts, undef) = split(/\|/, $memberinf{$user}, 6);
 
 		if ($user eq $username) { $bagcolor = "windowbg2"; }
 		else { $bagcolor = "windowbg"; }
@@ -412,7 +403,7 @@ sub MailingMembers {
 			$addel = qq~<input type="checkbox" name="member$actualnum" value="$user" class="windowbg" style="border: 0;" />~;
 			$actualnum++;
 
-			my $memberinfo = "$memposition";
+			my $memberinfo = $memposition;
 			if ($memberinfo eq "Administrator") {
 				($memberinfo, undef) = split(/\|/, $Group{"Administrator"}, 2);
 			} elsif ($memberinfo eq "Global Moderator") {
@@ -543,14 +534,11 @@ sub MailingMembers {
 
 	<div class="windowbg2" style="float: left; width: 50%; height: 115px; margin: 1%; border: 1px #cccccc solid; overflow: auto;">
 	~;
-		if (-e ("$vardir/maillist.dat")) {
-			fopen(FILE, "$vardir/maillist.dat");
-			@maillist = <FILE>;
-			fclose(FILE);
+		if (&checkfor_DBorFILE("$vardir/maillist.dat")) {
 			$yymain .= qq~
 		<table border="0" width="99%" cellspacing="0" cellpadding="3" class="windowbg2">
 		~;
-			foreach $curmail (@maillist) {
+			foreach my $curmail (&read_DBorFILE(0,'',$vardir,'maillist','dat')) {
 				chomp $curmail;
 				($otime, $osubject, $otext, $osender) = split(/\|/, $curmail);
 				&LoadUser($osender);

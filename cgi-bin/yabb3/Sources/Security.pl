@@ -34,13 +34,13 @@ if ($INFO{'thread'} =~ m~/~) { ($INFO{'thread'}, $INFO{'start'}) = split('/', $I
 $curnum = $INFO{'num'} || $INFO{'thread'} || $FORM{'threadid'};
 if ($curnum ne '') {
 	if ($curnum =~ /\D/) { &fatal_error("only_numbers_allowed","Thread ID: '$curnum'"); }
-	if (!-e "$datadir/$curnum.txt") {
+	if (!&checkfor_DBorFILE("$datadir/$curnum.txt")) {
 		eval { require "$datadir/movedthreads.cgi" };
 		&fatal_error("not_found","$datadir/$curnum.txt") if !$moved_file{$curnum};
 		while (exists $moved_file{$curnum}) {
 			$curnum = $moved_file{$curnum};
 			next if exists $moved_file{$curnum};
-			if (!-e "$datadir/$curnum.txt") { &fatal_error("not_found","$datadir/$curnum.txt"); }
+			if (!&checkfor_DBorFILE("$datadir/$curnum.txt")) { &fatal_error("not_found","$datadir/$curnum.txt"); }
 		}
 		$INFO{'num'} = $INFO{'thread'} = $FORM{'threadid'} = $curnum;
 	}
@@ -53,7 +53,7 @@ if ($curnum ne '') {
 
 if ($currentboard ne '') {
 	if ($currentboard !~ /\A[\s0-9A-Za-z#%+,-\.:=?@^_]+\Z/) { &fatal_error("invalid_character","$maintxt{'board'}"); }
-	if (!-e "$boardsdir/$currentboard.txt") { &fatal_error("cannot_open","$boardsdir/$currentboard.txt"); }
+	if (!&checkfor_DBorFILE("$boardsdir/$currentboard.txt")) { &fatal_error("cannot_open","$boardsdir/$currentboard.txt"); }
 	($boardname, $boardperms, $boardview) = split(/\|/, $board{"$currentboard"});
 	my $access = &AccessCheck($currentboard, '', $boardperms);
 	if (!$iamadmin && $access ne "granted" && $boardview != 1) { &fatal_error("no_access"); }
@@ -97,11 +97,9 @@ if ($currentboard ne '') {
 		if ($access ne "granted") { &fatal_error("no_access"); }
 	}
 
-	fopen(BOARDFILE, "$boardsdir/$currentboard.txt") || &fatal_error("not_found","$boardsdir/$currentboard.txt", 1);
-	while ($yyThreadLine = <BOARDFILE>) {
-		if ($yyThreadLine =~ m~\A$curnum\|~o) { last; }
+	foreach (&read_DBorFILE(0,'',$boardsdir,$currentboard,'txt')) {
+		if ($_ =~ m~\A$curnum\|~o) { $yyThreadLine = $_; last; }
 	}
-	fclose(BOARDFILE);
 	chomp $yyThreadLine;
 
 } else {
@@ -152,10 +150,8 @@ sub banning {
 	}
 
 	sub write_banlog {
-		&admin_fatal_error("banned","$register_txt{'678'}$register_txt{'430'}!") if $admincheck;
-		fopen(LOG, ">>$vardir/ban_log.txt");
-		print LOG "$date|$_[0]\n";
-		fclose(LOG);
+		&fatal_error("banned","$register_txt{'678'}$register_txt{'430'}!") if $admincheck;
+		&write_DBorFILE(0,LOG,$vardir,'ban_log','txt',(&read_DBorFILE(0,LOG,$vardir,'ban_log','txt'),"$date|$_[0]\n"));
 		&UpdateCookie("delete", $ban_user);
 		$username = "Guest";
 		$iamguest = 1;
@@ -190,18 +186,11 @@ sub check_banlist {
 
 sub CheckIcon {
 	# Check the icon so HTML cannot be exploited.
-	# Do it in 3 unless's because 1 is too long.
 	$icon =~ s~\Ahttp://.*\/(.*?)\..*?\Z~$1~;
 	$icon =~ s~[^A-Za-z]~~g;
 	$icon =~ s~\\~~g;
 	$icon =~ s~\/~~g;
-	unless ($icon eq "xx" || $icon eq "thumbup" || $icon eq "thumbdown" || $icon eq "exclamation") {
-		unless ($icon eq "question" || $icon eq "lamp" || $icon eq "smiley" || $icon eq "angry") {
-			unless ($icon eq "cheesy" || $icon eq "grin" || $icon eq "sad" || $icon eq "wink") {
-				$icon = "xx";
-			}
-		}
-	}
+	$icon = "xx" if $icon !~ /^(xx|thumbup|thumbdown|exclamation|no_postcount|question|lamp|smiley|angry|cheesy|grin|sadwink)$/;
 }
 
 sub AccessCheck {
@@ -320,7 +309,7 @@ sub email_domain_check {
 	### Based upon Distilled Email Domains mod by AstroPilot ###
 	my $checkdomain = $_[0];
 	if ($checkdomain) {
-		if (-e "$vardir/email_domain_filter.txt" ) { require "$vardir/email_domain_filter.txt"; }
+		if (&checkfor_DBorFILE("$vardir/email_domain_filter.txt")) { require "$vardir/email_domain_filter.txt"; }
 		if ($bdomains) {
 			foreach (split (/,/, $bdomains)) {
 				if ($_ !~ /\@/) {$_ = "\@$_";}

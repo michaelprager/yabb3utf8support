@@ -44,7 +44,7 @@ if ($action eq 'detailedversion') { return 1; }
 #6	@folders  (name1|name2|name3)
 
 # MF-B: new .ims file format
-#	### UserIMS YaBB 2.2 Version ###
+#	### YaBB UserIMS ###
 #	'${$username}{'PMmnum'}',"value"
 #	'${$username}{'PMimnewcount'}',"value"
 #	'${$username}{'PMmoutnum'}',"value"
@@ -73,11 +73,8 @@ sub buildIMsend {
 	$mctitle = $inmes_txt{'775'};
 	## check for a draft being opened
 	if ($INFO{'caller'} == 4 && $INFO{'id'}) {
-		if (!-e "$memberdir/$username.imdraft") { &fatal_error('cannot_open', "$username.imdraft");}
-		fopen(DRAFT, "$memberdir/$username.imdraft");
-		my @draftPM = <DRAFT>;
-		fclose(DRAFT);
-		chomp @draftPM;
+		my @draftPM = &read_DBorFILE(0,'',$memberdir,$username,'imdraft');
+		chomp(@draftPM);
 		my $flagfound;
 		foreach my $draftMess (@draftPM) {
 			my ($checkId, undef) = split(/\|/, $draftMess, 2);
@@ -106,10 +103,10 @@ sub buildIMsend {
 	elsif ($thestatus eq 'sb') { $stselect = qq~ selected="selected"~; $sendBMess = 1; }
 	elsif ($thestatus eq 'ub') { $urselect = qq~ selected="selected"~; $sendBMess = 1; }
 	elsif ($thestatus eq 'cb') { $cnselect = qq~ selected="selected"~; $sendBMess = 1; }
-	$sendBMess = 0 unless $sendBMess == 1 && (($PMenableBm_level == 1 && ($iamadmin || $iamgmod || $iammod)) || ($PMenableBm_level == 2 && ($iamadmin || $iamgmod)) || ($PMenableBm_level == 3 && $iamadmin));
+	$sendBMess = 0 unless $sendBMess == 1 && (($PMenableBm_level == 1 && $staff) || ($PMenableBm_level == 2 && ($iamadmin || $iamgmod)) || ($PMenableBm_level == 3 && $iamadmin));
 
 	##########   post code   #########
-	if (!$iamadmin && !$iamgmod && !$staff && ${$uid.$username}{'postcount'} < $numposts) {
+	if (!$staff && ${$uid.$username}{'postcount'} < $numposts) {
 		&fatal_error('im_low_postcount');
 	}
 
@@ -805,111 +802,7 @@ sub buildIMsend {
 		var olddragwidth = parseInt(document.getElementById('dragbgh').style.width) - $jsdragwpos;
 		var oldheight = parseInt(document.getElementById('message').style.height) - $jsdraghpos;
 		var olddragheight = parseInt(document.getElementById('dragbgw').style.height) - $jsdraghpos;
-
-		var skydobject={
-		x: 0, y: 0, temp2 : null, temp3 : null, targetobj : null, skydNu : 0, delEnh : 0,
-
-		initialize:function() {
-			document.onmousedown = this.skydeKnap
-			document.onmouseup=function(){
-				this.skydNu = 0;
-				document.getElementById('messagewidth').value = parseInt(document.getElementById('message').style.width);
-				document.getElementById('messageheight').value = parseInt(document.getElementById('message').style.height);
-			}
-		},
-		changeSize:function(deleEnh, knapId) {
-			if (knapId == "dragImg1") {
-				newwidth = oldwidth+parseInt(deleEnh);
-				newdragwidth = olddragwidth+parseInt(deleEnh);
-				document.getElementById('message').style.width = newwidth+'px';
-				document.getElementById('dragbgh').style.width = newdragwidth+'px';
-				document.getElementById('dragImg2').style.width = newdragwidth+'px';
-			}
-			if (knapId == "dragImg2") {
-				newheight = oldheight+parseInt(deleEnh);
-				newdragheight = olddragheight+parseInt(deleEnh);
-				document.getElementById('message').style.height = newheight+'px';
-				document.getElementById('dragbgw').style.height = newdragheight+'px';
-				document.getElementById('dragImg1').style.height = newdragheight+'px';
-				document.getElementById('dragcanvas').style.height = newdragheight+'px';
-			}
-		},
-
-		flytKnap:function(e) {
-			var evtobj = window.event ? window.event : e
-			if (this.skydNu == 1) {
-				sizestop = f_clientWidth()
-				maxstop = parseInt(((sizestop*66)/100)-427)
-				if(maxstop > 413) maxstop = 413
-				if(maxstop < 60) maxstop = 60
-
-				glX = parseInt(this.targetobj.style.left)
-				this.targetobj.style.left = this.temp2 + evtobj.clientX - this.x + "px"
-				nyX = parseInt(this.temp2 + evtobj.clientX - this.x)
-				if (nyX > glX) retning = "vn"; else retning = "hj";
-				if (nyX < 1 && retning == "hj") { this.targetobj.style.left = 0 + "px"; nyX = 0; retning = "vn"; }
-				if (nyX > maxstop && retning == "vn") { this.targetobj.style.left = maxstop + "px"; nyX = maxstop; retning = "hj"; }
-				delEnh = parseInt(nyX)
-				var knapObj = this.targetobj.id
-				skydobject.changeSize(delEnh, knapObj)
-				return false
-			}
-			if (this.skydNu == 2) {
-				glY = parseInt(this.targetobj.style.top)
-				this.targetobj.style.top = this.temp3 + evtobj.clientY - this.y + "px"
-				nyY = parseInt(this.temp3 + evtobj.clientY - this.y)
-				if (nyY > glY) retning = "vn"; else retning = "hj";
-				if (nyY < 1 && retning == "hj") { this.targetobj.style.top = 0 + "px"; nyY = 0; retning = "vn"; }
-				if (nyY > 270 && retning == "vn") { this.targetobj.style.top = 270 + "px"; nyY = 270; retning = "hj"; }
-				delEnh = parseInt(nyY)
-				var knapObj = this.targetobj.id
-				skydobject.changeSize(delEnh, knapObj)
-				return false
-			}
-		},
-		skydeKnap:function(e) {
-			var evtobj = window.event ? window.event : e
-			this.targetobj = window.event ? event.srcElement : e.target
-			if (this.targetobj.className == "drag") {
-				if(this.targetobj.id == "dragImg1") this.skydNu = 1
-				if(this.targetobj.id == "dragImg2") this.skydNu = 2
-				this.knapObj = this.targetobj
-				if (isNaN(parseInt(this.targetobj.style.left))) this.targetobj.style.left = 0
-				if (isNaN(parseInt(this.targetobj.style.top))) this.targetobj.style.top = 0
-				this.temp2 = parseInt(this.targetobj.style.left)
-				this.temp3 = parseInt(this.targetobj.style.top)
-				this.x = evtobj.clientX
-				this.y = evtobj.clientY
-				if (evtobj.preventDefault) evtobj.preventDefault()
-				document.onmousemove = skydobject.flytKnap
-			}
-		}
-		} // End of: var skydobject={
-
-		function f_clientWidth() {
-			return f_filterResults (
-				window.innerWidth ? window.innerWidth : 0,
-				document.documentElement ? document.documentElement.clientWidth : 0,
-				document.body ? document.body.clientWidth : 0
-			);
-		}
-
-		function f_filterResults(n_win, n_docel, n_body) {
-			var n_result = n_win ? n_win : 0;
-			if (n_docel && (!n_result || (n_result > n_docel))) n_result = n_docel;
-			return n_body && (!n_result || (n_result > n_body)) ? n_body : n_result;
-		}
-
 		var orgsize = $textsize;
-
-		function sizetext(sizefact) {
-			orgsize = orgsize + sizefact;
-			if(orgsize < 6) orgsize = 6;
-			if(orgsize > 16) orgsize = 16;
-			document.getElementById('message').style.fontSize = orgsize+'pt';
-			document.getElementById('txtsize').value = orgsize;
-		}
-
 		skydobject.initialize()
 		//-->
 		</script>
@@ -1355,12 +1248,6 @@ var GB_ROOT_DIR = "$yyhtml_root/greybox/";
 		</td>
 	</tr>\n~;
 
-	if ($action eq 'modify' || $action eq 'modify2') {
-		$displayname = $mename;
-	} else {
-		$displayname = ${$uid.$username}{'realname'};
-	}
-
 	require "$templatesdir/$usedisplay/Display.template";
 
 	foreach (@months) { $jsmonths .= qq~'$_',~; }
@@ -1385,7 +1272,7 @@ sub IMsendMessage {
 	##  sorry - no guests
 	if ($iamguest) { &fatal_error("im_members_only"); }
 
-	my (@ignore, $igname, $messageid, $subject, $message, @recipient, $ignored, $memnums);
+	my (@ignore, $igname, $messageid, $subject, $message, @recipient, $ignored);
 	$isBMess = $FORM{'isBMess'};
 
 	# set size of messagebox and text
@@ -1441,21 +1328,10 @@ sub IMsendMessage {
 		return;
 	}
 
-	undef @multiple;
-	fopen(MEMLIST, "$memberdir/memberlist.txt");
-	my @memberlist = <MEMLIST>;
-	my $allmems = @memberlist;
-	fclose(MEMLIST);
-
 	&ProcIMrecs;
 
-	$memnums = $#multiple + 1;
-	## no need to check for spam if its a broadcast, as this only creates the one post
-	if ($imspam ne "off" && !$isBMess) {
-		$checkspam = 100 / $allmems * $memnums;
-		if ($memnums == 1) { $checkspam = 0; }
-		if ($checkspam > $imspam && !$iamadmin) { &fatal_error("im_spam_alert"); }
-	}
+	# no need to check for spam if its a broadcast, as this only creates the one post
+	if (!$iamadmin && !$isBMess && $imspam && @allto * 100 / $members_total > $imspam) { &fatal_error("im_spam_alert"); }
 
 	# go through each member in list
 	# add to each msg (inbox) but only one to outbox
@@ -1509,7 +1385,7 @@ sub IMsendMessage {
 				}
 			} else { $sendAutoReply = 0; }
 
-			if (!-e ("$memberdir/$UserTo.vars")) { 
+			if (!&checkfor_DBorFILE("$memberdir/$UserTo.vars")) { 
 				# adds invalid user's name to array which error list will be built from later
 				push(@nouser, $UserTo);
 				$ignored = 1;
@@ -1517,26 +1393,17 @@ sub IMsendMessage {
 
 			if (!$ignored) {
 				# Send message to user
-				fopen(INBOX, "$memberdir/$UserTo.msg");
-				my @inmessages = <INBOX>;
-				fclose(INBOX);
-				fopen(INBOX, ">$memberdir/$UserTo.msg");
-				print INBOX "$messageid|$username|$FORM{'toshow'}|$FORM{'toshowcc'}|$FORM{'toshowbcc'}|$subject|$date|$message|$messageid|0|$ENV{'REMOTE_ADDR'}|$FORM{'status'}|u||\n";	
-				print INBOX @inmessages;
-				fclose(INBOX);
+				my @inmessages = &read_DBorFILE(0,'',$memberdir,$UserTo,'msg');
+				&write_DBorFILE(${$uid.$UserTo}{'mysql'},'',$memberdir,$UserTo,'msg',("$messageid|$username|$FORM{'toshow'}|$FORM{'toshowcc'}|$FORM{'toshowbcc'}|$subject|$date|$message|$messageid|0|$ENV{'REMOTE_ADDR'}|$FORM{'status'}|u||\n", @inmessages));
 
 				# we've added the msg to the inbox, now update the ims file
 				&updateIMS($UserTo, $messageid, 'messagein');
 				## if we need to drop the 'away' reply in....
 				if ($sendAutoReply) {
 					my $rmessageid = &getnewid;
-					fopen(INBOX, "$memberdir/$username.msg");
-					my @myinmessages = <INBOX>;
-					fclose(INBOX);
-					fopen(INBOX, ">$memberdir/$username.msg");
-					print INBOX "$rmessageid|$UserTo|$username|||${$uid.$UserTo}{'awaysubj'}|$date|${$uid.$UserTo}{'awayreply'}|$messageid|1|$ENV{'REMOTE_ADDR'}|s|u||\n";
-					print INBOX @myinmessages;
-					fclose(INBOX);
+
+					@inmessages = &read_DBorFILE(0,'',$memberdir,$username,'msg');
+					&write_DBorFILE(${$uid.$username}{'mysql'},'',$memberdir,$username,'msg',("$rmessageid|$UserTo|$username|||${$uid.$UserTo}{'awaysubj'}|$date|${$uid.$UserTo}{'awayreply'}|$messageid|1|$ENV{'REMOTE_ADDR'}|s|u||\n", @inmessages));
 				}
 				## relocated sender's msg out of the loop
 
@@ -1570,7 +1437,7 @@ sub IMsendMessage {
 			my $badusers;
 			foreach my $baduser (@nouser) {
 				&LoadUser($baduser);
-				$badusers .= qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$baduser}">${$uid.$baduser}{'realname'}</a>, ~;
+				$badusers .= qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$baduser}" rel="nofollow">${$uid.$baduser}{'realname'}</a>, ~;
 			}
 			$badusers =~ s/, \Z//;
 			&fatal_error('im_bad_users', $badusers);
@@ -1579,13 +1446,7 @@ sub IMsendMessage {
 
 	##  moved sender's reply marker here, open the sender's inbox and mark 'replied'
 	if (!$FORM{'draft'} && $isBMess) {
-		fopen(INBOX, "$memberdir/broadcast.messages");
-		my @inmessages = <INBOX>;
-		fclose(INBOX);
-		fopen(INBOX, ">$memberdir/broadcast.messages");
-		print INBOX "$messageid|$username|$FORM{'toshow'}|||$subject|$date|$message|$messageid|0|$ENV{'REMOTE_ADDR'}|$FORM{'status'}b|u||\n";
-		print INBOX @inmessages;
-		fclose(INBOX);
+		&write_DBorFILE(0,'',$memberdir,'broadcast','messages',("$messageid|$username|$FORM{'toshow'}|||$subject|$date|$message|$messageid|0|$ENV{'REMOTE_ADDR'}|$FORM{'status'}b|u||\n",&read_DBorFILE(1,'',$memberdir,'broadcast','messages')));
 	}
 
 	if ($FORM{'reply'} && $FORM{'info'}) { # mark msg replied
@@ -1595,12 +1456,9 @@ sub IMsendMessage {
 	## this now outside the foreach, to allow just one write in the outbox
 	# Add message to outbox, read outbox
 
-	@outmessages = ();
 	my $savetofile = 'outbox';
 	if ($FORM{'draft'}) { $savetofile = 'imdraft'; }
-	fopen(OUTBOX, "$memberdir/$username.$savetofile");
-	@outmessages = <OUTBOX>;
-	fclose(OUTBOX);
+	@outmessages = &read_DBorFILE(0,'',$memberdir,$username,$savetofile);
 
 	# add the PM to the outbox
 	# the sep users now live together
@@ -1635,24 +1493,22 @@ sub IMsendMessage {
 	}
 
 	if (!$FORM{'dontstoreinoutbox'} || $FORM{'draft'}) {
-		fopen(OUTBOX, "+>$memberdir/$username.$savetofile") || &fatal_error('cannot_open',"+>$memberdir/$username.$savetofile",1);
 		## all but drafts being resaved just get added to their file
 		if (!$FORM{'draft'} || ($FORM{'draft'} && !$FORM{'draftid'})) {
-			print OUTBOX "$messageid|$username|$FORM{'toshow'}|$FORM{'toshowcc'}|$FORM{'toshowbcc'}|$subject|$date|$message|$messageid|$FORM{'reply'}|$ENV{'REMOTE_ADDR'}|$FORM{'status'}$messFlag|||\n";
-			print OUTBOX @outmessages;
+			&write_DBorFILE(${$uid.$username}{'mysql'},'',$memberdir,$username,$savetofile,("$messageid|$username|$FORM{'toshow'}|$FORM{'toshowcc'}|$FORM{'toshowbcc'}|$subject|$date|$message|$messageid|$FORM{'reply'}|$ENV{'REMOTE_ADDR'}|$FORM{'status'}$messFlag|||\n",@outmessages));
 
 		} elsif ($FORM{'draft'} && $FORM{'draftid'}) {
 			## resaving draft - find draft message id and amend the entry
-			foreach my $outmessage (@outmessages) {
-				chomp $outmessage;
-				if ((split /\|/, $outmessage)[0] != $FORM{'draftid'}) {
-					print OUTBOX "$outmessage\n";
+			my @new_outmessages;
+			foreach (@outmessages) {
+				if ((split /\|/, $_, 2)[0] != $FORM{'draftid'}) {
+					push(@new_outmessages, $_);
 				} else {
-					print OUTBOX "$messageid|$username|$FORM{'toshow'}|$FORM{'toshowcc'}|$FORM{'toshowbcc'}|$subject|$date|$message|$messageid|$FORM{'reply'}|$ENV{'REMOTE_ADDR'}|$FORM{'status'}$messFlag|||\n";
+					push(@new_outmessages, "$messageid|$username|$FORM{'toshow'}|$FORM{'toshowcc'}|$FORM{'toshowbcc'}|$subject|$date|$message|$messageid|$FORM{'reply'}|$ENV{'REMOTE_ADDR'}|$FORM{'status'}$messFlag|||\n");
 				}
 			}
+			&write_DBorFILE(${$uid.$username}{'mysql'},'',$memberdir,$username,$savetofile,@new_outmessages);
 		}
-		fclose(OUTBOX);
 
 		## pdate ims for sent
 		if (!$FORM{'draft'}) { &updateIMS($username, $messageid, 'messageout'); }
@@ -1662,20 +1518,16 @@ sub IMsendMessage {
 	## if this is a draft being sent, remove it from the draft file
 	if ($FORM{'draftid'} && $FORM{'draft'} ne $inmes_txt{'savedraft'}) {
 		&updateIMS($username, $messageid, 'draftsend');
-		fopen(DRAFTFILE, "$memberdir/$username.imdraft");
-		my @draftPM = <DRAFTFILE>;
-		fclose(DRAFTFILE);
-		fopen(DRAFTFILE, ">$memberdir/$username.imdraft");
-		seek DRAFTFILE,0,0;
-		foreach my $draftmess (@draftPM) {
+		my @draftPM;
+		foreach my $draftmess (&read_DBorFILE(0,'',$memberdir,$username,'imdraft')) {
 			chomp $draftmess; 
 			if ((split /\|/, $draftmess)[0] != $FORM{'draftid'}) {
-				print DRAFTFILE "$draftmess\n";
+				push(@draftPM, "$draftmess\n");
 			} elsif ($FORM{'draftleave'}) {
-				print DRAFTFILE "$messageid|$username|$FORM{'toshow'}|$FORM{'toshowcc'}|$FORM{'toshowbcc'}|$subject|$date|$message|$messageid|$FORM{'reply'}|$ENV{'REMOTE_ADDR'}|$FORM{'status'}$messFlag|||\n";
+				push(@draftPM, "$messageid|$username|$FORM{'toshow'}|$FORM{'toshowcc'}|$FORM{'toshowbcc'}|$subject|$date|$message|$messageid|$FORM{'reply'}|$ENV{'REMOTE_ADDR'}|$FORM{'status'}$messFlag|||\n");
 			}
 		}
-		fclose(DRAFTFILE);
+		&write_DBorFILE(${$uid.$username}{'mysql'},'',$memberdir,$username,'imdraft',@draftPM);
 	}
 	# invalid users 
 	#if there were invalid usernames in the recipient list, these names are listed after all valid users have been IMed
@@ -1684,7 +1536,7 @@ sub IMsendMessage {
 			my $badusers;
 			foreach my $baduser (@nouser) {
 				&LoadUser($baduser);
-				$badusers .= qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$baduser}">${$uid.$baduser}{'realname'}</a>, ~;
+				$badusers .= qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$baduser}" rel="nofollow">${$uid.$baduser}{'realname'}</a>, ~;
 			}
 			$badusers =~ s/, \Z//;
 			&fatal_error('im_bad_users', $badusers);
@@ -1692,8 +1544,8 @@ sub IMsendMessage {
 	}
 
 	## saving a draft doesn't count as sending
-	if (!$FORM{'draft'}) { &UserAccount($username, 'update', 'lastim'); }
-	&UserAccount($username, 'update', 'lastonline');
+	if (!$FORM{'draft'}) { &UserAccount($username, 'update', 'lastim+lastonline'); }
+	else { &UserAccount($username, 'update', 'lastonline'); }
 
 	if ($INFO{'popup'}) {
 		print "Content-type: text/plain\n\n";
@@ -1713,48 +1565,42 @@ sub ProcIMrecs {
 	$FORM{'toshow'} =~ s/ //g;
 
 	if (!$isBMess) {
+		my $multiUser;
 		my $countMulti = 0;
-		@multiple = split(/\,/, $FORM{'toshow'});
-		foreach my $multiUser (@multiple) {
-			if ($do_scramble_id) { $multiple[$countMulti] = &decloak($multiUser); }
-			$countMulti++ ;
+		@multiple = split(/,/, $FORM{'toshow'});
+		if ($do_scramble_id) {
+			foreach $multiUser (@multiple) {
+				$multiple[$countMulti] = &decloak($multiUser);
+				$countMulti++;
+			}
 		}
-		$toshowList = join(',', @multiple);
-		$toshowList = qq~to:$toshowList~;
-		$toshowList =~ s/,/,to:/g; 
-		push(@allto, split(/\,/,$toshowList));
+		push(@allto, split(/,/, ("to:" . join(',to:', @multiple))));
 		$FORM{'toshow'} = join(',', @multiple);
 		$FORM{'toshowcc'} =~ s/ //g;
 		$FORM{'toshowbcc'} =~ s/ //g;
 
 		if ($FORM{'toshowcc'}) {
-			my $countMulti = 0;
-			@multiplecc = split(/\,/, $FORM{'toshowcc'});
-			foreach my $multiUser (@multiplecc) {
-				$multiUser =~ s/ //g;
-				if ($do_scramble_id) { $multiplecc[$countMulti] = &decloak($multiUser); }
-				else { $multiplecc[$countMulti] = $multiUser; }
-				$countMulti++ ;
+			@multiplecc = split(/,/, $FORM{'toshowcc'});
+			if ($do_scramble_id) {
+				$countMulti = 0;
+				foreach $multiUser (@multiplecc) {
+					$multiplecc[$countMulti] = &decloak($multiUser);
+					$countMulti++;
+				}
 			}
-			$toshowccList = join(',', @multiplecc);
-			$toshowccList = qq~cc:$toshowccList~;
-			$toshowccList =~ s/,/,cc:/g; 
-			push(@allto, split(/\,/,$toshowccList));
+			push(@allto, split(/,/, ("cc:" . join(',cc:', @multiplecc))));
 			$FORM{'toshowcc'} = join(',', @multiplecc);
 		}
 		if ($FORM{'toshowbcc'}) {
-			my $countMulti = 0;
-			@multiplebcc = split(/\,/, $FORM{'toshowbcc'});
-			foreach my $multiUser (@multiplebcc) {
-				$multiUser =~ s/ //g;
-				if ($do_scramble_id) { $multiplebcc[$countMulti] = &decloak($multiUser); }
-				else{$multiplebcc[$countMulti] = $multiUser;}
-				$countMulti++ ;
+			@multiplebcc = split(/,/, $FORM{'toshowbcc'});
+			if ($do_scramble_id) {
+				$countMulti = 0;
+				foreach $multiUser (@multiplebcc) {
+					$multiplebcc[$countMulti] = &decloak($multiUser);
+					$countMulti++;
+				}
 			}
-			$toshowbccList = join(',', @multiplebcc);
-			$toshowbccList = qq~bcc:$toshowbccList~;
-			$toshowbccList =~ s/,/,bcc:/g;
-			push(@allto, split(/\,/,$toshowbccList));
+			push(@allto, split(/,/, ("bcc:" . join(',bcc:', @multiplebcc))));
 			$FORM{'toshowbcc'} = join(',', @multiplebcc);
 		}
 	}
@@ -1796,11 +1642,11 @@ sub pageLinksList {
 	else { $endpage = $max; }
 	$lastpn = int($#tempim / $maxmessagedisplay) + 1;
 	$lastptn = ($lastpn - 1) * $maxmessagedisplay;
-	$pageindex1 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.gif" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" style="vertical-align: middle;" /> $display_txt{'139'}: $pagenumb</span>~;
+	$pageindex1 = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;"><img src="$imagesdir/index_togl.png" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" style="vertical-align: middle;" /> $display_txt{'139'}: $pagenumb</span>~;
 	if ($pagenumb > 1 || $all) {
 		if ($userthreadpage == 1 ) {
 			$pagetxtindexst = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;">~;
-			$pagetxtindexst .= qq~<a href="$scripturl?pmaction=$action$bmesslink;start=$start;action=pmpagetext$viewfolderinfo"><img src="$imagesdir/index_togl.gif" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" style="vertical-align: middle;" /></a> $display_txt{'139'}: ~; 
+			$pagetxtindexst .= qq~<a href="$scripturl?pmaction=$action$bmesslink;start=$start;action=pmpagetext$viewfolderinfo"><img src="$imagesdir/index_togl.png" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" style="vertical-align: middle;" /></a> $display_txt{'139'}: ~; 
 			if ($startpage > 0) { $pagetxtindex = qq~<a href="$scripturl?action=$action$bmesslink/0$viewfolderinfo" style="font-weight: normal;">1</a>&nbsp;...&nbsp;~; }
 			if ($startpage == $maxmessagedisplay) { $pagetxtindex = qq~<a href="$scripturl?action=$action$bmesslink;start=0$viewfolderinfo" style="font-weight: normal;">1</a>&nbsp;~; }
 			for ($counter = $startpage; $counter < $endpage; $counter += $maxmessagedisplay) {
@@ -1814,7 +1660,7 @@ sub pageLinksList {
 			$pageindex2 = $pageindex1;
 		} else {
 			$pagedropindex1 = qq~<span style="float: left; width: 350px; margin: 0px; margin-top: 2px; border: 0px;">~;
-			$pagedropindex1 .= qq~<span style="float: left; height: 21px; margin: 0; margin-right: 4px;"><a href="$scripturl?pmaction=$action$bmesslink;start=$start;action=pmpagedrop$viewfolderinfo"><img src="$imagesdir/index_togl.gif" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" /></a></span>~;
+			$pagedropindex1 .= qq~<span style="float: left; height: 21px; margin: 0; margin-right: 4px;"><a href="$scripturl?pmaction=$action$bmesslink;start=$start;action=pmpagedrop$viewfolderinfo"><img src="$imagesdir/index_togl.png" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" /></a></span>~;
 			$pagedropindex2 = $pagedropindex1;
 			$tstart = $start;
 			if (substr($INFO{'start'}, 0, 3) eq "all") { ($tstart, $start) = split(/\-/, $INFO{'start'}); }

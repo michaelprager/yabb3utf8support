@@ -9,7 +9,7 @@
 # Packaged:       October 05, 2010                                            #
 # Distributed by: http://www.yabbforum.com                                    #
 # =========================================================================== #
-# Copyright (c) 2000-2011 YaBB (www.yabbforum.com) - All Rights Reserved.     #
+# Copyright (c) 2000-2010 YaBB (www.yabbforum.com) - All Rights Reserved.     #
 # Software by:  The YaBB Development Team                                     #
 #               with assistance from the YaBB community.                      #
 ###############################################################################
@@ -117,7 +117,7 @@ if (-e "$vardir/Setup.lock") {
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -125,19 +125,19 @@ if (-e "$vardir/Setup.lock") {
 			<img src="$imagesdir/thread.gif" alt="" />
 			</td>
 			<td class="windowbg2" align="left" style="font-size: 11px;">
-			Make sure your YaBB 3 installation is running and that it has all the correct folder paths and URLs.<br />
-			Proceed through the following steps to convert your YaBB 1 Gold - SP 1.x forum to YaBB 3!<br /><br />
-			<b>If</b> your YaBB 1 Gold - SP 1.x forum is located on the same server as your YaBB 3 installation:
+			Make sure your YaBB 2 installation is running and that it has all the correct folder paths and URLs.<br />
+			Proceed through the following steps to convert your YaBB 1 Gold - SP 1.x forum to YaBB 2!<br /><br />
+			<b>If</b> your YaBB 1 Gold - SP 1.x forum is located on the same server as your YaBB 2 installation:
 			<ol>
 			<li>Insert the path to your YaBB 1 Gold - SP 1.x forum in the input field below</li>
 			<li>Click on the 'Continue' button</li>
 			</ol>
-			<b>Else</b> if your YaBB 1 Gold - SP 1.x forum is located on a different server than your YaBB 3 installation or if you dont know the path to your SP 1.x forum:
+			<b>Else</b> if your YaBB 1 Gold - SP 1.x forum is located on a different server than your YaBB 2 installation or if you dont know the path to your SP 1.x forum:
 			<ol>
 			<li>Copy all files in the /Boards, /Members, and /Messages folders from your YaBB 1 Gold - SP 1.x installation, to the corresponding Convert/Boards,
-			Convert/Members, and Convert/Messages folders of your YaBB 3 installation, and chmod them 777.</li>
-			<li>Copy cat.txt from the /Variables folder of your YaBB 1 Gold - SP 1.x installation to the Convert/Variables folder of your YaBB 3 installation, and chmod it 666.</li>
-			<li>If you have 'Add More Membergroups' installed on your YaBB 1 Gold - SP 1.x, copy MemberStats.txt from the /Variables folder of your YaBB 1 Gold - SP 1.x installation to the Convert/Variables folder of your YaBB 3 installation, and chmod it 666.</li>
+			Convert/Members, and Convert/Messages folders of your YaBB 2 installation, and chmod them 777.</li>
+			<li>Copy cat.txt from the /Variables folder of your YaBB 1 Gold - SP 1.x installation to the Convert/Variables folder of your YaBB 2 installation, and chmod it 666.</li>
+			<li>If you have 'Add More Membergroups' installed on your YaBB 1 Gold - SP 1.x, copy MemberStats.txt from the /Variables folder of your YaBB 1 Gold - SP 1.x installation to the Convert/Variables folder of your YaBB 2 installation, and chmod it 666.</li>
 
 			<li>Click on the 'Continue' button</li>
 			</ol>
@@ -203,7 +203,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -257,7 +257,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -365,7 +365,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -443,7 +443,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -511,7 +511,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -586,7 +586,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -655,7 +655,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -737,7 +737,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -805,7 +805,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -895,7 +895,7 @@ EOF
 					fclose(BOARDTTL);
 					chomp $line;
 					print FORUMTOTALS "$testboard|$line|\n";
-					#unlink "$boardsdir/$testboard.ttl";
+					#&delete_DBorFILE("$boardsdir/$testboard.ttl");
 				}
 			}
 			fclose(FORUMTOTALS);
@@ -932,7 +932,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -976,7 +976,7 @@ EOF
 			- Attachment Functions => Rebuild Attachments<br /></font>
 			<br />
 			<br />
-			You may now login to your forum. Enjoy using YaBB 3!
+			You may now login to your forum. Enjoy using YaBB 2!
 			</td>
 		</tr>
 		<tr>
@@ -1011,7 +1011,7 @@ EOF
 		<table width="100%" cellspacing="1" cellpadding="4">
 		<tr valign="middle">
 			<td width="100%" colspan="2" class="titlebg" align="left">
-			YaBB 3 Converter
+			YaBB 2 Converter
 			</td>
 		</tr>
 		<tr valign="middle">
@@ -1109,8 +1109,8 @@ EOF
 		~;
 	}
 
-	$yyim    = 'You are running the YaBB 3 Converter.';
-	$yytitle = 'YaBB 3 Converter';
+	$yyim    = 'You are running the YaBB 2 Converter.';
+	$yytitle = 'YaBB 2 Converter';
 	&SetupTemplate;
 }
 
@@ -1141,16 +1141,16 @@ sub PrepareConv {
 
 	&automaintenance('on');
 
-	unlink "$vardir/fixusers.txt";
+	&delete_DBorFILE("$vardir/fixusers.txt");
 
 	foreach $file (@boardlist) {
-		unless ($file eq ".htaccess" || $file eq "index.html" || $file eq "forum.control" || $file eq "." || $file eq "..") { unlink "$boardsdir/$file"; }
+		unless ($file eq ".htaccess" || $file eq "index.html" || $file eq "forum.control" || $file eq "." || $file eq "..") { &delete_DBorFILE("$boardsdir/$file"); }
 	}
 	foreach $file (@memblist) {
-		unless ($file eq ".htaccess" || $file eq "index.html" || $file eq "admin.vars" || $file eq "." || $file eq "..") { unlink "$memberdir/$file"; }
+		unless ($file eq ".htaccess" || $file eq "index.html" || $file eq "admin.vars" || $file eq "." || $file eq "..") { &delete_DBorFILE("$memberdir/$file"); }
 	}
 	foreach $file (@msglist) {
-		unless ($file eq ".htaccess" || $file eq "index.html" || $file eq "." || $file eq "..") { unlink "$datadir/$file"; }
+		unless ($file eq ".htaccess" || $file eq "index.html" || $file eq "." || $file eq "..") { &delete_DBorFILE("$datadir/$file"); }
 	}
 }
 
@@ -1312,7 +1312,7 @@ sub IllegalUser {
 		'cathide'       => "$settings[30]",
 		'postlayout'    => ($settings[31] ? "$settings[31]|0" : ''),
 		'dsttimeoffset' => "$dstoffset",
-		'pageindex'     => "1|1|1",
+		'pageindex'     => "1|1|1|0",
 		'lastips'       => "$c_ip_one|$c_ip_two|$c_ip_three",
 	);
 
@@ -1432,7 +1432,7 @@ sub MyUpdateUser {
 		'cathide'       => "$settings[30]",
 		'postlayout'    => "$settings[31]|0",
 		'dsttimeoffset' => "$dstoffset",
-		'pageindex'     => "1|1|1",
+		'pageindex'     => "1|1|1|0",
 		'lastips'       => "$c_ip_one|$c_ip_two|$c_ip_three",
 	);
 
@@ -2007,7 +2007,7 @@ sub MyReCountTotals {
 		${ $uid . $cntboard }{'threadcount'}  = $threadcount;
 		${ $uid . $cntboard }{'messagecount'} = $messagecount;
 		# &BoardTotals("update", ...) is done in &BoardSetLastInfo
-		&BoardSetLastInfo($cntboard,@threads);
+		&BoardSetLastInfo($cntboard,\@threads);
 
 		if (time() > $time_to_jump && ($j + 1) < $totalboards) {
 			$yySetLocation = qq~$set_cgi?action=cleanup2;st=~ . int($INFO{'st'} + time() - $time_to_jump + $max_process_time) . qq~;starttime=$time_to_jump;clean=1;total_boards=$INFO{'total_boards'};total_re_tot=$totalboards;my_re_tot=~ . ($j + 1);
@@ -2020,7 +2020,6 @@ sub MyReCountTotals {
 
 sub MyMemberIndex {
 	if ($INFO{'memb_index'} > 0) {
-		&ManageMemberlist("load");
 		&ManageMemberinfo("load");
 		$siglength = $INFO{'siglength'};
 	} else {
@@ -2072,34 +2071,27 @@ sub MyMemberIndex {
 
 		&UserAccount($member, "update");
 
-		$memberlist{$member} = sprintf("%010d", ${$uid.$member}{'regtime'});
-		$memberinf{$member}  = qq~${$uid.$member}{'realname'}|${$uid.$member}{'email'}|${$uid.$member}{'position'}|${$uid.$member}{'postcount'}~;
+		$memberinf{$member} = sprintf("%010d", ${$uid.$member}{'regtime'}) . qq~|${$uid.$member}{'realname'}|${$uid.$member}{'email'}|${$uid.$member}{'position'}|${$uid.$member}{'postcount'}|${$uid.$member}{'bday'}~;
 
 		if (time() > $time_to_jump && ($j + 1) < $totalmemb) {
-			&ManageMemberlist("save");
 			&ManageMemberinfo("save");
 			$yySetLocation = qq~$set_cgi?action=cleanup2;st=~ . int($INFO{'st'} + time() - $time_to_jump + $max_process_time) . qq~;starttime=$time_to_jump;clean=2;total_boards=$INFO{'total_boards'};total_re_tot=$INFO{'total_re_tot'};tmp_firstforum=$INFO{'tmp_firstforum'};firstforum=$INFO{'firstforum'};siglength=$siglength;total_memb=$totalmemb;memb_index=~ . ($j + 1);
 			&redirectexit;
 		}
 	}
-	&ManageMemberlist("save");
 	&ManageMemberinfo("save");
 
 	$INFO{'total_memb'} = $totalmemb;
 	$INFO{'clean'} = 3;
 
-	fopen(MEMBERLISTREAD, "$memberdir/memberlist.txt") || &setup_fatal_error("$maintext_23 $memberdir/memberlist.txt: ", 1);
-	my @num = <MEMBERLISTREAD>;
-	fclose(MEMBERLISTREAD);
-	my $membertotal = @num;
+	fopen(MEMBERINFOREAD, "$memberdir/memberinfo.txt") || &setup_fatal_error("$maintext_23 $memberdir/memberinfo.txt: ", 1);
+	my @num = <MEMBERINFOREAD>;
+	fclose(MEMBERINFOREAD);
 
-	($latestmember, undef) = split(/\t/, $num[$#num], 2);
+	$members_total = @num;
+	($last_member, undef) = split(/\t/, $num[$#num], 2);
 
-	fopen(MEMTTL, ">$memberdir/members.ttl") || &setup_fatal_error("$maintext_23 $memberdir/members.ttl: ", 1);
-	print MEMTTL qq~$membertotal|$latestmember~;
-	fclose(MEMTTL);
-
-	if ($INFO{'tmp_firstforum'} > $INFO{'firstforum'} || $siglength > 200) { &SetInstall2; }
+	&SetInstall2;
 }
 
 sub MyMemberPostGroup {
@@ -2123,7 +2115,7 @@ sub MyMailNotify {
 	closedir(DIRECTORY);
 
 	my $totalfiles = @files;
-	my ($j,$filename,@mailaddresses,$mailaddress,$curuser,$value);
+	my ($j,$filename,@mailaddresses,$mailaddress);
 	for ($j = ($INFO{'my_mail_n'} || 0); $j < $totalfiles; $j++) {
 		$filename = (split(/\./, $files[$j], 2))[0];
 
@@ -2133,10 +2125,10 @@ sub MyMailNotify {
 		chomp(@mailaddresses);
 
 		foreach $mailaddress (@mailaddresses) {
-			while (($curuser, $value) = each(%memberinf)) {
-				if ($mailaddress eq (split(/\|/, $value, 3))[1]) {
-					&ManageThreadNotify("add", $filename, $curuser, $language, 1, 1);
-					undef %{$uid.$curuser} if $curuser ne $username;
+			foreach (keys %memberinf) {
+				if ($mailaddress eq (split(/\|/, $memberinf{$_}, 4))[2]) {
+					&ManageThreadNotify("add", $filename, $_, $language, 1, 1);
+					undef %{$uid.$_} if $_ ne $username;
 					last;
 				}
 			}
@@ -2147,6 +2139,7 @@ sub MyMailNotify {
 			&redirectexit;
 		}
 	}
+	undef %memberinf;
 
 	$INFO{'total_mail_n'} = $totalfiles;
 	$INFO{'clean'} = 4;
@@ -2658,6 +2651,8 @@ function autofill() {
 	var htmlurl = document.auto_settings.prehtml_root.value || "";
 	if(!htmldir) {return 0;}
 	if(!htmlurl) {return 0;}
+	htmldir = htmldir.replace(/\\/+\$/, "");
+	htmlurl = htmlurl.replace(/\\/+\$/, "");
 	var confirmvalue = confirm("Do autofill the forms in the right colum below (Saved:) with the basic values in here?");
 	if(!confirmvalue) {return 0;}
 	else {
@@ -3066,7 +3061,7 @@ EOF
 	print FILE &nicely_aligned_file($setfile);
 	fclose(FILE);
 
-	if (-e "$vardir/Paths.pl") { unlink "$vardir/Paths.pl"; }
+	if (-e "$vardir/Paths.pl") { &delete_DBorFILE("$vardir/Paths.pl"); }
 
 	$yySetLocation = qq~$set_cgi?action=checkmodules~;
 	&redirectexit;
@@ -3204,7 +3199,6 @@ EOF
 'clean_log',"on",
 'boardrecount',"",
 'rebuildmesindex',"",
-'membershiprecount',"",
 'rebuildmemlist',"",
 'rebuildmemhist',"",
 'deleteoldthreads',"",
@@ -3341,7 +3335,7 @@ EOF
 	if (!-e "$varsdir/news.txt") {
 		fopen(NEWSFILE, ">$varsdir/news.txt") || &setup_fatal_error("$maintext_23 $varsdir/news.txt: ", 1);
 		print NEWSFILE "Welcome to our forum.\n";
-		print NEWSFILE "We've upgraded to YaBB 3!\n";
+		print NEWSFILE "We've upgraded to YaBB 2!\n";
 		print NEWSFILE "Visit [url=http://www.yabbforum.com]YaBB[/url] today \;\)\n";
 		print NEWSFILE "Signup for free on our forum and benefit from new features!\n";
 		print NEWSFILE "Latest info can be found on the [url=http://www.yabbforum.com/community/]YaBB Chat and Support Community[/url].\n";
@@ -3426,8 +3420,8 @@ sub checkmodules {
 </form>
 ~;
 
-	$yyim    = "You are running YaBB 3 Setup.";
-	$yytitle = "YaBB 3 Setup";
+	$yyim    = "You are running YaBB 2 Setup.";
+	$yytitle = "YaBB 2 Setup";
 	&SetupTemplate;
 }
 
@@ -3458,7 +3452,7 @@ sub SetInstall {
 		</td>
 	</tr><tr valign="middle">
 		<td width="100%" class="windowbg" align="left">
-		Here you can set some of the default settings for your new YaBB 3 forum.<br />
+		Here you can set some of the default settings for your new YaBB 2 forum.<br />
 		After finishing the setup procedure, you should login to your forum and go to your 'Admin Center' -&gt; 'Forum Settings' where you can modify this and other settings.
 		</td>
 	</tr><tr valign="middle">
@@ -3532,8 +3526,8 @@ sub SetInstall {
 </form>
 ~;
 
-	$yyim    = "You are running YaBB 3 Setup.";
-	$yytitle = "YaBB 3 Setup";
+	$yyim    = "You are running YaBB 2 Setup.";
+	$yytitle = "YaBB 2 Setup";
 	&SetupTemplate;
 }
 
@@ -3541,6 +3535,8 @@ sub SetInstall2 {
 	if ($action eq "checkmodules" || $action eq "setinstall2") {
 		$settings_file_version = "YaBB 0.0.0";
 		$maintenance = 1;
+		$members_total = 1;
+		$last_member = "admin";  
 		$rememberbackup = 0;
 		$guestaccess = 1;
 		$mbname = $FORM{'mbname'} || 'My Perl YaBB Forum';
@@ -3569,6 +3565,11 @@ sub SetInstall2 {
 		$MenuType = 2;
 		$profilebutton = 0;
 		$allow_hide_email = 1;
+		$user_hide_avatars = 0;
+		$user_hide_user_text = 0;
+		$user_hide_attach_img = 0;
+		$user_hide_signat = 0;
+		$user_hide_smilies_row = 0;
 		$showlatestmember = 1;
 		$shownewsfader = 0;
 		$Show_RecentBar = 1;
@@ -3577,7 +3578,6 @@ sub SetInstall2 {
 		$showuserpic = 1;
 		$showusertext = 1;
 		$showtopicviewers = 1;
-		$showtopicrepliers = 1;
 		$showgenderimage = 1;
 		$showyabbcbutt = 1;
 		$nestedquotes = 1;
@@ -3628,6 +3628,8 @@ sub SetInstall2 {
 		$ClickLogTime = 100;
 		$max_log_days_old = 90;
 		$fadertime = 1000;
+		$color{'fadertext'} = '#000000';
+		$color{'faderbg'} = '#FFFFFF';
 		$defaultusertxt = 'I Love YaBB 3.0!';
 		$timeout = 5;
 		$HotTopic = 10;
@@ -3712,6 +3714,9 @@ sub SetInstall2 {
 'Old YaBB 2.4 style' => "yabb24|yabb24|yabb24|yabb24|yabb24|yabb24|yabb24|",
 );                                                  # Forum templates settings
 
+\$members_total = $members_total;                   # Total number of Members
+\$last_member = "\Q$last_member\E";                 # Name of the last Member
+
 \$maintenance = $maintenance;                       # Set to 1 to enable Maintenance mode
 \$rememberbackup = $rememberbackup;                 # seconds past since last backup until alert is displayed
 \$guestaccess = $guestaccess;                       # Set to 0 to disallow guests from doing anything but login or register
@@ -3776,6 +3781,11 @@ sub SetInstall2 {
 \$posttools = 0;                                    # Enable dropdown for post actions
 \$userinfostyle = 0;                                # 1 for old user info on left, 0 for new user info above posts
 \$allow_hide_email = $allow_hide_email;             # Allow users to hide their email from public. Set 0 to disable
+\$user_hide_avatars = $user_hide_avatars;           # Allow users to hide Avatars in threads. Set 0 to disable
+\$user_hide_user_text = $user_hide_user_text;       # Allow users to hide User Text in threads. Set 0 to disable
+\$user_hide_attach_img = $user_hide_attach_img;     # Allow users to hide Attached Images in threads. Set 0 to disable
+\$user_hide_signat = $user_hide_signat;             # Allow users to hide User Signatures in threads. Set 0 to disable
+\$user_hide_smilies_row = $user_hide_smilies_row;   # Allow users to hide Smilies row below the Post-Message-inputarea. Set 0 to disable
 \$showlatestmember = $showlatestmember;             # Set to 1 to display "Welcome Newest Member" on the Board Index
 \$shownewsfader = $shownewsfader;                   # 1 to allow or 0 to disallow NewsFader javascript on the Board Index
                                                     # If 0, you'll have no news at all unless you put <yabb news> tag
@@ -3787,8 +3797,8 @@ sub SetInstall2 {
                                                     # message view (by the ICQ.. etc.)
 \$showusertext = $showusertext;                     # Set to 1 to display each member's personal text
                                                     # in the message view (by the ICQ.. etc.)
-\$showtopicviewers = $showtopicviewers;             # Set to 1 to display members viewing a topic
-\$showtopicrepliers = $showtopicrepliers;           # Set to 1 to display members replying to a topic
+\$showtopicviewers = $showtopicviewers;             # Set to 1 to display members viewing/replying a topic for staff
+                                                    # Set to 2 for all members; 3 for all; 0 for none
 \$showgenderimage = $showgenderimage;               # Set to 1 to display each member's gender in the
                                                     # message view (by the ICQ.. etc.)
 \$showyabbcbutt = $showyabbcbutt;                   # Set to 1 to display the yabbc buttons on Posting and IM Send Pages
@@ -3826,7 +3836,7 @@ sub SetInstall2 {
 \$NewNotificationAlert = $NewNotificationAlert;     # enable notification alerts (popup) for new notifications
 \$autolinkurls = $autolinkurls;                     # Set to 1 to turn URLs into links, or 0 for no auto-linking.
 
-\$forumnumberformat = $forumnumberformat;			# Select your preferred output Format for Numbers
+\$forumnumberformat = $forumnumberformat;           # Select your preferred output Format for Numbers
 \$timeselected = $timeselected;                     # Select your preferred output Format of Time and Date
 \$timecorrection = $timecorrection;                 # Set time correction for server time in seconds
 \$timeoffset = "$timeoffset";                       # Time Offset to GMT/UTC (0 for GMT/UTC)
@@ -3848,7 +3858,7 @@ sub SetInstall2 {
 \$spd_detention_time = $spd_detention_time;         # Time in seconds before a speedposting ban is lifted again
 \$min_post_speed = $min_post_speed;                 # Minimum time in seconds between entering a post form and submitting a post
 \$minlinkpost = $minlinkpost;                       # Minimum amount of posts a member needs to post links and images
-\$minlinksig = $minlinksig;							# Minimum amount of posts a member needs to create links and images in signature
+\$minlinksig = $minlinksig;			    # Minimum amount of posts a member needs to create links and images in signature
 \$post_speed_count = $post_speed_count;             # Maximum amount of abuses befor a user gets banned
 \$MaxSigLen = $MaxSigLen;                           # Maximum Allowed Characters in Signatures
 \$MaxAwayLen = $MaxAwayLen;                         # Maximum Allowed Characters in Away message
@@ -3860,6 +3870,8 @@ sub SetInstall2 {
 \$stepdelay = $stepdelay;                           # Time in miliseconds of a single step
 \$fadelinks = $fadelinks;                           # Fade links as well as text?
 
+\$color{'fadertext'}  = "$color{'fadertext'}";      # Color of text in the NewsFader (news color)
+\$color{'faderbg'}  = "$color{'faderbg'}";          # Color of background in the NewsFader (news color)
 \$defaultusertxt = qq~$defaultusertxt~;             # The dafault usertext visible in users posts
 \$timeout = $timeout;                               # Minimum time between 2 postings from the same IP
 \$HotTopic = $HotTopic;                             # Number of posts needed in a topic for it to be classed as "Hot"
@@ -4012,6 +4024,10 @@ sub SetInstall2 {
                                                   # the specified time limit w/o showing "last Edit" message
 \$tllastmodtime = 60;                             # Time limit to modify posts w/o triggering "last Edit" message (in minutes)
 
+########## bypass post for locked thread ##########
+
+\$bypass_lock_perm = "fa";                        # set level of permission - fa / fa+gmod / fa+gmod+mod
+
 ########## File Attachment Settings ##########
 
 \$limit = 250;                                    # Set to the maximum number of kilobytes an attachment can be.
@@ -4142,18 +4158,17 @@ EOF
 	fclose(SETTING);
 	if ($action eq "setinstall2") {
 		&LoadUser('admin');
-        ${$uid.'admin'}{'email'} = $webmaster_email;
-        ${$uid.'admin'}{'timeoffset'} = $timeoffset; # must set before &timetostring($date)	 
-        ${$uid.'admin'}{'regdate'} = &timetostring($date);	 
-        ${$uid.'admin'}{'regtime'} = $date;	 
-        ${$uid.'admin'}{'timeselect'} = $timeselected;
-        ${$uid.'admin'}{'language'} = $lang;
+		${$uid.'admin'}{'email'} = $webmaster_email;
+		${$uid.'admin'}{'timeoffset'} = $timeoffset; # must set before &timetostring($date)
+		${$uid.'admin'}{'regdate'} = &timetostring($date);
+		${$uid.'admin'}{'regtime'} = $date;
+		${$uid.'admin'}{'timeselect'} = $timeselected;
+		${$uid.'admin'}{'language'} = $lang;
 		&UserAccount('admin', "update");
-		 &ManageMemberinfo('update', 'admin', $date, '', $webmaster_email);
+		&ManageMemberinfo('update', 'admin', $date, '', $webmaster_email);
 		$yySetLocation = qq~$set_cgi?action=setup3~;
 		&redirectexit;
 	}
-
 }
 
 sub tempstarter {
@@ -4227,12 +4242,8 @@ sub CheckInstall {
 	else { $mem_created .= qq~admin.outbox, ~; }
 	if (!-e "$memberdir/admin.vars") { $mem_missing .= qq~admin.vars, ~; }
 	else { $mem_created .= qq~admin.vars, ~; }
-	if (!-e "$memberdir/memberlist.txt") { $mem_missing .= qq~memberlist.txt, ~; }
-	else { $mem_created .= qq~memberlist.txt, ~; }
 	if (!-e "$memberdir/memberinfo.txt") { $mem_missing .= qq~memberinfo.txt, ~; }
 	else { $mem_created .= qq~memberinfo.txt, ~; }
-	if (!-e "$memberdir/members.ttl") { $mem_missing .= qq~members.ttl~; }
-	else { $mem_created .= qq~members.ttl~; }
 	$mem_missing =~ s/, $//;
 	$mem_created =~ s/, $//;
 
@@ -4497,8 +4508,8 @@ sub CheckInstall {
 	<tr><td width="6%" class="windowbg" align="center">
 	<img src="$imagesdir/off.gif" alt="" />
 	</td><td width="94%" class="windowbg2" align="left">
-	Click on 'Continue' and go to your <i>Admin Center - Forum Settings</i> to set the options for your YaBB 3.<br />
-	Click on 'Convert' to convert your YaBB 1 Gold - SP 1.x forum to YaBB 3.
+	Click on 'Continue' and go to your <i>Admin Center - Forum Settings</i> to set the options for your YaBB 2.<br />
+	Click on 'Convert' to convert your YaBB 1 Gold - SP 1.x forum to YaBB 2.
 	</td></tr>
 		~;
 	}
@@ -4527,8 +4538,8 @@ sub CheckInstall {
 	</table>
 </div>
 	~;
-	$yyim    = "You are running YaBB 3 Setup.";
-	$yytitle = "YaBB 3 Setup";
+	$yyim    = "You are running YaBB 2 Setup.";
+	$yytitle = "YaBB 2 Setup";
 	&SetupTemplate;
 }
 
@@ -4537,7 +4548,7 @@ sub ready {
 	elsif (-e "$INFO{'nextstep'}.$yyext") { $yySetLocation = qq~$INFO{'nextstep'}.$yyext?action=revalidatesession~; }
 
 	&CreateSetupLock;
-	unlink "$vardir/cook.txt";
+	&delete_DBorFILE("$vardir/cook.txt");
 	&redirectexit;
 }
 
@@ -4548,7 +4559,7 @@ sub CreateConvLock {
 	print LOCKFILE q~Delete this file if you want to run the Converter again.~;
 	fclose("LOCKFILE");
 
-	unlink("$vardir/ConvSettings.txt");
+	&delete_DBorFILE("$vardir/ConvSettings.txt");
 }
 
 sub CreateSetupLock {
@@ -4609,7 +4620,7 @@ sub FoundConvLock {
 	<table width="100%" cellspacing="1" cellpadding="4">
 	<tr valign="middle">
 		<td width="100%" colspan="2" class="titlebg" align="left">
-		YaBB 3 Converter
+		YaBB 2 Converter
 		</td>
 	</tr>
 	<tr valign="middle">
@@ -4635,8 +4646,8 @@ sub FoundConvLock {
 </div>
 	~;
 
-	$yyim    = "YaBB 3 Setup and Converter has already been run.";
-	$yytitle = "YaBB 3 Setup/Converter";
+	$yyim    = "YaBB 2 Setup and Converter has already been run.";
+	$yytitle = "YaBB 2 Setup/Converter";
 	&SetupTemplate;
 }
 
@@ -4663,8 +4674,8 @@ sub setup_fatal_error {
 </table>
 <center><br /><a href="javascript:history.go(-1)">Back</a></center>
 	~;
-	$yyim    = "YaBB 3 Convertor Error.";
-	$yytitle = "YaBB 3 Convertor Error.";
+	$yyim    = "YaBB 2 Convertor Error.";
+	$yytitle = "YaBB 2 Convertor Error.";
 
 	&SimpleOutput if !-e "$vardir/Settings.pl";
 
@@ -4680,7 +4691,7 @@ sub SimpleOutput {
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>YaBB 3 Setup</title>
+<title>YaBB 2 Setup</title>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 </head>
 <body>

@@ -79,9 +79,9 @@ $maintenance = 2 if !$maintenance && -e "$vardir/maintenance.lock";
 $max_process_time = 20;
 
 $action = $INFO{'action'};
-$SIG{__WARN__} = sub { &admin_fatal_error("error_occurred","@_"); };
+$SIG{__WARN__} = sub { &fatal_error("error_occurred","@_"); };
 eval { &yymain; };
-if ($@) { &admin_fatal_error("untrapped",":<br />$@"); }
+if ($@) { &fatal_error("untrapped",":<br />$@"); }
 
 sub yymain {
 	# Choose what to do based on the form action
@@ -201,6 +201,7 @@ sub AdminTemplate {
 	"|$admintxt{'a1_title'}|$admintxt{'a1_label'} - $admintxt{'34'}|a1",
 	"newsettings;page=main|$admintxt{'a1_sub1'}|$admintxt{'a1_label1'}|",
 	"newsettings;page=advanced|$admintxt{'a1_sub2'}|$admintxt{'a1_label2'}|",
+	"database|$admintxt{'a1_sub2a'}|$admintxt{'a1_label2a'}|",
 	"editpaths|$admintxt{'a1_sub3'}|$admintxt{'a1_label3'}|",
 	"editbots|$admintxt{'a1_sub4'}|$admintxt{'a1_label4'}|",
 	);
@@ -257,7 +258,6 @@ sub AdminTemplate {
 	"rebuildmesindex|$admintxt{'a7_sub2a'}|$admintxt{'a7_label2a'}|",
 	"boardrecount|$admintxt{'a7_sub2'}|$admintxt{'a7_label2'}|",
 	"rebuildmemlist|$admintxt{'a7_sub4'}|$admintxt{'a7_label4'}|",
-	"membershiprecount|$admintxt{'a7_sub3'}|$admintxt{'a7_label3'}|",
 	"rebuildmemhist|$admintxt{'a7_sub4a'}|$admintxt{'a7_label4a'}|",
 	"rebuildnotifications|$admintxt{'a7_sub4b'}|$admintxt{'a7_label4b'}|",
 	"clean_log|$admintxt{'a7_sub1'}|$admintxt{'a7_label1'}|",
@@ -349,12 +349,7 @@ sub AdminTemplate {
 }
 
 sub TrackAdminLogins {
-	if (-e "$vardir/adminlog.txt") {
-		fopen(ADMINLOG, "$vardir/adminlog.txt");
-		@adminlog = <ADMINLOG>;
-		fclose(ADMINLOG);
-	}
-	fopen(ADMINLOG, ">$vardir/adminlog.txt");
+	@adminlog = &read_DBorFILE(0,ADMINLOG,$vardir,'adminlog','txt');
 	print ADMINLOG qq~$username|$user_ip|$date\n~;
 	for ($i = 0; $i < 4; $i++) {
 		if ($adminlog[$i]) {
@@ -362,5 +357,5 @@ sub TrackAdminLogins {
 			print ADMINLOG qq~$adminlog[$i]\n~;
 		}
 	}
-	fclose(ADMINLOG);
+	&write_DBorFILE(0,ADMINLOG,$vardir,'adminlog','txt',(''));
 }

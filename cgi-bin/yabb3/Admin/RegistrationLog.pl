@@ -22,21 +22,16 @@ sub view_reglog {
 
 	$yytitle = $prereg_txt{'15a'};
 
-	if (-e "$vardir/registration.log") {
-		fopen(LOGFILE, "$vardir/registration.log");
-		@logentries = <LOGFILE>;
-		fclose(LOGFILE);
+	my @logentries;
+	if (&checkfor_DBorFILE("$vardir/registration.log")) {
+		@logentries = &read_DBorFILE(0,'',$vardir,'registration','log');
 		@logentries = reverse @logentries;
 
-		fopen(FILE, "$memberdir/memberlist.txt");
-		@memberlist = <FILE>;
-		fclose(FILE);
+		&ManageMemberinfo("load");
 
 		# If a pre-registration list exists load it
-		if (-e "$memberdir/memberlist.inactive") {
-			fopen(INACT, "$memberdir/memberlist.inactive");
-			@reglist = <INACT>;
-			fclose(INACT);
+		if (&checkfor_DBorFILE("$memberdir/memberlist.inactive")) {
+			@reglist = &read_DBorFILE(0,'',$memberdir,'memberlist','inactive');
 		}
 		# grab pre regged user activationkey for admin activation
 		foreach (@reglist) {
@@ -47,7 +42,6 @@ sub view_reglog {
 		$servertime = $date;
 		push(@logentries, "$servertime|LD|$username|$username|$user_ip");
 	}
-	@memberlist = reverse @memberlist;
 
 	if (@logentries > 0) {
 		$logcount = @logentries;
@@ -89,38 +83,36 @@ sub view_reglog {
 	foreach $logentry (@logentries) {
 		chomp $logentry;
 		my ($logtime, $status, $userid, $actid, $ipadd) = split(/\|/, $logentry);
-		if($do_scramble_id){
+		if ($do_scramble_id) {
 			$cryptactid = &cloak($actid);
 			$cryptuserid = &cloak($userid);
 		} else {
-			$cryptactid = $actid; 
+			$cryptactid = $actid;
 			$cryptuserid = $userid;
 		}
-		if($userid ne $actid && $actid ne '') {
+		if ($userid ne $actid && $actid ne '') {
 			&LoadUser($actid);
 			$actadminlink = qq~ $prereg_txt{'by'} <a href="$scripturl?action=viewprofile;username=$cryptactid">${$uid.$actid}{'realname'}</a>~;
 		} else {
 			$actadminlink = '';
 		}
 		if ($status eq 'AA' && &LoadUser($userid)){
-			&LoadUser($userid);
-			$linkuserid = qq~$userid (<a href="$scripturl?action=viewprofile;username=$cryptuserid">${$uid.$userid}{'realname'}</a>)~; 
-		} else { 
+			$linkuserid = qq~$userid (<a href="$scripturl?action=viewprofile;username=$cryptuserid">${$uid.$userid}{'realname'}</a>)~;
+		} else {
 			$linkuserid = $userid; 
 		}
-		$is_member = &check_member($userid);
 		if ($do_scramble_id){ $cryptid = &cloak($userid); } else { $cryptid = $userid; }
 		$reclogtime = &timeformat($logtime);
-		if ($status eq 'N' && $is_member == 0 && -e "$memberdir/$userid.pre") {
+		if ($status eq 'N' && !exists $memberinf{$userid} && &checkfor_DBorFILE("$memberdir/$userid.pre")) {
 			$delrecord = qq~<a href="$adminurl?action=del_regentry;username=$cryptid">$prereg_txt{'del'}</a>~;
 			$delrecord .= qq~<br /><a href="$adminurl?action=view_regentry;username=$cryptid~ . ($actkey{$userid} ne '' ? ";activationkey=$actkey{$userid};type=validate" : "") . qq~">$prereg_txt{'view'}</a>~;
 			$delrecord .= qq~<br /><a href="$scripturl?action=activate;username=$cryptid;activationkey=$actkey{$userid}">$prereg_txt{'act'}</a>~;
-		} elsif ($status eq 'W' && $is_member == 0 && -e "$memberdir/$userid.wait") {
+		} elsif ($status eq 'W' && !exists $memberinf{$userid} && &checkfor_DBorFILE("$memberdir/$userid.wait")) {
 			$delrecord = qq~<a href="$adminurl?action=rej_regentry;username=$cryptid">$prereg_txt{'reject'}</a>~;
 			$delrecord .= qq~<br /><a href="$adminurl?action=view_regentry;username=$cryptid;type=approve">$prereg_txt{'view'}</a>~;
 			$delrecord .= qq~<br /><a href="$adminurl?action=apr_regentry;username=$cryptid">$prereg_txt{'apr'}</a>~;
-		} else { 
-			$delrecord = '---'; 
+		} else {
+			$delrecord = '---';
 		}
 		$loglist .= qq~
 		<tr>
@@ -170,38 +162,21 @@ sub view_reglog {
 	&AdminTemplate;
 }
 
-sub check_member {
-	my $is_member = 0;
-	foreach $lstmember (@memberlist) {
-		chomp $lstmember;
-		($listmember, undef) = split(/\t/, $lstmember, 2);
-		if ($_[0] eq $listmember) {
-			$is_member = 1;
-			last;
-		}
-	}
-	$is_member;
-}
-
 sub clean_reglog {
 	&is_admin_or_gmod;
 	my (@outlist, @reglist, $reguser, $regstatus);
-	fopen(REG, "$vardir/registration.log", 1);
-	@reglist = <REG>;
-	fclose(REG);
+	@reglist = &read_DBorFILE(0,'',$vardir,'registration','log');
 	## depending on registration type only leave uncompleted entries in the log for completion and remove the failed or completed ones ##
 	foreach (@reglist) {
-		(undef, $regstatus, $reguser, undef) = split(/\|/, $_);
-		if (($regtype == 1 || $regtype == 2) && $regstatus eq "N" && -e "$memberdir/$reguser.pre") {
+		(undef, $regstatus, $reguser, undef) = split(/\|/, $_, 4);
+		if (($regtype == 1 || $regtype == 2) && $regstatus eq "N" && &checkfor_DBorFILE("$memberdir/$reguser.pre")) {
 			push(@outlist, $_);
 		}
-		if ($regtype == 1 && $regstatus eq "W" && -e "$memberdir/$reguser.wait") {
+		if ($regtype == 1 && $regstatus eq "W" && &checkfor_DBorFILE("$memberdir/$reguser.wait")) {
 			push(@outlist, $_);
 		}
 	}
-	fopen(REG, ">$vardir/registration.log", 1);
-	print REG @outlist;
-	fclose(REG);
+	&write_DBorFILE(0,'',$vardir,'registration','log',@outlist);
 
 	$yySetLocation = qq~$adminurl?action=view_reglog~;
 	&redirectexit;
@@ -213,21 +188,17 @@ sub kill_registration {
 	my $deluser = $_[0] || $INFO{'username'};
 	if ($do_scramble_id) { $deluser = &decloak($deluser); }
 
-	fopen(INFILE, "$memberdir/memberlist.inactive");
-	@actlist = <INFILE>;
-	fclose(INFILE);
+	@actlist = &read_DBorFILE(0,'',$memberdir,'memberlist','inactive');
 
 	# check if user is in pre-registration and check activation key
 	foreach (@actlist) {
 		($regtime, undef, $regmember, undef) = split(/\|/, $_, 4);
 		if ($deluser eq $regmember) {
 			$changed = 1;
-			unlink "$memberdir/$regmember.pre";
+			&delete_DBorFILE("$memberdir/$regmember.pre");
 
 			# add entry to registration log
-			fopen(REG, ">>$vardir/registration.log", 1);
-			print REG "$date|D|$regmember|$username|$user_ip\n";
-			fclose(REG);
+			&write_DBorFILE(0,REG,$vardir,'registration','log',(&read_DBorFILE(0,REG,$vardir,'registration','log'),"$date|D|$regmember|$username|$user_ip\n"));
 		} else {
 			# update non activate user list
 			# write valid registration to the list again
@@ -236,9 +207,7 @@ sub kill_registration {
 	}
 	if ($changed) {
 		# re-open inactive list for update if changed
-		fopen(OUTFILE, ">$memberdir/memberlist.inactive", 1);
-		print OUTFILE @outlist;
-		fclose(OUTFILE);
+		&write_DBorFILE(0,'',$memberdir,'memberlist','inactive',@outlist);
 	}
 	$yySetLocation = qq~$adminurl?action=view_reglog~;
 	&redirectexit;
@@ -368,13 +337,11 @@ sub reject_registration {
 	if (!$admin_reason) { $admin_reason = $FORM{'admin_reason'}; }
 	if ($do_scramble_id) { $deluser = &decloak($deluser); }
 
-	if (-e "$memberdir/memberlist.approve" && $regtype == 1) {
-		fopen(APR, "$memberdir/memberlist.approve");
-		@aprlist = <APR>;
-		fclose(APR);
+	if (&checkfor_DBorFILE("$memberdir/memberlist.approve") && $regtype == 1) {
+		@aprlist = &read_DBorFILE(0,'',$memberdir,'memberlist','approve');
 	}
 	# check if waiting user exists
-	if (-e "$memberdir/$deluser.wait") {
+	if (&checkfor_DBorFILE("$memberdir/$deluser.wait")) {
 		&LoadUser($deluser);
 		## send a rejection email ##
 		my $templanguage = $language;
@@ -390,7 +357,7 @@ sub reject_registration {
 		$language = $templanguage;
 
 		## remove the registration data for the rejected user ##
-		unlink "$memberdir/$deluser.wait";
+		&delete_DBorFILE("$memberdir/$deluser.wait");
 		foreach (@aprlist) {
 			(undef, undef, $regmember, undef) = split(/\|/, $_, 4);
 			if ($regmember ne $deluser) {
@@ -398,14 +365,10 @@ sub reject_registration {
 			}
 		}
 		# update approval user list
-		fopen(APR, ">$memberdir/memberlist.approve");
-		print APR @aprchnglist;
-		fclose(APR);
+		&write_DBorFILE(0,'',$memberdir,'memberlist','approve',@aprchnglist);
 
 		## add entry to registration log ##
-		fopen(REG, ">>$vardir/registration.log", 1);
-		print REG "$date|AR|$deluser|$username|$user_ip\n";
-		fclose(REG);
+		&write_DBorFILE(0,REG,$vardir,'registration','log',(&read_DBorFILE(0,REG,$vardir,'registration','log'),"$date|AR|$deluser|$username|$user_ip\n"));
 	}
 	$yySetLocation = qq~$adminurl?action=view_reglog~;
 	&redirectexit;
@@ -418,9 +381,7 @@ sub approve_registration {
 	if ($do_scramble_id) { $apruser = &decloak($apruser); }
 
 	## load the list with waiting approvals ##
-	fopen(APR, "$memberdir/memberlist.approve");
-	@aprlist = <APR>;
-	fclose(APR);
+	@aprlist = &read_DBorFILE(0,'',$memberdir,'memberlist','approve');
 
 	foreach (@aprlist) {
 		(undef, undef, $regmember, $regpassword) = split(/\|/, $_);
@@ -433,7 +394,7 @@ sub approve_registration {
 	}
 
 	## check if waiting user exists and was indeed in the waiting list ##
-	if (-e "$memberdir/$apruser.wait" && $foundmember ne "") {
+	if (&checkfor_DBorFILE("$memberdir/$apruser.wait") && $foundmember ne "") {
 		&LoadUser($apruser);
 		# ckeck if email is allready in active use
 		if (lc ${$uid.$apruser}{'email'} eq lc &MemberIndex("check_exist", ${$uid.$apruser}{'email'})) {
@@ -442,7 +403,11 @@ sub approve_registration {
 		}
 
 		## user is approved, so let him/her in ##
-		rename("$memberdir/$apruser.wait", "$memberdir/$apruser.vars");
+		if ($use_MySQL) {
+			&UserAccount($apruser);
+			${$uid.$apruser}{'mysql'} = 1;
+			&delete_DBorFILE("$memberdir/$apruser.wait");
+		} else { rename("$memberdir/$apruser.wait", "$memberdir/$apruser.vars"); }
 		&MemberIndex("add", $apruser);
 
 		## send a approval email ##
@@ -470,20 +435,14 @@ sub approve_registration {
 			# new format msg file:
 			# messageid|(from)user|(touser(s))|(ccuser(s))|(bccuser(s))|subject|date|message|(parentmid)|reply#|ip|messagestatus|flags|storefolder|attachment
 			$messageid = $^T . $$;
-			fopen(INBOX, ">$memberdir/$apruser.msg");
-			print INBOX "$messageid|$sendname|$apruser|||$imsubject|$date|$imtext|$messageid|0|$ENV{'REMOTE_ADDR'}|s|u||\n";
-			fclose(INBOX);
+			&write_DBorFILE(${$uid.$apruser}{'mysql'},'',$memberdir,$apruser,'msg',"$messageid|$sendname|$apruser|||$imsubject|$date|$imtext|$messageid|0|$ENV{'REMOTE_ADDR'}|s|u||\n");
 		}
 
 		# update approval user list
-		fopen(APR, ">$memberdir/memberlist.approve");
-		print APR @aprchnglist;
-		fclose(APR);
+		&write_DBorFILE(0,'',$memberdir,'memberlist','approve',@aprchnglist);
 
 		## add entry to registration log ##
-		fopen(REG, ">>$vardir/registration.log", 1);
-		print REG "$date|AA|$apruser|$username|$user_ip\n";
-		fclose(REG);
+		&write_DBorFILE(0,REG,$vardir,'registration','log',(&read_DBorFILE(0,REG,$vardir,'registration','log'),"$date|AA|$apruser|$username|$user_ip\n"));
 	}
 	$yySetLocation = qq~$adminurl?action=view_reglog~;
 	&redirectexit;

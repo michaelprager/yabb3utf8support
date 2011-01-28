@@ -65,7 +65,6 @@ $errorlngver = 'YaBB 3.0 Beta $Revision: 100 $';
 'low_diskspace'			=> "The available disk/hostspace is low. The forum was put to maintenance to avoid file corruption. Please notify the administrator of this error !!",
 'invalid_key'			=> "Masterkey is invalid !<br />This should be a text string between 8 and 24 characters long !",
 'corrupt_member_file'		=> "The member data file is corrupt. Please notify the administrator of this error!",
-'file_lock_failed'		=> "Unable to lock file. Please notify the administrator of this error!",
 
 ## BoardIndex ##
 'collapse_no_member'		=> " You must be a member to use the collapsible/expandable categories!",
@@ -97,7 +96,7 @@ $errorlngver = 'YaBB 3.0 Beta $Revision: 100 $';
 'time_out'			=> "You did not activate your account within $preregspan hours!<br />As a result your pre-registration has been removed!<br />Please re-register again!",
 'wrong_code'			=> "Your activation code is wrong!",
 'admin_login_only'		=> "Only the admin can login at the moment, because our forum is in Maintenance Mode.<br />Please try again later. Thank you!",
-'wrong_id'			=> "You have an invalid ID.  Please try again.",
+'wrong_id'			=> "You have an invalid ID. Please try again.",
 
 ## Mailer ##
 'net_fatal'			=> "Net::SMTP fatal error",
@@ -111,7 +110,7 @@ $errorlngver = 'YaBB 3.0 Beta $Revision: 100 $';
 'delete_not_allowed'		=> "You are not allowed to delete this post!",
 'split_splice_not_allowed'	=> "You are not allowed to split or splice this topic; you must be a moderator or administrator to do this.",
 'no_perm_post'			=> "You do not have permission to post new topics in this board",
-'no_perm_reply'		=> "You do not have permission to reply to topics in this board",
+'no_perm_reply'			=> "You do not have permission to reply to topics in this board",
 'no_perm_poll'			=> "You do not have permission to post polls in this board",
 'no_perm_att'			=> "You do not have permission to post attachments in this board",
 'no_board_slash'		=> "The board field does not accept / in the query string",
@@ -159,7 +158,7 @@ $errorlngver = 'YaBB 3.0 Beta $Revision: 100 $';
 'name_too_long'			=> "Please shorten your displayed name. It is too long.",
 'invalid_birthdate'		=> "Invalid input in one or more of the Birthdate fields.",
 'id_reserved'			=> "The user ID you tried to register contains a reserved name! Please try another user ID. Reserved ID: ",
-'name_reserved'		=> "The displayed name you tried to register contains a reserved name! Please try another displayed name. Reserved displayed name: ", #new
+'name_reserved'			=> "The displayed name you tried to register contains a reserved name! Please try another displayed name. Reserved displayed name: ", #new
 'cannot_kill_admin'		=> "As a security feature, you cannot delete the account with user ID: ",
 'email_taken'			=> "The following e-mail address is being used by a registered member already! If you feel this is a mistake, please go to the login page and use the password reminder with that address.",
 'invalid_template'		=> "This is not a valid template name.",

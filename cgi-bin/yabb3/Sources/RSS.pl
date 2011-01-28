@@ -54,9 +54,7 @@ sub RSS_board {
 	if ($annboard eq $board && !$iamadmin && !$iamgmod) { &RSS_error('no_access'); }
 
 	# Now, go into the board and look for the last X topics
-	fopen(BRDTXT, "$boardsdir/$board.txt") || &RSS_error('cannot_open', "$boardsdir/$board.txt", 1);
-	my @threadlist = <BRDTXT>;
-	fclose(BRDTXT);
+	my @threadlist = &read_DBorFILE(0,'',$boardsdir,$board,'txt');
 	my $threadcount = @threadlist;
 	if ($threadcount < $topics) { $topics = $threadcount; }
 
@@ -114,25 +112,23 @@ sub RSS_board {
 		}
 
 		my $post;
-		fopen(TOPIC, "$datadir/$curnum.txt") || &RSS_error('cannot_open', "$datadir/$curnum.txt", 1);
 		if ($rss_message == 1) {
 			# Open up the thread and read the last post.
-			while (<TOPIC>) {
+			foreach (&read_DBorFILE(0,'',$datadir,$curnum,'txt')) {
 				chomp $_;
 				$post = $_ if $_;
 			}
 		} elsif ($rss_message == 2) {
 			# Open up the thread and read the first post.
-			$post = <TOPIC>;
+			$post = (&read_DBorFILE(0,'',$datadir,$curnum,'txt'))[0];
 		}
-		fclose(TOPIC);
 		if ($post ne '') {
 			(undef, undef, undef, undef, $musername, undef, undef, undef, $message, $ns) = split(/\|/, $post);
 		}
 		if ($showauthor) {
 			# The spec really wants us to include their email.
 			# That's not adviseable for us (spambots anyone?). So we skip author if the email hidden flag is on for that user.
-			if (-e "$memberdir/$musername.vars") {
+			if (&checkfor_DBorFILE("$memberdir/$musername.vars")) {
 				&LoadUser($musername); 
 				if (!${$uid.$musername}{'hidemail'}){
 					$yymain .= qq~<author>~ . &RSSDescriptionTrim("${$uid.$musername}{'email'} (${$uid.$musername}{'realname'})") . qq~</author>~;
@@ -208,11 +204,11 @@ sub RSS_recent {
 			my $access = &AccessCheck($curboard, '', $boardperms);
 			if (!$iamadmin && $access ne 'granted') { next; }
 
-			fopen(BOARD, "$boardsdir/$curboard.txt") || &RSS_error('cannot_open', "$boardsdir/$curboard.txt", 1);
-			for($i = 0; $i < $topics; $i++) {
-				my($buffer, $mnum, $mdate, $mstate);
+			my @temp = &read_DBorFILE(0,'',$boardsdir,$curboard,'txt');
+			for (my $i = 0; $i < $topics; $i++) {
+				my ($buffer, $mnum, $mdate, $mstate);
 
-				$buffer = <BOARD>;
+				$buffer = $temp[$i];
 				last unless $buffer;
 				chomp $buffer;
 
@@ -226,7 +222,6 @@ sub RSS_recent {
 				# Add it to an array, using $mdate as the first value so we can easily sort
 				push(@threadlist, "$mdate|$curboard|$buffer");
 			}
-			fclose(BOARD);
 
 			# Clean out the extra entries in the threadlist
 			@threadlist = reverse sort @threadlist;
@@ -278,19 +273,17 @@ sub RSS_recent {
 		}
 
 		my $post;
-		fopen(TOPIC, "$datadir/$curnum.txt") || &RSS_error('cannot_open', "$datadir/$curnum.txt", 1);
 		if ($rss_message == 1) {
 			# Open up the thread and read the last post.
-			while(<TOPIC>) {
+			foreach (&read_DBorFILE(0,'',$datadir,$curnum,'txt')) {
 				chomp $_;
 				$post = $_ if $_;
 			}
 		} elsif ($rss_message == 2) {
 			# Open up the thread and read the first post.
-			$post = <TOPIC>;
+			$post = (&read_DBorFILE(0,'',$datadir,$curnum,'txt'))[0];
 		}
-		fclose(TOPIC);
-		
+
 		if ($post ne ''){
 			(undef, undef, undef, undef, $musername, undef, undef, undef, $message, $ns) = split(/\|/, $post);
 		}
@@ -298,7 +291,7 @@ sub RSS_recent {
 		if ($showauthor) {
 			# The spec really wants us to include their email.
 			# That's not adviseable for us (spambots anyone?). So we skip author if the email hidden flag is on for that user.
-			if (-e "$memberdir/$musername.vars") {
+			if (&checkfor_DBorFILE("$memberdir/$musername.vars")) {
 				&LoadUser($musername); 
 				if (!${$uid.$musername}{'hidemail'}){
 					$yymain .= qq~			<author>~ . &RSSDescriptionTrim("${$uid.$musername}{'email'} (${$uid.$musername}{'realname'})") . qq~</author>\n~;

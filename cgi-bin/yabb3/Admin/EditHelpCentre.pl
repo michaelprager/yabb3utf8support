@@ -95,11 +95,11 @@ sub HelpEdit2 {
 	$Area = $FORM{'area'};
 	$Page = $FORM{'page'};
 
-	fopen(HELPORDER, ">$helpfile/$language/$Area/$Page.help");
-
 	$FORM{"SectionName"} =~ s/ /_/g;
-	print HELPORDER qq~\$SectionName = "$FORM{"SectionName"}";\n\n~;
 	$a = 1;
+
+	&read_DBorFILE(0,HELPORDER,"$helpfile/$language/$Area",$Page,'help');
+	print HELPORDER qq~\$SectionName = "$FORM{"SectionName"}";\n\n~;
 	while ($FORM{"SectionBody$a"}) {
 
 		$FORM{"SectionBody$a"} =~ tr/\r//d;
@@ -120,9 +120,7 @@ sub HelpEdit2 {
 
 		$a++;
 	}
-	print HELPORDER qq~1;~;
-
-	fclose(HELPORDER);
+	&write_DBorFILE(0,HELPORDER,"$helpfile/$language/$Area",$Page,'help',('1;'));
 
 	$yymain .= "$helptxt{'8'}";
 	$yytitle       = "$helptxt{'7'}";
@@ -160,13 +158,9 @@ sub MainAdmin {
 		$admincount++;
 	}
 	if (!-e ("$vardir/Admin.helporder")) {
-		fopen(HELPORDER, ">$vardir/Admin.helporder") || die("couldn't write order file - check permissions on $vardir");
-		print HELPORDER qq~$admin_lst~;
-		fclose(HELPORDER);
+		&write_DBorFILE(0,'',$vardir,'Admin','helporder',($admin_lst));
 	}
-	fopen(HELPORDER, "$vardir/Admin.helporder");
-	@adminorderlist = <HELPORDER>;
-	fclose(HELPORDER);
+	@adminorderlist = &read_DBorFILE(0,'',$vardir,'Admin','helporder');
 	foreach $line (@adminorderlist) {
 		chomp $line;
 		$adminlist .= "$line\n";
@@ -186,13 +180,9 @@ sub MainAdmin {
 		$gmodcount++;
 	}
 	if (!-e ("$vardir/Gmod.helporder")) {
-		fopen(HELPORDER, ">$vardir/Gmod.helporder") || die("couldn't write order file - check permissions on $vardir");
-		print HELPORDER qq~$gmod_lst~;
-		fclose(HELPORDER);
+		&write_DBorFILE(0,'',$vardir,'Gmod','helporder',($gmod_lst));
 	}
-	fopen(HELPORDER, "$vardir/Gmod.helporder");
-	@gmodorderlist = <HELPORDER>;
-	fclose(HELPORDER);
+	@gmodorderlist = &read_DBorFILE(0,'',$vardir,'Gmod','helporder');
 	foreach $line (@gmodorderlist) {
 		chomp $line;
 		$gmodlist .= "$line\n";
@@ -212,13 +202,9 @@ sub MainAdmin {
 		$modcount++;
 	}
 	if (!-e ("$vardir/Moderator.helporder")) {
-		fopen(HELPORDER, ">$vardir/Moderator.helporder") || die("couldn't write order file - check permissions on $vardir");
-		print HELPORDER qq~$moderator_lst~;
-		fclose(HELPORDER);
+		&write_DBorFILE(0,'',$vardir,'Moderator','helporder',($moderator_lst));
 	}
-	fopen(HELPORDER, "$vardir/Moderator.helporder");
-	@modorderlist = <HELPORDER>;
-	fclose(HELPORDER);
+	@modorderlist = &read_DBorFILE(0,'',$vardir,'Moderator','helporder');
 	foreach $line (@modorderlist) {
 		chomp $line;
 		$moderatorlist .= "$line\n";
@@ -238,13 +224,9 @@ sub MainAdmin {
 		$usercount++;
 	}
 	if (!-e ("$vardir/User.helporder")) {
-		fopen(HELPORDER, ">$vardir/User.helporder") || die("couldn't write order file - check permissions on $vardir");
-		print HELPORDER qq~$user_lst~;
-		fclose(HELPORDER);
+		&write_DBorFILE(0,'',$vardir,'User','helporder',($user_lst));
 	}
-	fopen(HELPORDER, "$vardir/User.helporder");
-	@userorderlist = <HELPORDER>;
-	fclose(HELPORDER);
+	@userorderlist = &read_DBorFILE(0,'',$vardir,'User','helporder');
 	foreach $line (@userorderlist) {
 		chomp $line;
 		$userlist .= qq~$line\n~;
@@ -474,9 +456,7 @@ sub SetOrderFile {
 		if (!(exists($verify_hash{$order}))) { next; }
 		$theorder .= "$order\n";
 	}
-	fopen(HELPORDER, ">$vardir/$help_area.helporder") || die("couldn't write order file - check permissions on $vardir");
-	print HELPORDER qq~$theorder~;
-	fclose(HELPORDER);
+	&write_DBorFILE(0,'',$vardir,$help_area,'helporder',($theorder));
 	$yytitle       = "$helptxt{'7'}";
 	$yySetLocation = qq~$adminurl?action=helpadmin~;
 	&redirectexit;

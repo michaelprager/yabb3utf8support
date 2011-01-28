@@ -41,51 +41,56 @@ sub Login2 {
 	&fatal_error("invalid_character","$loginout_txt{'35'} $loginout_txt{'241'}") if $username =~ /[^ \w\x80-\xFF\[\]\(\)#\%\+,\-\|\.:=\?\@\^]/;
 	#&fatal_error("only_numbers_allowed") if $FORM{'cookielength'} !~ /^[0-9]+$/;
 
+	my $user_exists = &checkfor_DBorFILE("$memberdir/$username.vars");
+
 	## Check if login ID is not and email address or screenname ##
-	if (!-e "$memberdir/$username.vars"){
-		$test_id = &MemberIndex("who_is", "$FORM{'username'}");
-		if ($test_id ne "") { $username = $test_id; } else { &fatal_error("bad_credentials"); }
+	if (!$user_exists) {
+		my $test_id = &MemberIndex("who_is", "$FORM{'username'}");
+		if ($test_id ne "") {
+			$username = $test_id;
+			$user_exists = 1;
+		} else {
+			$username = "Guest";
+			&fatal_error("bad_credentials");
+		}
 	}
-	if (-e "$memberdir/$username.pre" && -e "$memberdir/$username.vars") { unlink "$memberdir/$username.pre"; }
-	if (-e "$memberdir/$username.pre" && ($regtype == 1 || $regtype == 2)) { &fatal_error('not_activated'); }
+	if (&checkfor_DBorFILE("$memberdir/$username.pre")) {
+		if ($user_exists) { &delete_DBorFILE("$memberdir/$username.pre"); }
+		if ($regtype == 1 || $regtype == 2) { &fatal_error('not_activated'); }
+	}
 
 	# Need to do this to get correct case of username,
 	# for case insensitive systems. Can cause weird issues otherwise
-	$caseright = 0;
-	&ManageMemberlist("load");
-	while (($curmemb, $value) = each(%memberlist)) {
-		if ($username =~ m/\A\Q$curmemb\E\Z/) { $caseright = 1; last; }
+	&ManageMemberinfo("load");
+	my $caseright;
+	foreach (keys %memberinf) {
+		if ($username =~ m/\A\Q$_\E\Z/) { $caseright = 1; last; }
 	}
-	undef %memberlist;
-	if(!$caseright) {
+	undef %memberinf;
+	if (!$caseright || !&checkfor_DBorFILE("$memberdir/$username.vars")) {
 		$username = "Guest";
 		&fatal_error("bad_credentials");
 	}
 
-	if (-e "$memberdir/$username.vars") {
-		&LoadUser($username);
-		if(!$openidvalidated) {
-			my $spass     = ${$uid.$username}{'password'};
-			my $cryptpass = &encode_password("$FORM{'passwrd'}");
+	&LoadUser($username);
+	if(!$openidvalidated) {
+		my $spass     = ${$uid.$username}{'password'};
+		my $cryptpass = &encode_password("$FORM{'passwrd'}");
 
-			# convert non encrypted password to MD5 crypted one
-			if ($spass eq $FORM{'passwrd'} && $spass ne $cryptpass) {
-				# only encrypt the password if it's not already MD5 encrypted
-				# MD5 hashes in YaBB are always 22 chars long (base64)
-				if (length(${$uid.$username}{'password'}) != 22) {
-					${$uid.$username}{'password'} = $cryptpass;
-					&UserAccount($username);
-					$spass = $cryptpass;
-				}
-			}
-			if ($spass ne $cryptpass) {
-				$username = "Guest";
-				&fatal_error("bad_credentials");
+		# convert non encrypted password to MD5 crypted one
+		if ($spass eq $FORM{'passwrd'} && $spass ne $cryptpass) {
+			# only encrypt the password if it's not already MD5 encrypted
+			# MD5 hashes in YaBB are always 22 chars long (base64)
+			if (length(${$uid.$username}{'password'}) != 22) {
+				${$uid.$username}{'password'} = $cryptpass;
+				&UserAccount($username);
+				$spass = $cryptpass;
 			}
 		}
-	} else {
-		$username = "Guest";
-		&fatal_error("bad_credentials");
+		if ($spass ne $cryptpass) {
+			$username = "Guest";
+			&fatal_error("bad_credentials");
+		}
 	}
 
 	$iamadmin     = ${$uid.$username}{'position'} eq 'Administrator' ? 1 : 0;
@@ -306,8 +311,8 @@ sub Reminder2 {
 	my $user = $FORM{'user'};
 	$user =~ s/\s/_/g;
 
-	if (!-e "$memberdir/$user.vars"){
-		$test_id = &MemberIndex("who_is", $user);
+	if (!&checkfor_DBorFILE("$memberdir/$user.vars")) {
+		my $test_id = &MemberIndex("who_is", $user);
 		if ($test_id) { $user = $test_id; }
 		else { &fatal_error("bad_credentials"); }
 	}
@@ -330,12 +335,11 @@ sub Reminder2 {
 	if (exists $pass{$user}) { delete $pass{$user}; }
 	$pass{"$user"} = $randid;
 
-	fopen(FILE, ">$memberdir/forgotten.passes") || &fatal_error("cannot_open","$memberdir/forgotten.passes", 1);
+	my @temp;
 	while (($key, $value) = each(%pass)) {
-		print FILE qq~\$pass{"$key"} = '$value';\n~;
+		push(@temp, qq~\$pass{"$key"} = '$value';\n~);
 	}
-	print FILE "1;";
-	fclose(FILE);
+	&write_DBorFILE(0,'',$memberdir,'forgotten','passes',(@temp,"\n1;"));
 
 	$subject = "$loginout_txt{'36'} $mbname: ${$uid.$user}{'realname'}";
 	if($do_scramble_id){$cryptusername = &cloak($user);} else {$cryptusername = $user; }
@@ -382,12 +386,12 @@ sub Reminder3 {
 	require "$memberdir/forgotten.passes";
 	if ($pass{$user} ne $id) { &fatal_error("wrong_id"); }
 	delete $pass{$user};
-	fopen(FORGOTTEN, ">$memberdir/forgotten.passes") || &fatal_error("cannot_open","$memberdir/forgotten.passes", 1);
+
+	my @temp;
 	while (($key, $value) = each(%pass)) {
-		print FORGOTTEN qq~\$pass{"$key"} = '$value';\n~;
+		push(@temp, qq~\$pass{"$key"} = '$value';\n~);
 	}
-	print FORGOTTEN "\n1;";
-	fclose(FORGOTTEN);
+	&write_DBorFILE(0,'',$memberdir,'forgotten','passes',(@temp,"\n1;"));
 
 	# add newly generated password to user data
 	${$uid.$user}{'password'} = &encode_password($newpassword);

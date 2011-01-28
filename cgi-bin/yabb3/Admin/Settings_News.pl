@@ -16,9 +16,7 @@ $settings_newsplver = 'YaBB 3.0 Beta $Revision: 100 $';
 if ($action eq 'detailedversion') { return 1; }
 
 # Load the news from news.txt
-fopen(NEWS, "$vardir/news.txt") || &fatal_error('cannot_open', "$vardir/news.txt", 1);
-my $yabbnews = join('', <NEWS>);
-fclose(NEWS);
+my $yabbnews = join('', &read_DBorFILE(0,'',$vardir,'news','txt'));
 # ToHTML, in case they have some crazy HTML in it like </textarea>
 &ToHTML($yabbnews);
 &ToChars($yabbnews);
@@ -70,6 +68,36 @@ fclose(NEWS);
 			validate => 'boolean',
 			depends_on => ['enable_news', 'shownewsfader'],
 		},
+		{
+			description => qq~<label for="fadertext">$admin_txt{'389'}</label>~,
+			input_html => qq~<input type="text" size="7" maxlength="7" name="fadertext" id="fadertext" value="$color{'fadertext'}" onkeyup="previewColor(this.value);" /> <span id="fadertext2" style="background-color:$color{'fadertext'}">&nbsp; &nbsp; &nbsp;</span> <img align="top" src="$defaultimagesdir/palette1.gif" style="cursor: pointer" onclick="window.open('$scripturl?action=palette;task=templ', '', 'height=308,width=302,menubar=no,toolbar=no,scrollbars=no')" alt="" border="0" />
+			<script language="JavaScript1.2" type="text/javascript">
+			<!--
+			function previewColor(color) {
+				document.getElementById('fadertext2').style.background = color;
+				document.getElementsByName("fadertext")[0].value = color;
+			}
+			//-->
+			</script>~,
+			name => 'fadertext',
+			validate => 'hexadecimal,alpha',
+			depends_on => ['enable_news', 'shownewsfader'],
+		},
+		{
+			description => qq~<label for="faderbackground">$admin_txt{'389a'}</label>~,
+			input_html => qq~<input type="text" size="7" maxlength="7" name="faderbackground" id="faderbackground" value="$color{'faderbg'}" onkeyup="previewColor_0(this.value);" /> <span id="faderbackground2" style="background-color:$color{'faderbg'}">&nbsp; &nbsp; &nbsp;</span> <img align="top" src="$defaultimagesdir/palette1.gif" style="cursor: pointer" onclick="window.open('$scripturl?action=palette;task=templ_0', '', 'height=308,width=302,menubar=no,toolbar=no,scrollbars=no')" alt="" border="0" />
+			<script language="JavaScript1.2" type="text/javascript">
+			<!--
+			function previewColor_0(color) {
+				document.getElementById('faderbackground2').style.background = color;
+				document.getElementsByName("faderbackground")[0].value = color;
+			}
+			//-->
+			</script>~,
+			name => 'faderbackground',
+			validate => 'hexadecimal,alpha',
+			depends_on => ['enable_news', 'shownewsfader'],
+		},
 	],
 },
 {
@@ -98,10 +126,8 @@ sub SaveSettings {
 	chomp $settings{'news'};
 	&FromChars($settings{'news'});
 	# news.txt stuff
-	fopen(NEWS, ">$vardir/news.txt", 1) || &fatal_error('cannot_open', "$vardir/news.txt", 1);
-	print NEWS $settings{'news'}; # Remove it from the hash
-	fclose(NEWS);
-	delete $settings{'news'};
+	&write_DBorFILE(0,'',$vardir,'news','txt',($settings{'news'}));
+	delete $settings{'news'}; # Remove it from the hash
 
 	# Settings.pl stuff
 	&SaveSettingsTo('Settings.pl', %settings);

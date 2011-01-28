@@ -517,7 +517,7 @@ if ($quota[2]) {
   <option value="0" ${isselected($use_flock == 0)}>$admin_txt{'401'}</option>
   <option value="1" ${isselected($use_flock == 1)}>$admin_txt{'402'}</option>
   <option value="2" ${isselected($use_flock == 2)}>$admin_txt{'403'}</option>
-  <option value="3" ${isselected($use_flock == 3)}>$admin_txt{'409'}</option>
+  <option value="3" ${isselected($use_flock == 3)}>$admin_txt{'410'}</option>
 </select>~,
 			name => 'use_flock',
 			validate => 'number',

@@ -36,9 +36,7 @@ sub Display {
 		$dlp = $dlp > $date - ($max_log_days_old * 86400) ? $dlp : $date - ($max_log_days_old * 86400);
 
 		unless (ref($thread_arrayref{$mnum})) {
-			fopen(MNUM, "$datadir/$mnum.txt");
-			@{$thread_arrayref{$mnum}} = <MNUM>;
-			fclose(MNUM);
+			@{$thread_arrayref{$mnum}} = &read_DBorFILE(0,'',$datadir,$mnum,'txt');
 		}
 		my $i = -1;
 		foreach (@{$thread_arrayref{$mnum}}) {
@@ -63,7 +61,7 @@ sub Display {
 	# strip off any non numeric values to avoid exploitation
 	$maxmessagedisplay ||= 10;
 	my ($msubthread, $mnum, $mstate, $mdate, $msub, $mname, $memail, $mreplies, $musername, $micon, $mip, $mlm, $mlmb);
-	my ($counter, $counterwords, $threadclass, $notify, $max, $start, $windowbg, $mattach, $pagedropindex, $template_viewers, $template_favorite, $template_pollmain, $navback, $mark_unread, $pollbutton, $icanbypass, $replybutton, $bypassReplyButton);
+	my ($counter, $counterwords, $threadclass, $notify, $max, $start, $windowbg, $mreplyno, $pagedropindex, $template_viewers, $template_favorite, $template_pollmain, $navback, $mark_unread, $pollbutton, $icanbypass, $replybutton, $bypassReplyButton);
 
 	&LoadCensorList;
 
@@ -94,7 +92,7 @@ sub Display {
 	if ($mstate =~ /m/) {
 		$msubthread =~ / dest=(\d+)\]/;
 		my $newnum = $1;
-		if (-e "$datadir/$newnum.txt") {
+		if (&checkfor_DBorFILE("$datadir/$newnum.txt")) {
 			$yySetLocation = "$scripturl?num=$newnum";
 			&redirectexit;
 		}
@@ -102,7 +100,7 @@ sub Display {
 		while (exists $moved_file{$newnum}) {
 			$newnum = $moved_file{$newnum};
 			next if exists $moved_file{$newnum};
-			if (-e "$datadir/$newnum.txt") {
+			if (&checkfor_DBorFILE("$datadir/$newnum.txt")) {
 				$yySetLocation = "$scripturl?num=$newnum";
 				&redirectexit;
 			}
@@ -139,10 +137,12 @@ sub Display {
 
 	## now we've established credentials,
 	## can this user bypass locks?
-	## work out who can bypass locked thread post only if bypass switched on
+	## work out who can bypass locked thread
 	if ($mstate =~ /l/i) {
-		if ($bypass_lock_perm) { $icanbypass = &checkUserLockBypass; }
+		$icanbypass = &checkUserLockBypass;
 		$enable_quickreply = 0;
+	} elsif ($staff) {
+		$icanbypass = 2;
 	}
 
 	my $permdate = &permtimer($mnum);
@@ -152,7 +152,7 @@ sub Display {
 	if (&AccessCheck($currentboard, 3) eq 'granted') {
 		$pollbutton = qq~$menusep<a href="$scripturl?action=post;num=$viewnum;virboard=$vircurrentboard;title=AddPoll">$img{'addpoll'}</a>~;
 	}
-	if (-e "$datadir/$viewnum.poll") {
+	if (&checkfor_DBorFILE("$datadir/$viewnum.poll")) {
 		$has_poll = 1;
 		$pollbutton = '';
 	} else {
@@ -183,7 +183,7 @@ sub Display {
 	## hidden threads
 	if ($mstate =~ /h/i) {
 		$threadclass = 'hide';
-		if (!$iamadmin && !$iamgmod && !$iammod) { &fatal_error('no_access'); }
+		if (!$staff) { &fatal_error('no_access'); }
 	}
 	## locked thread
 	elsif ($mstate =~ /l/i) {
@@ -217,16 +217,16 @@ sub Display {
 	elsif ($mstate =~ /s/i) { $threadclass = 'sticky'; }
 	elsif (${$mnum}{'board'} eq $annboard) { $threadclass = $threadclass eq 'locked' ? 'announcementlock' : 'announcement'; }
 
-	if (-e "$datadir/$mnum.mail" && !$iamguest) {
+	if (!$iamguest && &checkfor_DBorFILE("$datadir/$mnum.mail")) {
 		require "$sourcedir/Notify.pl";
-		&ManageThreadNotify("update", $mnum, $username, '', '', '1');
+		&ManageThreadNotify("update", $mnum, $username, '', '', 1);
 	}
 
 	if ($showmodgroups ne "" && $showmods ne "") { $showmods .= qq~ - ~; }
 
 	# Build the page links list.
 	if (!$iamguest) {
-		(undef, $userthreadpage, undef,undef) = split(/\|/, ${$uid.$username}{'pageindex'});
+		(undef, $userthreadpage, undef) = split(/\|/, ${$uid.$username}{'pageindex'}, 3);
 	}
 	my ($pagetxtindex, $pagetextindex, $pagedropindex1, $pagedropindex2, $all, $allselected);
 	$postdisplaynum = 3; # max number of pages to display
@@ -253,8 +253,8 @@ sub Display {
 	if ($pagenumb > 1 || $all) {
 		if ($userthreadpage == 1 || $iamguest) {
 			$pagetxtindexst = qq~<span class="small" style="float: left; height: 21px; margin: 0px; margin-top: 2px;">~;
-			if (!$iamguest) { $pagetxtindexst .= qq~<a href="$scripturl?num=$viewnum;start=~ . (!$ttsreverse ? $start : $mreplies - $start) . qq~;action=threadpagedrop"><img src="$imagesdir/index_togl.gif" border="0" alt="$display_txt{'19'}" style="vertical-align: middle;" /></a> $display_txt{'139'}: ~; }
-			else { $pagetxtindexst .= qq~<img src="$imagesdir/index_togl.gif" border="0" alt="" style="vertical-align: middle;" /> $display_txt{'139'}: ~; }
+			if (!$iamguest) { $pagetxtindexst .= qq~<a href="$scripturl?num=$viewnum;start=~ . (!$ttsreverse ? $start : $mreplies - $start) . qq~;action=threadpagedrop"><img src="$imagesdir/index_togl.png" border="0" alt="$display_txt{'19'}" style="vertical-align: middle;" /></a> $display_txt{'139'}: ~; }
+			else { $pagetxtindexst .= qq~<img src="$imagesdir/index_togl.png" border="0" alt="" style="vertical-align: middle;" /> $display_txt{'139'}: ~; }
 			if ($startpage > 0) { $pagetxtindex = qq~<a href="$scripturl?num=$viewnum/~ . (!$ttsreverse ? 0 : $mreplies) . qq~" style="font-weight: normal;">1</a>&nbsp;<a href="javascript:void(0);" onclick="ListPages($mnum);">...</a>&nbsp;~; }
 			if ($startpage == $maxmessagedisplay) { $pagetxtindex = qq~<a href="$scripturl?num=$viewnum/~ . (!$ttsreverse ? 0 : $mreplies) . qq~" style="font-weight: normal;">1</a>&nbsp;~; }
 			for ($counter = $startpage; $counter < $endpage; $counter += $maxmessagedisplay) {
@@ -269,7 +269,7 @@ sub Display {
 
 		} else {
 			$pagedropindex1 = qq~<span style="float: left; width: 350px; margin: 0px; margin-top: 2px; border: 0px;">~;
-			$pagedropindex1 .= qq~<span style="float: left; height: 21px; margin: 0; margin-right: 4px;"><a href="$scripturl?num=$viewnum;start=~ . (!$ttsreverse ? $start : $mreplies - $start) . qq~;action=threadpagetext"><img src="$imagesdir/index_togl.gif" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" /></a></span>~;
+			$pagedropindex1 .= qq~<span style="float: left; height: 21px; margin: 0; margin-right: 4px;"><a href="$scripturl?num=$viewnum;start=~ . (!$ttsreverse ? $start : $mreplies - $start) . qq~;action=threadpagetext"><img src="$imagesdir/index_togl.png" border="0" alt="$display_txt{'19'}" title="$display_txt{'19'}" /></a></span>~;
 			$pagedropindex2 = $pagedropindex1;
 			$tstart = $start;
 			#if (substr($INFO{'start'}, 0, 3) eq "all") { ($tstart, $start) = split(/\-/, $INFO{'start'}); }
@@ -441,7 +441,7 @@ sub Display {
 		$navback = qq~<a href="$scripturl?board=$currentboard">&lsaquo; $maintxt{'board'}</a>~;
 		$template_mods  = qq~$showmods$showmodgroups~;
 	}
-	if ($showtopicviewers && ($iamadmin || $iamgmod || $iammod) && $sessionvalid == 1) {
+	if (($showtopicviewers == 1 && $staff) || ($showtopicviewers == 2 && !$iamguest) || $showtopicviewers == 3) {
 		my ($mrepuser, $misreplying, $replying);
 		foreach (@repliers) {
 			(undef, $mrepuser, $misreplying) = split(/\|/, $_);
@@ -476,9 +476,7 @@ sub Display {
 	if (!$UseMenuType) { $sm = 1; }
 
 	unless (ref($thread_arrayref{$viewnum})) {
-		fopen(MSGTXT, "$datadir/$viewnum.txt") || &fatal_error("cannot_open","$datadir/$viewnum.txt", 1);
-		@{$thread_arrayref{$viewnum}} = <MSGTXT>;
-		fclose(MSGTXT);
+		@{$thread_arrayref{$viewnum}} = &read_DBorFILE(0,'',$datadir,$viewnum,'txt');
 	}
 	$counter = 0;
 	my @messages;
@@ -499,13 +497,18 @@ sub Display {
 		@messages = reverse(@messages);
 	}
 
+	my $hideavatar = 1 if !$allowpics || !$showuserpic || (${$uid.$username}{'hide_avatars'} && $user_hide_avatars);
+	my $hideusertext = 1 if !$showusertext || (${$uid.$username}{'hide_user_text'} && $user_hide_user_text);
+	my $hideattachimg = 1 if ${$uid.$username}{'hide_attach_img'} && $user_hide_attach_img;
+	my $hidesignat = 1 if (${$uid.$username}{'hide_signat'} && $user_hide_signat) || ($hide_signat_for_guests && $iamguest);
+
 	# For each post in this thread:
 	my (%attach_gif,%attach_count,$movedflag);
 	foreach (@messages) {
 		my ($userlocation, $aimad, $yimad, $msnad, $gtalkad, $skypead, $myspacead, $facebookad, $icqad, $buddyad, $addbuddy, $isbuddy, $addbuddylink, $userOnline, $signature_hr, $lastmodified, $memberinfo, $template_postinfo, $template_ext_prof, $template_profile, $template_quote, $template_email, $template_www, $template_pm);
 
 		$css = $cssvalues[($counter % $cssnum)];
-		($msub, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $postmessage, $ns, $mlm, $mlmb, $mfn) = split(/[\|]/, $_);
+		($msub, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $postmessage, $ns, $mlm, $mlmb, $mfn) = split(/[\|]/, $_);
 
 		# If the user isn't a guest, load their info.
 		if ($musername ne 'Guest' && !$yyUDLoaded{$musername} && -e ("$memberdir/$musername.vars")) {
@@ -530,12 +533,10 @@ sub Display {
 			# store all downloadcounts in variable
 			if (!%attach_count) {
 				my ($atfile,$atcount);
-				fopen(ATM, "$vardir/attachments.txt");
-				while (<ATM>) {
+				foreach (&read_DBorFILE(1,'',$vardir,'attachments','txt')) {
 					(undef, undef, undef, undef, undef, undef, undef, $atfile, $atcount) =split(/\|/, $_);
 					$attach_count{$atfile} = $atcount;
 				}
-				fclose(ATM);
 				$attach_count{'no_attachments'} = 1 if !%attach_count;
 			}
 
@@ -547,7 +548,7 @@ sub Display {
 				}
 				my $filesize = -s "$uploaddir/$_";
 				if ($filesize) {
-					if ($_ =~ /\.(bmp|jpe|jpg|jpeg|gif|png)$/i && $amdisplaypics == 1) {
+					if ($_ =~ /\.(bmp|jpe|jpg|jpeg|gif|png)$/i && $amdisplaypics == 1 && !$hideattachimg) {
 						$showattach .= qq~<div class="small" style="float:left; margin:8px;"><a href="$scripturl?action=downloadfile;file=$_" target="_blank"><img src="$imagesdir/$attach_gif{$ext}" border="0" align="bottom" alt="" /> $_</a> (~ . int($filesize / 1024) . qq~ KB | <acronym title='$attach_count{$_} $fatxt{'41a'}' class="small">$attach_count{$_}</acronym> )<br />~ . ($img_greybox ? ($img_greybox == 2 ? qq~<a href="$scripturl?action=downloadfile;file=$_" rel="gb_imageset[nice_pics]" title="$_">~ : qq~<a href="$scripturl?action=downloadfile;file=$_" rel="gb_image[nice_pics]" title="$_">~) : qq~<a href="$scripturl?action=downloadfile;file=$_" target="_blank">~) . qq~<img src="$uploadurl/$_" name="attach_img_resize" alt="$_" title="$_" border="0" style="display:none" /></a></div>\n~;
 					} else {
 						$attachment .= qq~<div class="small"><a href="$scripturl?action=downloadfile;file=$_"><img src="$imagesdir/$attach_gif{$ext}" border="0" align="bottom" alt="" /> $_</a> (~ . int($filesize / 1024) . qq~ KB | <acronym title='$attach_count{$_} $fatxt{'41a'}' class="small">$attach_count{$_}</acronym> )</div>~;
@@ -574,7 +575,7 @@ sub Display {
 		else { $mip = $display_txt{'511'}; }
 
 		## moderator alert button!
-		if ($PMenableAlertButton && $PM_level && !$iamadmin && !$iamgmod && !$iammod && (!$iamguest || ($iamguest && $PMAlertButtonGuests))) {
+		if ($PMenableAlertButton && $PM_level && !$staff && (!$iamguest || ($iamguest && $PMAlertButtonGuests))) {
 			$PMAlertButton = qq~$menusep<a href="$scripturl?action=modalert;num=$viewnum;title=PostReply;quote=$counter" onclick="return confirm('$display_txt{'alertmod_confirm'}');">$img{'alertmod'}</a>~;
 		}
 		## is member a buddy of mine?
@@ -591,14 +592,13 @@ sub Display {
 				else { $addbuddy = $addbuddylink; }
 				# Allow instant message sending if current user is a member.
 				&CheckUserPM_Level($musername);
-				if ($PM_level == 1 || ($PM_level == 2 && $UserPM_Level{$musername} > 1 && ($iamadmin || $iamgmod || $iammod)) || ($PM_level == 3 && $UserPM_Level{$musername} == 3 && ($iamadmin || $iamgmod))) {
+				if ($PM_level == 1 || ($PM_level == 2 && $UserPM_Level{$musername} > 1 && $staff) || ($PM_level == 3 && $UserPM_Level{$musername} == 3 && ($iamadmin || $iamgmod))) {
 					$template_pm = qq~$menusep<a href="$scripturl?action=imsend;to=$useraccount{$musername}">$img{'message_sm'}</a>~;
 				}
 			}
 
-			$tmppostcount = &NumberFormat(${$uid.$musername}{'postcount'});
-			$template_postinfo = qq~$display_txt{'21'}: $tmppostcount<br />~;
-			$template_profile = ($profilebutton && !$iamguest) ? qq~$menusep<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}">$img{'viewprofile_sm'}</a>~ : '';
+			$template_postinfo = qq~$display_txt{'21'}: ~ . &NumberFormat(${$uid.$musername}{'postcount'}) . qq~<br />~;
+			$template_profile = ($profilebutton && !$iamguest) ? qq~$menusep<a href="$scripturl?action=viewprofile;username=$useraccount{$musername}" rel="nofollow">$img{'viewprofile_sm'}</a>~ : '';
 			$template_www = ${$uid.$musername}{'weburl'} ? qq~$menusep${$uid.$musername}{'weburl'}~ : '';
 
 			$userOnline = &userOnLineStatus($musername) . "<br />";
@@ -667,9 +667,8 @@ sub Display {
 		&wrap2;
 		&ToChars($message);
 
-		if ($icanbypass) { $template_modify = qq~$menusep<a href="$scripturl?board=$currentboard;action=modify;message=$counter;thread=$viewnum" onclick="return confirm('$display_txt{'modifyinlocked'}');">$img{'modify'}</a> ~; }
-
-		if ($mstate !~ /l/i) {
+		$template_modify = '';
+		if ($mstate !~ /l/i || $icanbypass) {
 			if ($replybutton) {
 				my $quote_mname = $displayname;
 				$quote_mname =~ s/'/\\'/g;
@@ -680,14 +679,12 @@ sub Display {
 					$usernamelink = qq~<a href="javascript://" onclick="AddText('[color=$quoteuser_color]@[/color] [b]$quote_mname\[/b]\\r\\n\\r\\n'))"><img src="$imagesdir/qquname.gif" border="0" alt="$display_txt{'146n'}" title="$display_txt{'146n'}" /></a> $usernamelink~ if $enable_quickreply && $enable_quoteuser && (!$iamguest || $enable_guestposting);
 				}
 				
-				if (!$movedflag || $iamadmin || $iamgmod || $iammod) {
+				if (!$movedflag || $staff) {
 					$quote_mname = $useraccount{$musername};
 					$quote_mname =~ s/'/\\'/g;
 					
 					if ($display_postpopup) {
-						if ($enable_markquote) {
-							$template_markquote = qq~$menusep<a href="javascript://" onclick="popupquote('$quote_mname',$viewnum,$counter,$mdate,quote_selection[$counter])">$img{'mquote'}</a>~;
-						}
+						$template_markquote = qq~$menusep<a href="javascript://" onclick="popupquote('$quote_mname',$viewnum,$counter,$mdate,quote_selection[$counter])">$img{'mquote'}</a>~;
 						if (length($postmessage) <= $quick_quotelength) {
 							my $quickmessage = $postmessage;
 							if (!$nestedquotes) {
@@ -722,21 +719,19 @@ sub Display {
 							$template_quote = qq~$menusep<a href="$scripturl?action=post;num=$viewnum;virboard=$vircurrentboard;quote=$counter;title=PostReply">$img{'quote'}</a>~;
 						}
 					} else {
-						$template_quote = qq~$menusep<a href="$scripturl?action=post;num=$viewnum;virboard=$vircurrentboard;quote=$counter;title=PostReply">$img{'quote'}</a>~;
+						$template_quote = qq~$menusep<a href="$scripturl?action=post;num=$viewnum;virboard=$vircurrentboard;quote=$counter;title=PostReply"~ . ($icanbypass == 1 ? qq~ onclick="return confirm('$display_txt{'modifyinlocked'}');"~ : '') . qq~>$img{'quote'}</a>~;
 					}
 				}
 			}
-			if ($sessionvalid == 1 && ($iamadmin || $iamgmod || $iammod || ($username eq $musername && !$exmem && (!$tlnomodflag || $date < $mdate + ($tlnomodtime * 3600 * 24))))) {
-				$template_modify = qq~$menusep<a href="$scripturl?board=$currentboard;action=modify;message=$counter;thread=$viewnum">$img{'modify'}</a>~;
-			} else {
-				$template_modify = '';
+			if ($counter > 0 && $icanbypass) {
+				$template_split = qq~$menusep<a href="$scripturl?action=split_splice;board=$currentboard;thread=$viewnum;oldposts=~ . join(',%20', ($counter .. $mreplies)) . qq~;leave=0;newcat=$curcat;newboard=$currentboard;newthread=new;ss_submit=1" onclick="return confirm('~ . ($icanbypass == 1 ? qq~$display_txt{'modifyinlocked'}\\n\\n~ : '') . qq~$display_txt{'split_confirm'}');">$img{'admin_split'}</a>~;
 			}
-			if ($counter > 0 && ($iamadmin || $iamgmod || $iammod) && $sessionvalid == 1) {
-				$template_split = qq~$menusep<a href="$scripturl?action=split_splice;board=$currentboard;thread=$viewnum;oldposts=~ . join(',%20', ($counter .. $mreplies)) . qq~;leave=0;newcat=$curcat;newboard=$currentboard;newthread=new;ss_submit=1" onclick="return confirm('$display_txt{'split_confirm'}');">$img{'admin_split'}</a>~;
+			if ($staff || ($username eq $musername && !$exmem && (!$tlnomodflag || $date < $mdate + ($tlnomodtime * 3600 * 24)))) {
+				$template_modify = qq~$menusep<a href="$scripturl?board=$currentboard;action=modify;message=$counter;thread=$viewnum"~ . ($icanbypass == 1 ? qq~ onclick="return confirm('$display_txt{'modifyinlocked'}');"~ : '') . qq~>$img{'modify'}</a>~;
 			}
-			if ($sessionvalid == 1 && ($iamadmin || $iamgmod || $iammod || ($username eq $musername && !$exmem && (!$tlnodelflag || $date < $mdate + ($tlnodeltime * 3600 * 24))))) {
-				$template_delete = qq~$menusep<span style="cursor: pointer; cursor: hand;" onclick="if(confirm('$display_txt{'rempost'}')) {uncheckAllBut($counter);}">$img{'delete'}</span>~;
-				if ((($iammod && $mdmod == 1) || ($iamadmin && $mdadmin == 1) || ($iamgmod && $mdglobal == 1)) && $sessionvalid == 1) {
+			if ($staff || ($username eq $musername && !$exmem && (!$tlnodelflag || $date < $mdate + ($tlnodeltime * 3600 * 24)))) {
+				$template_delete = qq~$menusep<span style="cursor: pointer; cursor: hand;" onclick="if(confirm('~ . ($icanbypass == 1 ? qq~$display_txt{'modifyinlocked'}\\n\\n~ : '') . qq~$display_txt{'rempost'}')) {uncheckAllBut($counter);}">$img{'delete'}</span>~;
+				if (($iammod && $mdmod == 1) || ($iamadmin && $mdadmin == 1) || ($iamgmod && $mdglobal == 1)) {
 					$template_admin = qq~<input type="checkbox" class="$css" style="border: 0px;" name="del$counter" value="$counter" />~;
 				} else {
 					# need to set visibility to hidden - used for regular users to delete their posts too,
@@ -815,19 +810,27 @@ sub Display {
 		$outblock =~ s/({|<)yabb msgdate(}|>)/$messdate/g;
 		$outblock =~ s/({|<)yabb replycount(}|>)/$counterwords/g;
 		$outblock =~ s/({|<)yabb count(}|>)/$counter/g;
-		$outblock =~ s/({|<)yabb att(}|>)/$attachment/g;
+		if ($showattach || $attachment) {
+			$outblock =~ s/({|<)yabb showatthr(}|>)/showattachhr/g;
+			$outblock =~ s/({|<)yabb att(}|>)/$attachment/g;
+			$outblock =~ s/({|<)yabb showatt(}|>)/$showattach/g;
+		} else {
+			$outblock =~ s/({|<)yabb hideatt(}|>)/ display: none;/g;
+		}
 		$outblock =~ s/({|<)yabb css(}|>)/$css/g;
 		$outblock =~ s/({|<)yabb gender(}|>)/${$uid.$musername}{'gender'}/g;
 		$outblock =~ s/({|<)yabb ext_prof(}|>)/$template_ext_prof/g;
 		$outblock =~ s/({|<)yabb postinfo(}|>)/$template_postinfo/g;
-		$outblock =~ s/({|<)yabb usertext(}|>)/${$uid.$musername}{'usertext'}/g;
-		$outblock =~ s/({|<)yabb userpic(}|>)/${$uid.$musername}{'userpic'}/g;
+		$outblock =~ s/({|<)yabb usertext(}|>)/${$uid.$musername}{'usertext'}/g if !$hideusertext;
+		$outblock =~ s/({|<)yabb userpic(}|>)/${$uid.$musername}{'userpic'}/g if !$hideavatar;
 		$outblock =~ s/({|<)yabb message(}|>)/$message/g;
-		$outblock =~ s/({|<)yabb showatt(}|>)/$showattach/g;
-		$outblock =~ s/({|<)yabb showatthr(}|>)/$showattachhr/g;
 		$outblock =~ s/({|<)yabb modified(}|>)/$lastmodified/g;
-		$outblock =~ s/({|<)yabb signature(}|>)/${$uid.$musername}{'signature'}/g;
-		$outblock =~ s/({|<)yabb signaturehr(}|>)/$signature_hr/g;
+		if (!$hidesignat && ${$uid.$musername}{'signature'}) {
+			$outblock =~ s/({|<)yabb signature(}|>)/${$uid.$musername}{'signature'}/g;
+			$outblock =~ s/({|<)yabb signaturehr(}|>)/$signature_hr/g;
+		} else {
+			$outblock =~ s/({|<)yabb hidesignat(}|>)/ display: none;/;
+		}
 		$outblock =~ s/({|<)yabb ipimg(}|>)/$ipimg/g;
 		$outblock =~ s/({|<)yabb ip(}|>)/$mip/g;
 		$outblock =~ s/({|<)yabb outsideposttools(}|>)/$outside_posttools_tmp/g;
@@ -851,19 +854,14 @@ sub Display {
 
 	# Insert 5
 	my ($template_remove, $template_splice, $template_lock, $template_hide, $template_sticky, $template_multidelete);
-	if (($iammod || $iamadmin || $iamgmod) && $sessionvalid == 1) {
-		$template_remove = qq~$menusep<a href="javascript:document.removethread.submit();" onclick="return confirm('$display_txt{'162'}')"> $img{'admin_rem'}</a>~;
-
-		$template_splice = qq~$menusep<a href="javascript:void(window.open('$scripturl?action=split_splice;board=$currentboard;thread=$viewnum;oldposts=all;leave=0;newcat=$curcat;newboard=$currentboard;position=end','_blank','width=800,height=650,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,top=150,left=150'))">$img{'admin_move_split_splice'}</a>~;
-
-		$template_lock = qq~$menusep<a href="$scripturl?action=lock;thread=$viewnum">$img{'admin_lock'}</a>~;
-		$template_hide = qq~$menusep<a href="$scripturl?action=hide;thread=$viewnum">$img{'hide'}</a>~;
-		$template_sticky = qq~$menusep<a href="$scripturl?action=sticky;thread=$viewnum">$img{'admin_sticky'}</a>~;
-		if (${$mnum}{'board'} eq $annboard) { $template_sticky = ''; }
-	}
-	if ((($iammod && $mdmod == 1) || ($iamadmin && $mdadmin == 1) || ($iamgmod && $mdglobal == 1)) && $sessionvalid == 1) {
-		if ($mstate !~ /l/i) {
-			$template_multidelete = qq~$menusep<a href="javascript:document.multidel.submit();" onclick="return confirm('$display_txt{'739'}')">$img{'admin_del'}</a>~;
+	if ($icanbypass) {
+		$template_remove = qq~$menusep<a href="javascript:document.removethread.submit();" onclick="return confirm('~ . ($icanbypass == 1 ? qq~$display_txt{'modifyinlocked'}\\n\\n~ : '') . qq~$display_txt{'162'}')">$img{'admin_rem'}</a>~;
+		$template_splice = qq~$menusep<a href="javascript:void(window.open('$scripturl?action=split_splice;board=$currentboard;thread=$viewnum;oldposts=all;leave=0;newcat=$curcat;newboard=$currentboard;position=end','_blank','width=800,height=650,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,top=150,left=150'))"~ . ($icanbypass == 1 ? qq~ onclick="return confirm('$display_txt{'modifyinlocked'}');"~ : '') . qq~>$img{'admin_move_split_splice'}</a>~;
+		$template_lock = qq~$menusep<a href="$scripturl?action=lock;thread=$viewnum"~ . ($icanbypass == 1 ? qq~ onclick="return confirm('$display_txt{'modifyinlocked'}');"~ : '') . qq~>$img{'admin_lock'}</a>~ if &checkUserLockBypass;
+		$template_hide = qq~$menusep<a href="$scripturl?action=hide;thread=$viewnum"~ . ($icanbypass == 1 ? qq~ onclick="return confirm('$display_txt{'modifyinlocked'}');"~ : '') . qq~>$img{'hide'}</a>~;
+		$template_sticky = qq~$menusep<a href="$scripturl?action=sticky;thread=$viewnum"~ . ($icanbypass == 1 ? qq~ onclick="return confirm('$display_txt{'modifyinlocked'}');"~ : '') . qq~>$img{'admin_sticky'}</a>~ if ${$mnum}{'board'} ne $annboard;
+		if (($iammod && $mdmod == 1) || ($iamadmin && $mdadmin == 1) || ($iamgmod && $mdglobal == 1)) {
+			$template_multidelete = qq~$menusep<a href="javascript:document.multidel.submit();" onclick="return confirm('~ . ($icanbypass == 1 ? qq~$display_txt{'modifyinlocked'}\\n\\n~ : '') . qq~$display_txt{'739'}')">$img{'admin_del'}</a>~;
 		}
 	}
 
@@ -886,22 +884,7 @@ sub Display {
 
 	$tabsep = qq~<img src="$imagesdir/tabsep211.png" border="0" alt="" style="vertical-align: middle;" />~;
 	$yynavback = qq~$tabsep <a href="$scripturl">&#171; $img_txt{'103'}</a> $tabsep $navback $tabsep~;
-	
-	$boardtree = '';
-	$parentboard = $currentboard;
-	while($parentboard) {
-		my ($pboardname, undef, undef) = split(/\|/, $board{"$parentboard"});
-		if(${$uid.$parentboard}{'canpost'}) {
-			$pboardname = qq~<a href="$scripturl?board=$parentboard" class="a"><b>$pboardname</b></a>~;
-		} else {
-			$pboardname = qq~<a href="$scripturl?boardselect=$parentboard&subboards=1" class="a"><b>$pboardname</b></a>~;
-		}
-		$boardtree = qq~ &rsaquo; $pboardname$boardtree~;
-		$parentboard = ${$uid.$parentboard}{'parent'};
-	}
-	
-	$yynavigation = qq~&rsaquo; $template_cat$boardtree &rsaquo; $msubthread~;
-	
+	$yynavigation = qq~&rsaquo; $template_cat &rsaquo; $template_board &rsaquo; $msubthread~;
 	# Create link to modify displayed post order if allowed
 	my $curthreadurl = (!$iamguest and $ttsureverse) ? qq~<a title="$display_txt{'reverse'}" href="$scripturl?num=$viewnum;start=~ . (!$ttsreverse ? $mreplies : 0) . qq~;action=~ . ($userthreadpage == 1 ? 'threadpagetext' : 'threadpagedrop') . qq~;reversetopic=$ttsreverse"><img src="$imagesdir/arrow_~ . ($ttsreverse ? 'up' : 'down') . qq~.gif" border="0" alt="" style="vertical-align: middle;" /> $msubthread</a>~ : $msubthread;
 
@@ -963,22 +946,20 @@ sub Display {
 	$display_template =~ s/({|<)yabb threadhandellist2(}|>)/$threadhandellist2/g;
 	$display_template =~ s/({|<)yabb threadimage(}|>)/$template_threadimage/g;
 	$display_template =~ s/({|<)yabb threadurl(}|>)/$curthreadurl/g;
-	$tmpviews = ${$viewnum}{'views'} - 1;
-	$tmpviews = &NumberFormat($tmpviews);
-	$display_template =~ s/({|<)yabb views(}|>)/ $tmpviews /eg;
-	if (($iamadmin || $iamgmod || $iammod) && $sessionvalid == 1) {
+	$display_template =~ s/({|<)yabb views(}|>)/ &NumberFormat(${$viewnum}{'views'} - 1) /eg;
+	my $formstart;
+	if ($icanbypass) {
 		# Board=$currentboard is necessary for multidel - DO NOT REMOVE!!
 		# This form is necessary to allow thread deletion in locked topics.
-		$formstart .= qq~<form name="removethread" action="$scripturl?action=removethread" method="post" style="display: inline">
-		<input type="hidden" name="thread" value="$viewnum" />
-		</form>~;
-
+		$formstart = qq~
+	<form name="removethread" action="$scripturl?action=removethread" method="post" style="display: inline">
+	<input type="hidden" name="thread" value="$viewnum" />
+	</form>~;
 	}
-	$formstart .= qq~<form name="multidel" action="$scripturl?board=$currentboard;action=multidel;thread=$viewnum/~ . (!$ttsreverse ? $start : $mreplies - $start) . qq~" method="post" style="display: inline">~;
-	$formend = qq~</form>~;
-
+	$formstart .= qq~
+	<form name="multidel" action="$scripturl?board=$currentboard;action=multidel;thread=$viewnum/~ . (!$ttsreverse ? $start : $mreplies - $start) . qq~" method="post" style="display: inline">~;
 	$display_template =~ s/({|<)yabb multistart(}|>)/$formstart/g;
-	$display_template =~ s/({|<)yabb multiend(}|>)/$formend/g;
+	$display_template =~ s/({|<)yabb multiend(}|>)/<\/form>/g;
 
 	$display_template =~ s/({|<)yabb pollmain(}|>)/$template_pollmain/g;
 	$display_template =~ s/({|<)yabb postsblock(}|>)/$tmpoutblock/g;
@@ -1050,7 +1031,7 @@ sub Display {
 	}~;
 	}
 
-$yymain .= qq~
+	$yymain .= qq~
 
 	$pageindexjs
 	function ListPages(tid) { window.open('$scripturl?action=pages;num='+tid, '', 'menubar=no,toolbar=no,top=50,left=50,scrollbars=yes,resizable=no,width=400,height=300'); }
@@ -1086,17 +1067,11 @@ var GB_ROOT_DIR = "$yyhtml_root/greybox/";
 }
 
 sub NextPrev {
-	fopen(MSGTXT, "$boardsdir/$currentboard.txt") || &fatal_error("cannot_open","$boardsdir/$currentboard.txt", 1);
-	my @threadlist = <MSGTXT>;
-	fclose(MSGTXT);
+	my @threadlist = &read_DBorFILE(0,'',$boardsdir,$currentboard,'txt');
 
 	$thevirboard = qq~num=~;
 	if ($vircurrentboard) {
-		fopen(MSGTXT, "$boardsdir/$vircurrentboard.txt") || &fatal_error("cannot_open","$boardsdir/$vircurrentboard.txt", 1);
-		my @virthreadlist = <MSGTXT>;
-		fclose(MSGTXT);
-		push(@threadlist, @virthreadlist);
-		undef @virthreadlist;
+		push(@threadlist, &read_DBorFILE(0,'',$boardsdir,$vircurrentboard,'txt'));
 		$thevirboard = qq~virboard=$vircurrentboard;num=~;
 	}
 
@@ -1104,7 +1079,7 @@ sub NextPrev {
 	my (@stickythreadlist,@nostickythreadlist);
 	for ($i = 0; $i < @threadlist; $i++) {
 		my $threadstatus = (split /\|/, $threadlist[$i])[8];
-		if ($threadstatus =~ /h/i && !$iamadmin && !$iamgmod && !$iammod) { next; }
+		if ($threadstatus =~ /h/i && !$staff) { next; }
 		if ($threadstatus =~ /s/i || $threadstatus =~ /a/i) {
 			$stickythreadlist[$countsticky] = $threadlist[$i];
 			$countsticky++;
@@ -1148,18 +1123,16 @@ sub NextPrev {
 }
 
 sub SetMsn {
-	$msnstyle = qq~<link rel="stylesheet" href="$forumstylesurl/$usestyle.css" type="text/css" />~;
-	$msnstyle =~ s~$usestyle\/~~g;
 	my $msnname = $INFO{'msnname'};
-	if (!${$uid.$msnname}{'password'}) { &LoadUser($msnname); }
-	$msnuser = ${$uid.$msnname}{'msn'};
+	$msnname = $do_scramble_id ? &decloak($msnname) : $msnname;
+	&LoadUser($msnname);
 
 	print qq~Content-type: text/html\n\n~;
 	print qq~<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <title>$msntxt{'5'}</title>
-$msnstyle
+<link rel="stylesheet" href="$forumstylesurl/$usestyle.css" type="text/css" />
 </head>
 <body class="windowbg2" style="margin: 0px; padding: 0px;">
 <table border="0" width="100%" cellspacing="1" cellpadding="4" class="bordercolor">
@@ -1219,30 +1192,28 @@ window.onerror = notOnline;
 }
 
 sub SetGtalk {
-	$gtalkstyle = qq~<link rel="stylesheet" href="$forumstylesurl/$usestyle.css" type="text/css" />~;
-	$gtalkstyle =~ s~$usestyle\/~~g;
 	my $gtalkname = $INFO{'gtalkname'};
-	if (!${$uid.$gtalkname}{'password'}) { &LoadUser($gtalkname); }
-	$gtalkuser = ${$uid.$gtalkname}{'gtalk'};
+	$gtalkname = $do_scramble_id ? &decloak($gtalkname) : $gtalkname;
+	&LoadUser($gtalkname);
 
 	print qq~Content-type: text/html\n\n~;
 	print qq~<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <title>Google Talk</title>
-$gtalkstyle
+<link rel="stylesheet" href="$forumstylesurl/$usestyle.css" type="text/css" />
 </head>
 <body class="windowbg2" style="margin: 0px; padding: 0px;">
 <table border="0" width="100%" cellspacing="1" cellpadding="4" class="bordercolor">
   <tr>
     <td class="titlebg" align="left" height="22">
-      <img src="$defaultimagesdir/gtalk2.gif" width="16" height="14" alt="" title="" border="0" />
+      <img src="$defaultimagesdir/gtalk.gif" width="16" height="14" alt="" title="" border="0" />
        Google Talk
     </td>
   </tr>
   <tr>
     <td class="windowbg" align="left" height="58">
-      <img src="$defaultimagesdir/gtalk2.gif" width="16" height="14" style="vertical-align: middle;" alt="${$uid.$gtalkname}{'realname'}" title="${$uid.$gtalkname}{'realname'}" border='0' /> $gtalkuser<br /><br />
+      <img src="$defaultimagesdir/gtalk.gif" width="16" height="14" style="vertical-align: middle;" alt="${$uid.$gtalkname}{'realname'}" title="${$uid.$gtalkname}{'realname'}" border='0' /> ${$uid.$gtalkname}{'gtalk'}<br /><br />
     </td>
   </tr>
 </table>
@@ -1252,20 +1223,17 @@ $gtalkstyle
 }
 
 sub ThreadPageindex {
-	#my ($msindx, $trindx, $mbindx);
-	my ($msindx, $trindx, $mbindx,$pmindx) = split(/\|/, ${$uid.$username}{'pageindex'});
+	my ($msindx, $trindx, $mbindx, $pmindx) = split(/\|/, ${$uid.$username}{'pageindex'});
 	if ($INFO{'action'} eq "threadpagedrop") {
 		${$uid.$username}{'pageindex'} = qq~$msindx|0|$mbindx|$pmindx~;
-	}
-	if ($INFO{'action'} eq "threadpagetext") {
+	} elsif ($INFO{'action'} eq "threadpagetext") {
 		${$uid.$username}{'pageindex'} = qq~$msindx|1|$mbindx|$pmindx~;
 	}
-	if (exists($INFO{'reversetopic'})) {
-		${$uid.$username}{'reversetopic'} = $INFO{'reversetopic'} ? 0 : 1;
+	if (exists $INFO{'reversetopic'}) {
+		$ttsreverse = ${$uid.$username}{'reversetopic'} = $INFO{'reversetopic'} ? 0 : 1;
 	}
 	&UserAccount($username, "update");
-	$yySetLocation = qq~$scripturl?num=$INFO{'num'}/$INFO{'start'}~;
-	&redirectexit;
+	&redirectinternal;
 }
 
 sub undumplog { # Used to mark a thread as unread

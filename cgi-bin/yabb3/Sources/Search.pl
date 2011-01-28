@@ -18,15 +18,10 @@ if ($action eq 'detailedversion') { return 1; }
 &LoadLanguage('Search');
 
 if($FORM{'searchboards'} =~ /\A\!/) {
-	#my($checklist, $catid, $curboard);
-	$checklist = '';
+	my $checklist = '';
 	unless ($mloaded == 1) { require "$boardsdir/forum.master"; }
-	foreach $catid (@categoryorder) {
-		my($boardlist, @bdlist, $curboard);
-#		if ($catselect ne $catid && $catselect) { next; }
-		#$boardlist = $cat{$catid};
+	foreach my $catid (@categoryorder) {
 		(@bdlist) = split(/\,/,$cat{$catid});
-		#@bdlist = split(/\,/, $boardlist);
 		my ($catname, $catperms, $catallowcol) = split(/\|/, $catinfo{$catid});
 		my $access = &CatAccess($catperms);
 		if (!$access) { next; }
@@ -34,7 +29,7 @@ if($FORM{'searchboards'} =~ /\A\!/) {
 		recursive_search(@bdlist);
 	}
 	sub recursive_search {
-		foreach $curboard (@_) {
+		foreach my $curboard (@_) {
 			chomp $curboard;
 			# don't add to count if it's a sub board
 			if(!${$uid.$curboard}{'parent'}) { $cat_boardcnt{$catid}++; }
@@ -372,7 +367,7 @@ sub plushSearch2 {
 	else { @search = ($search); }
 	my $case = $FORM{'casesensitiv'};
 
-	my ($curboard, @threads, $curthread, $tnum, $tsub, $tname, $temail, $tdate, $treplies, $tusername, $ticon, $tstate, @messages, $curpost, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $ns, $subfound, $msgfound, $numfound, %data, $i, $board, $curcat, @categories, %catid, %catname, %cataccess, %openmemgr, @membergroups, %cats, @boardinfo, %boardinfo, @boards, $counter, $msgnum);
+	my ($curboard, @threads, $curthread, $tnum, $tsub, $tname, $temail, $tdate, $treplies, $tusername, $ticon, $tstate, @messages, $curpost, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $ns, $subfound, $msgfound, $numfound, %data, $i, $board, $curcat, @categories, %catid, %catname, %cataccess, %openmemgr, @membergroups, %cats, @boardinfo, %boardinfo, @boards, $counter, $msgnum);
 	my $maxtime = $date + (3600 * ${$uid.$username}{'timeoffset'}) - ($maxage * 86400);
 	my $oldestfound = 9999999999;
 
@@ -411,9 +406,7 @@ sub plushSearch2 {
 		my $access = &AccessCheck($curboard, '', $boardperms);
 		if (!$iamadmin && $access ne "granted") { next; }
 
-		fopen(FILE, "$boardsdir/$curboard.txt") || next;
-		@threads = <FILE>;
-		fclose(FILE);
+		next if !(@threads = &read_DBorFILE(0,'',$boardsdir,$curboard,'txt'));
 
 		threadcheck: foreach $curthread (@threads) {
 			chomp $curthread;
@@ -429,15 +422,13 @@ sub plushSearch2 {
 				}
 			}
 
-			fopen(FILE, "$datadir/$tnum.txt") || next;
-			@messages = <FILE>;
-			fclose(FILE);
+			next if !(@messages = &read_DBorFILE(0,'',$datadir,$tnum,'txt'));
 
 			postcheck: for ($msgnum = @messages; $msgnum >= 0; $msgnum--) {
 				$curpost = $messages[$msgnum];
 				chomp $curpost;
 
-				my ($msub, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $savedmessage, $ns) = split(/\|/, $curpost);
+				my ($msub, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $savedmessage, $ns) = split(/\|/, $curpost);
 
 				## if either max to display or outside of filter, next
 				if ($mdate < $maxtime || ($numfound >= $display && $mdate <= $oldestfound)) { next postcheck; }
@@ -527,7 +518,7 @@ sub plushSearch2 {
 				## blank? try next = else => build list from found mess/sub
 				unless ($msgfound || $subfound) { next postcheck; }
 
-				$data{$mdate} = [$curboard, $tnum, $msgnum, $tusername, $tname, $msub, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $savedmessage, $ns, $tstate];
+				$data{$mdate} = [$curboard, $tnum, $msgnum, $tusername, $tname, $msub, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $savedmessage, $ns, $tstate];
 				if ($mdate < $oldestfound) { $oldestfound = $mdate; }
 				$numfound++;
 				if ($one_per_thread) { last postcheck; }
@@ -552,8 +543,10 @@ sub plushSearch2 {
 	undef %found;
 	@search = grep(!$found{$_}++, @tmpsearch);
 
+	my $icanbypass = &checkUserLockBypass;
+
 	for ($i = 0; $i < @messages; $i++) {
-		($board, $tnum, $msgnum, $tusername, $tname, $msub, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $message, $ns, $tstate) = @{ $data{ $messages[$i] } };
+		($board, $tnum, $msgnum, $tusername, $tname, $msub, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $message, $ns, $tstate) = @{ $data{ $messages[$i] } };
 
 		$tname = &addMemberLink($tusername,$tname,$tnum);
 		$mname = &addMemberLink($musername,$mname,$mdate);
@@ -605,7 +598,7 @@ sub plushSearch2 {
 			<table border="0" width="100%" class="titlebg">
 				<tr>
 					<td align="left">$search_txt{'109'} $tname | $search_txt{'105'} $search_txt{'525'} $mname</td>
-					~;
+					<td align="right">&nbsp;~;
 
 		if ($tstate != 1 && (!$iamguest || ($iamguest && $enable_guestposting))) {
 			my $notify = '';
@@ -616,13 +609,16 @@ sub plushSearch2 {
 					$notify = qq~$menusep<a href="$scripturl?action=notify2;oldnotify=1;num=$tnum/$msgnum#$msgnum">$img{'add_notify'}</a>~;
 				}
 			}
-			$yymain .= qq~
-			<td align="right">&nbsp;
-				<a href="$scripturl?board=$board;action=post;num=$tnum/$msgnum#$msgnum;title=PostReply">$img{'reply'}</a>$menusep<a href="$scripturl?board=$board;action=post;num=$tnum;quote=$msgnum;title=PostReply">$img{'recentquote'}</a>$notify &nbsp;
-			</td>~;
+			$yymain .= qq~<a href="$scripturl?board=$board;action=post;num=$tnum/$msgnum#$msgnum;title=PostReply">$img{'reply'}</a>$menusep<a href="$scripturl?board=$board;action=post;num=$tnum;quote=$msgnum;title=PostReply">$img{'recentquote'}</a>$notify~;
 		}
 
-		$yymain .= qq~
+		if ($staff && ($icanbypass || $tstate !~ /l/i) && (!$iammod || &is_moderator($username,$board))) {
+				&LoadLanguage('Display');
+				$yymain .= qq~$menusep<a href="$scripturl?action=multidel;recent=1;thread=$tnum;del$c=$c" onclick="return confirm('~ . (($icanbypass && $tstate =~ /l/i) ? qq~$display_txt{'modifyinlocked'}\\n\\n~ : '') . qq~$display_txt{'rempost'}')">$img{'delete'}</a>~;
+		}
+
+		$yymain .= qq~ &nbsp;
+					</td>
 				</tr>
 			</table>
 		</td>
@@ -665,9 +661,10 @@ sub pmsearch {
 		&ManageMemberinfo("load");
 		my $username;
 		foreach (keys %memberinf) {
-			($memrealname, undef) = split(/\|/, $memberinf{$_}, 2);
-			$username = $_ if $memrealname eq $search;
+			(undef, $memrealname, undef) = split(/\|/, $memberinf{$_}, 3);
+			if ($memrealname eq $search) { $username = $_; last; }
 		}
+		undef %memberinf;
 		$search = $username;
 	} else { $searchtype = 1; }
 
@@ -690,31 +687,19 @@ sub pmsearch {
 	elsif ($searchtype != 3) { @search = split(/\s+/, lc $search); }
 	else { @search = (lc $search); }
 
-	my ($curboard, @threads, $curthread, $tnum, $tsub, $tname, $temail, $treplies, $tusername, $ticon, $tstate, @messages, $mname, $memail, $mdate, $musername, $micon, $mattach, $mip, $userfound, $subfound, $msgfound, $numfound, %data, $i, $board, $curcat, @categories, %catname, %cataccess, %openmemgr, @membergroups, %cats, @boardinfo, %boardinfo, @boards, $counter, $msgnum, @scanthreads);
+	my ($curboard, @threads, $curthread, $tnum, $tsub, $tname, $temail, $treplies, $tusername, $ticon, $tstate, @messages, $mname, $memail, $mdate, $mattachment, $mip, $userfound, $subfound, $msgfound, $numfound, %data, $i, $board, $curcat, @categories, %catname, %cataccess, %openmemgr, @membergroups, %cats, @boardinfo, %boardinfo, @boards, $counter, $msgnum, @scanthreads);
 	my $oldestfound = 9999999999;
 
-	if($pmbox eq "!all" || $pmbox eq "1") {
-		if(-e "$memberdir/$username.msg") {
-			fopen(FILE, "$memberdir/$username.msg");
-			@msgthreads = <FILE>;
-			fclose(FILE);
-		}
+	if (($pmbox eq "!all" || $pmbox == 1) && &checkfor_DBorFILE("$memberdir/$username.msg")) {
+		@msgthreads = &read_DBorFILE(0,'',$memberdir,$username,'msg');
 	}
 
-	if($pmbox eq "!all" || $pmbox eq "2") {
-		if(-e "$memberdir/$username.outbox") {
-			fopen(FILE, "$memberdir/$username.outbox");
-			@outthreads = <FILE>;
-			fclose(FILE);
-		}
+	if (($pmbox eq "!all" || $pmbox == 2) && &checkfor_DBorFILE("$memberdir/$username.outbox")) {
+		@outthreads = &read_DBorFILE(0,'',$memberdir,$username,'outbox');
 	}
 
-	if($pmbox eq "!all" || $pmbox eq "3") {
-		if(-e "$memberdir/$username.imstore") {
-			fopen(FILE, "$memberdir/$username.imstore");
-			@storethreads = <FILE>;
-			fclose(FILE);
-		}
+	if (($pmbox eq "!all" || $pmbox == 3) && &checkfor_DBorFILE("$memberdir/$username.imstore")) {
+		@storethreads = &read_DBorFILE(0,'',$memberdir,$username,'imstore');
 	}
 
 	if ($enable_ubbc) { require "$sourcedir/YaBBC.pl"; }
@@ -918,9 +903,9 @@ sub pmsearch {
 
 sub addMemberLink {
 	my ($user,$displayname,$mdate) = @_;
-	if (-e "$memberdir/$user.vars") { &LoadUser($user); }
+	if (&checkfor_DBorFILE("$memberdir/$user.vars")) { &LoadUser($user); }
 	if (${$uid.$user}{'regdate'} && $mdate >= (${$uid.$user}{'regtime'} || $date)) {
-		$mname = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$user}">${$uid.$user}{'realname'}</a>~;
+		$mname = qq~<a href="$scripturl?action=viewprofile;username=$useraccount{$user}" rel="nofollow">${$uid.$user}{'realname'}</a>~;
 	} elsif ($user !~ m~Guest~ && $mdate < (${$uid.$user}{'regtime'} || $date)) {
 		$mname = qq~$displayname - $maintxt{'470a'}~;
 	} else {
