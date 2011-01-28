@@ -69,13 +69,12 @@ sub Display {
 	$curcat = ${$uid.$currentboard}{'cat'};
 
 	# Figure out the name of the category
-	&get_forum_master;
+	unless ($mloaded == 1) { require "$boardsdir/forum.master"; }
 
 	if ($currentboard eq $annboard) {
 		$vircurrentboard = $INFO{'virboard'};
 		$vircurcat = ${$uid.$vircurrentboard}{'cat'};
 		($vircat, undef) = split(/\|/, $catinfo{$vircurcat});
-		&ToChars($vircat);
 		($virboardname, undef) = split(/\|/, $board{$vircurrentboard},2);
 		&ToChars($virboardname);
 	}
@@ -518,7 +517,7 @@ sub Display {
 		($msub, $mname, $memail, $mdate, $musername, $micon, $mreplyno, $mip, $postmessage, $ns, $mlm, $mlmb, $mfn) = split(/[\|]/, $_);
 
 		# If the user isn't a guest, load their info.
-		if ($musername ne 'Guest' && !$yyUDLoaded{$musername} && &checkfor_DBorFILE("$memberdir/$musername.vars")) {
+		if ($musername ne 'Guest' && !$yyUDLoaded{$musername} && -e ("$memberdir/$musername.vars")) {
 			my $tmpns = $ns;
 			$ns = "";
 			&LoadUserDisplay($musername);
@@ -681,7 +680,7 @@ sub Display {
 				$quote_mname =~ s/'/\\'/g;
 				
 				if ($display_postpopup) {
-					$usernamelink = qq~<a href="javascript://" onclick="popupqqusername('$quote_mname')"><img src="$imagesdir/qquname.gif" border="0" alt="$display_txt{'146n'}" title="$display_txt{'146n'}" /></a> $usernamelink~ if $enable_quickreply && $enable_quoteuser && (!$iamguest || $enable_guestposting);
+					$usernamelink = qq~<a href="javascript://" onclick="popupqqusername('$quote_mname')"><img src="$imagesdir/qquname.gif" border="0" alt="$display_txt{'146n'}" title="$display_txt{'146n'}" /></a> $usernamelink~ if $enable_quoteuser && (!$iamguest || $enable_guestposting);
 				} else {
 					$usernamelink = qq~<a href="javascript://" onclick="AddText('[color=$quoteuser_color]@[/color] [b]$quote_mname\[/b]\\r\\n\\r\\n'))"><img src="$imagesdir/qquname.gif" border="0" alt="$display_txt{'146n'}" title="$display_txt{'146n'}" /></a> $usernamelink~ if $enable_quickreply && $enable_quoteuser && (!$iamguest || $enable_guestposting);
 				}
