@@ -17,7 +17,7 @@ if ($action eq 'detailedversion') { return 1; }
 
 sub scramble {
 	my ($input, $user) = @_;
-	if ($user eq "") { return; }
+	if ($user eq "" || $input eq "") { return; }
 	# creating a codekey based on userid
 	my $carrier = "";
 	for (my $n = 0; $n < length $user; $n++) {
@@ -52,7 +52,7 @@ sub scramble {
 
 sub descramble {
 	my ($input, $user) = @_;
-	if ($user eq ""){ return; }
+	if ($user eq "" || $input eq ""){ return; }
 	# creating a codekey based on userid
 	my $carrier = "";
 	for (my $n = 0; $n < length($user); $n++) {
