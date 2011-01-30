@@ -91,6 +91,7 @@ sub Split_Splice {
 	my $catlist = qq~<option value="cats" >$sstxt{'28'}</option>\n~;
 	foreach (@categoryorder) {
 		my ($catname, $catperms) = split(/\|/, $catinfo{$_}, 3);
+		&ToChars($catname);
 		next if !&CatAccess($catperms);
 		$catlist .= qq~<option value="$_" ~ . ($newcat eq $_ ? q~selected="selected"~ : '') . qq~>$catname</option>\n~;
 	}
@@ -107,6 +108,7 @@ sub Split_Splice {
 			my $dash;
 			if($indent > 0) { $dash = "-"; }
 			my ($boardname, $boardperms) = split(/\|/, $board{$childbd}, 3);
+			&ToChars($boardname);
 			my $access = &AccessCheck($_, '', $boardperms);
 			next if !$iamadmin && $access ne "granted" && $boardview != 1;
 			
