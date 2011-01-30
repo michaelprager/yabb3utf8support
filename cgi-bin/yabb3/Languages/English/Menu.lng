@@ -89,7 +89,7 @@ if (!$language){$language = $lang;}
 'skype' => 'Skype/VoIP',
 'yim' => 'YIM',
 'birthdaylist' => 'Birthday List',
-'eventcal' => 'Event Calendar',
+'eventcal' => 'Calendar',
 );
 
 %img_polltxt = (
