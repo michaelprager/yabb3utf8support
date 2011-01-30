@@ -16,6 +16,8 @@
 #               Your source for web hosting, web design, and domains.         #
 ###############################################################################
 
+require 5.008_001; # required perl version 5.8.1 because of unicode support
+
 if ($ENV{'SERVER_SOFTWARE'} =~ /IIS/) {
 	$yyIIS = 1;
 	$0 =~ m~(.*)(\\|/)~;

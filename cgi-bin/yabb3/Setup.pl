@@ -14,6 +14,8 @@
 #               with assistance from the YaBB community.                      #
 ###############################################################################
 
+require 5.008_001; # required perl version 5.8.1 because of unicode support
+
 $setupplver = 'YaBB 3.0 Beta $Revision: 100 $';
 
 # use CGI::Carp qw(fatalsToBrowser); # used only for tests
@@ -3701,6 +3703,8 @@ sub SetInstall2 {
 #               with assistance from the YaBB community.                      #
 ###############################################################################
 
+use utf8; # This file may contain UTF-8 encoded characters
+
 ########## Board Info ##########
 # Note: these settings must be properly changed for YaBB to work
 
@@ -4688,7 +4692,7 @@ sub SimpleOutput {
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>YaBB 3 Setup</title>
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
 

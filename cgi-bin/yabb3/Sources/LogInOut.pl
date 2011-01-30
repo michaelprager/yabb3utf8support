@@ -38,7 +38,7 @@ sub Login2 {
 	&fatal_error("no_password") if ($FORM{'passwrd'}  eq "" && !$openidvalidated);
 	$username = $FORM{'username'};
 	$username =~ s/\s/_/g;
-	&fatal_error("invalid_character","$loginout_txt{'35'} $loginout_txt{'241'}") if $username =~ /[^ \w\x80-\xFF\[\]\(\)#\%\+,\-\|\.:=\?\@\^]/;
+	&fatal_error("invalid_character","$loginout_txt{'35'} $loginout_txt{'241'}") if $username =~ /[^ \w\x{80}-\x{10FFFF}\[\]\(\)#\%\+,\-\|\.:=\?\@\^]/;
 	#&fatal_error("only_numbers_allowed") if $FORM{'cookielength'} !~ /^[0-9]+$/;
 
 	my $user_exists = &checkfor_DBorFILE("$memberdir/$username.vars");

@@ -621,7 +621,7 @@ sub Register2 {
 	&CountChars;
 	$member{'regrealname'} = $convertstr;
 	&fatal_error("realname_to_long","($member{'regrealname'} => $convertstr)") if $cliped;
-	&fatal_error('invalid_character', "$register_txt{'38'} $register_txt{'241re'}") if $member{'regrealname'} =~ /[^ \w\x80-\xFF\[\]\(\)#\%\+,\-\|\.:=\?\@\^]/;
+	&fatal_error('invalid_character', "$register_txt{'38'} $register_txt{'241re'}") if $member{'regrealname'} =~ /[^ \w\x{80}-\x{10FFFF}\[\]\(\)#\%\+,\-\|\.:=\?\@\^]/;
 
 	if ($name_cannot_be_userid && lc $member{'regusername'} eq lc $member{'regrealname'}) { &fatal_error('name_is_userid'); }
 

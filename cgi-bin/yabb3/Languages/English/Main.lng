@@ -14,7 +14,7 @@
 
 $mainlngver = 'YaBB 3.0 Beta $Revision: 100 $';
 
-$yycharset = 'ISO-8859-1';
+# $yycharset = 'UTF-8'; # All language files need to be UTF-8 encoded now. No need to set $yycharset anymore
 $abbr_lang = 'en-us';
 
 @days = ('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday');

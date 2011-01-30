@@ -14,6 +14,8 @@
 #               with assistance from the YaBB community.                      #
 ###############################################################################
 
+require 5.008_001; # required perl version 5.8.1 because of unicode support
+
 ### Version Info ###
 $YaBBversion = 'YaBB 3.0 Beta';
 $YaBBplver = 'YaBB 3.0 Beta $Revision: 100 $';

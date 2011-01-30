@@ -519,6 +519,8 @@ sub SaveSettingsTo {
 #               with assistance from the YaBB community.                      #
 ###############################################################################
 
+use utf8; # This file may contain UTF-8 encoded characters
+
 ########## Board Info ##########
 # Note: these settings must be properly changed for YaBB to work
 

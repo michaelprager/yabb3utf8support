@@ -285,6 +285,8 @@ sub SaveDatabase {
 	push(@db_vars_tabs_order, 'additional_variables');
 	%db_user_vars_col = ();
 	%db_vars_col = ();
+	
+	my $default_table_options = "TYPE=MyISAM, DEFAULT CHARACTER SET utf8 COLLATE utf8_bin";
 
 	my $buildnew_vars = qq~CREATE TABLE `$FORM{'db_prefix'}vars` (\n`yabbusername` char(20) binary default NULL,\n~; # binary because we want case sensitive primary key (there might be duplicate legacy usernames if this would be case insensitive)
 	foreach (@db_vars_tabs_order) {
@@ -302,7 +304,7 @@ sub SaveDatabase {
 			$db_vars_col{$_} = 1;
 
 			if      ($_ eq 'realname') {
-				$buildnew_vars .= qq~`$_` char(240) default NULL,\n~; # We allow 30 character max; but using HTML UTF8 encoded chars like &#27721; we need up to 30*8=240 bytes for international names
+				$buildnew_vars .= qq~`$_` char(30) default NULL,\n~;
 			} elsif ($_ eq 'password') {
 				$buildnew_vars .= qq~`$_` char(22) binary default NULL,\n~;
 			} elsif ($_ eq 'position') {
@@ -453,7 +455,7 @@ sub SaveDatabase {
 	$buildnew_vars .= qq~`imdraft` text,\n~;
 	$buildnew_vars .= qq~`log` text,\n~;
 	$buildnew_vars .= qq~`rlog` text,\n~;
-	$buildnew_vars .= qq~PRIMARY KEY (`yabbusername`)) TYPE=MyISAM~;
+	$buildnew_vars .= qq~PRIMARY KEY (`yabbusername`)) $default_table_options~;
 	$buildnew_vars = '' if !%db_vars_col;
 
 	if (%db_user_vars_col) { # must be more then only 'yabbusername'
@@ -510,7 +512,7 @@ sub SaveDatabase {
 
 	$buildnew_online .= qq~`additional_data` varchar(300) default NULL~;
 	$buildnew_online .= qq~,\nKEY `date` (`date`)~ if grep { "`$_`" eq $db_log_date } @var_colums;
-	$buildnew_online .= qq~) TYPE=MyISAM~;
+	$buildnew_online .= qq~) $default_table_options~;
 
 
 	# ctb
@@ -526,7 +528,7 @@ sub SaveDatabase {
 	$buildnew_ctb .= qq~`mail` text,\n~;
 	$buildnew_ctb .= qq~`poll` text,\n~;
 	$buildnew_ctb .= qq~`polled` text,\n~;
-	$buildnew_ctb .= qq~PRIMARY KEY (`threadnum`)) TYPE=MyISAM~;
+	$buildnew_ctb .= qq~PRIMARY KEY (`threadnum`)) $default_table_options~;
 
 
 	# messages.txt
@@ -545,7 +547,7 @@ sub SaveDatabase {
 	$buildnew_message_txt .= qq~`modified_date` bigint(11) default NULL,\n~;
 	$buildnew_message_txt .= qq~`modified_by` char(20) default NULL,\n~;
 	$buildnew_message_txt .= qq~`attachments` varchar(500) default NULL,\n~;
-	$buildnew_message_txt .= qq~PRIMARY KEY (`mess_threadnum`,`post_number`)) TYPE=MyISAM~;
+	$buildnew_message_txt .= qq~PRIMARY KEY (`mess_threadnum`,`post_number`)) $default_table_options~;
 	
 	
 	# /Boards/*.[txt|mail]
@@ -554,7 +556,7 @@ sub SaveDatabase {
 	$buildnew_boards .= qq~`board` char(20) NOT NULL,\n~;
 	$buildnew_boards .= qq~`txt` longtext,\n~;
 	$buildnew_boards .= qq~`mail` text,\n~;
-	$buildnew_boards .= qq~PRIMARY KEY (`board`)) TYPE=MyISAM~;
+	$buildnew_boards .= qq~PRIMARY KEY (`board`)) $default_table_options~;
 
 
 	# /Boards/forum.[master|control|totals]
@@ -562,7 +564,7 @@ sub SaveDatabase {
 	$buildnew_forum = qq~CREATE TABLE IF NOT EXISTS `$FORM{'db_prefix'}forum` (\n~;
 	$buildnew_forum .= qq~`master` text,\n~;
 	$buildnew_forum .= qq~`control` text,\n~;
-	$buildnew_forum .= qq~`totals` text) TYPE=MyISAM~;
+	$buildnew_forum .= qq~`totals` text) $default_table_options~;
 	
 
 	# do the work now

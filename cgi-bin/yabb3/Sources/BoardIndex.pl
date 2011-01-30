@@ -1140,7 +1140,7 @@ if (confirm('$boardindex_imtxt{'11'} ${$username}{'PMstorenum'} $boardindex_imtx
 			}
 		}
 	} else {
-		print "Content-type: text/html; charset=ISO-8859-1\n\n";
+		print "Content-type: text/html; charset=UTF-8\n\n";
 		print qq~
 		<table id="subloaded_$INFO{'board'}" style="display:none">
 		$boardindex_template

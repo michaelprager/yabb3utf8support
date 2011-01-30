@@ -13,6 +13,15 @@
 ###############################################################################
 
 $subsplver = 'YaBB 3.0 Beta $Revision: 100 $';
+
+# We now work with UTF-8 only
+$yycharset = "UTF-8";
+$emailcharset = "UTF-8";
+use Encode;                   # Required for UTF-8 support
+use open ':encoding(utf8)';   # Assume UTF-8 encoding for any file opening
+binmode(STDOUT, ":utf8");     # Force output to be UTF-8 encoded
+use utf8;                     # We may have UTF-8 encoded source files (e.g. Settings.pl)
+	
 if ($debug) { &LoadLanguage('Debug'); }
 
 use subs 'exit';
@@ -118,12 +127,13 @@ sub print_HTML_output_and_finish {
 		if ($gzcomp == 1 || $filehandle_exists) {
 			$| = 1;
 			open(GZIP, "| gzip -f") unless $filehandle_exists;
-			print GZIP $output;
+			print GZIP encode_utf8($output);
 			close(GZIP);
 		} else {
 			require Compress::Zlib;
-			binmode STDOUT;
-			print Compress::Zlib::memGzip($output);
+			binmode STDOUT, ":pop"; # make sure we don't output in UTF-8 here, use binary instead
+			#binmode STDOUT, ":raw";
+			print Compress::Zlib::memGzip(encode_utf8($output));
 		}
 	} else {
 		print $output;
@@ -831,7 +841,8 @@ sub readform {
 			my ($name, @value);
 			foreach $name ($CGI_query->param()) {
 				next if $name =~ /^file(\d+|_avatar)$/; # files are directly called in Profile.pl, Post.pl and ModifyMessages.pl
-				@value = $CGI_query->param($name);
+				@value = map{ decode_utf8($_) } $CGI_query->param($name);
+				$name = decode_utf8($name);
 				if ($debug) { $getpairs .= qq~[$debug_txt{'name'}-&gt;]$name=@value\[&lt;-$debug_txt{'value'}]<br />~; }
 				$FORM{$name} = join(', ', @value); # multiple values are joined
 			}
@@ -865,6 +876,8 @@ sub readform {
 			$name  =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 			$value =~ tr/+/ /;
 			$value =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+			$name = decode_utf8($name);
+			$value = decode_utf8($value);
 			if ($debug) { $getpairs .= qq~[$debug_txt{'name'}-&gt;]$name=$value\[&lt;-$debug_txt{'value'}]<br />~; }
 			if (exists($hash->{$name})) {
 				$hash->{$name} .= ", $value";
@@ -1164,11 +1177,13 @@ sub generate_code {
 }
 
 sub FromChars {
-	$_[0] =~ s/&#(\d{3,});/ $1>127 ? "[ch$1]" : $& /egis;
+	$_[0] =~ s/&#(\d{3,});/ $1>127 ? pack("U", $1) : $& /egis; # turn html encoded chars like #&12345; to UTF-8 encoding
+	#$_[0] =~ s/&#(\d{3,});/ $1>127 ? "[ch$1]" : $& /egis; # before UTF-8, [ch12345] was used as encoding
 }
 
 sub ToChars {
-	$_[0] =~ s/\[ch(\d{3,})\]/ $1>127 ? "\&#$1;" : '' /egis;
+	$_[0] =~ s/\[ch(\d{3,})\]/ $1>127 ? pack("U", $1) : '' /egis; # convert old [ch12345] encoding to UTF-8. This should probably be moved to converter
+	#$_[0] =~ s/\[ch(\d{3,})\]/ $1>127 ? "\&#$1;" : '' /egis; # no need to turn encoded chars back to html, it supports UTF-8 natively
 }
 
 sub ToHTML {
@@ -1465,7 +1480,7 @@ sub encode_password {
 	chomp $eol;
 	require Digest::MD5;
 	import Digest::MD5 qw(md5_base64);
-	md5_base64($eol);
+	md5_base64(encode_utf8($eol));
 }
 
 sub Censor {
@@ -1535,6 +1550,10 @@ sub LoadLanguage {
 
 		&fatal_error("cannot_open_language","$use_lang/$what_to_load.lng");
 	}
+	
+	# overwrite any remaining character set definition from language files. We stick with UTF-8 now.
+	$yycharset = "UTF-8";
+	$emailcharset = "UTF-8";
 }
 
 sub Recent_Load {
@@ -1774,7 +1793,7 @@ sub MailList {
 }
 
 sub cloak {
-	my ($input) =$_[0];
+	my ($input) =encode_utf8($_[0]);
 	my ($user,$ascii,$key,$hex,$hexkey);
 	$key = substr($date,length($date)-2,2);
 	$hexkey = uc(unpack("H2", pack("V", $key)));
@@ -1786,13 +1805,13 @@ sub cloak {
 	}
 	$user .= $hexkey;
 	$user .= '0';
-	return $user;
+	return decode_utf8($user);
 }
 
 sub decloak {
-	my ($input) =$_[0];
+	my ($input) =encode_utf8($_[0]);
 	my ($user,$ascii,$key,$dec,$hexkey);
-	if (length($input) % 2 == 0) {return &old_decloak($input);} # Old style, return it
+	if (length($input) % 2 == 0) {return decode_utf8(&old_decloak($input));} # Old style, return it
 	elsif ($input !~ /\A[0-9A-F]+\Z/) {return $input; }         # probably a non cloacked ID as it contains non hex code
 	else {$input =~ s~0$~~;}
 	$hexkey = substr($input,length($input)-2,2);
@@ -1803,7 +1822,7 @@ sub decloak {
 		$ascii = chr($ascii);
 		$user .= $ascii;
 	}
-	return $user;
+	return decode_utf8($user);
 }
 
 # THIS IS BROKEN -- it fails on larger ASCII values (for example chr(255) )
@@ -2343,7 +2362,7 @@ sub CheckUserPM_Level {
 					&mysql_process(0,'prepare',qq~SELECT CONCAT_WS('|', `~ . join('`, `', @{$db_table{$DBfile}[2]}) . qq~`) FROM `$db_table{$DBfile}[0]` WHERE `$db_table{$DBfile}[1]`=? ORDER BY `post_number` ASC~);
 			}
 			&mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'execute',$name);
-			return map { $$_[0] } @{&mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'fetchall_arrayref',0,1)};
+			return map { decode_utf8($$_[0]) } @{&mysql_process($sth_r{$DBfile.$db_table{$DBfile}[0]},'fetchall_arrayref',0,1)};
 
 		} else { # for Messages/[threadnumber].[ctb|mail|poll|polled]
 			if (!$sth_r{$DBfile.$db_table{$DBfile}[0]}) {
@@ -2390,7 +2409,7 @@ sub CheckUserPM_Level {
 		if ($DBfile eq $vardir."log"."txt") { # only for Variables/log.txt
 			&mysql_process(0,'do',"LOCK TABLES `$db_prefix"."log` WRITE" . ($db_user_log_table ? ",`$db_user_log_table` WRITE" : "")) if $LOCKHANDLE;
 
-			return map { $$_[0] } @{&mysql_process(0,'selectall_arrayref',qq~SELECT CONCAT_WS('|', ~ . join(', ', split(/,/, $db_log_order)) . qq~) FROM `$db_prefix~.qq~log`~ . ($db_user_log_table ? ",`$db_user_log_table` WHERE `yabbuserlogname`=`$db_user_log_key`" : "") . " ORDER BY $db_log_date DESC")};
+			return map { decode_utf8($$_[0]) } @{&mysql_process(0,'selectall_arrayref',qq~SELECT CONCAT_WS('|', ~ . join(', ', split(/,/, $db_log_order)) . qq~) FROM `$db_prefix~.qq~log`~ . ($db_user_log_table ? ",`$db_user_log_table` WHERE `yabbuserlogname`=`$db_user_log_key`" : "") . " ORDER BY $db_log_date DESC")};
 
 		} else {
 			&mysql_process(0,'do',"LOCK TABLES `$db_table{$DBfile}[0]` WRITE") if $LOCKHANDLE;
@@ -2758,10 +2777,13 @@ sub CheckUserPM_Level {
 				     HandleError => 0, # The HandleError attribute provide alternative behaviour in case of errors
 				     PrintError  => 0, # 1 => on error: warn("$class $method failed: $DBI::errstr")
 				     RaiseError  => 0, # 1 => on error:  die("$class $method failed: $DBI::errstr")
+				     mysql_enable_utf8 => 1,
 				     );
 			$vari{"dbh"} = DBI->connect(qq*DBI:mysql:$db:$db_server:$db_port;mysql_compression=1$socket*, $db_username, $db_password, \%attr);
 
 			&fatal_error('', qq*No DBI conection:<br>DBI->connect("DBI:mysql:$db:$db_server:$db_port;mysql_compression=1$socket", $db_username, $db_password, %attr)<br>DBI::errstr:<br>* . $DBI::errstr, 1) if $DBI::errstr;
+			
+			&mysql_process(0, 'do', "SET NAMES utf8"); # to be on the save side... mysql_enable_utf8 might "disappear"
 		}
 	}
 	
@@ -2778,11 +2800,14 @@ sub CheckUserPM_Level {
 			my %attr = ( AutoCommit  => 1,
 				     HandleError => 0, # The HandleError attribute provide alternative behaviour in case of errors
 				     PrintError  => 0, # 1 => on error: warn("$class $method failed: $DBI::errstr")
-				     RaiseError  => 0, # 1 => on error:  die("$class $method failed: $DBI::errstr")
+				     RaiseError  => 0, # 1 => on error:  die("$class $method failed: $DBI::errstr"),
+				     mysql_enable_utf8 => 1,
 				     );
 			$vari{"dbh"} = DBI->connect(qq*DBI:mysql:$db:$db_server:$db_port;mysql_compression=1$socket*, $db_username, $db_password, \%attr);
 
 			&fatal_error('', qq*No DBI conection:<br>DBI->connect("DBI:mysql:$db:$db_server:$db_port;mysql_compression=1$socket", $db_username, $db_password, %attr)<br>DBI::errstr:<br>* . $DBI::errstr, 1) if $DBI::errstr;
+			
+			&mysql_process(0, 'do', "SET NAMES utf8"); # to be on the save side... mysql_enable_utf8 might "disappear"
 		}
 
 		if (!$method) {

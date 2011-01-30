@@ -54,12 +54,13 @@ if ($ENV{'SCRIPT_FILENAME'} =~ /ModuleChecker\.\w+$/) {
 	'Carp' => 'Used to send emails via "YaBB SMTP Engine".<br />This module is only needed if you want to send your emails via the "YaBB SMTP Engine". Otherwise you do not need this module.',
 	'bytes' => 'Used to send emails via "YaBB SMTP Engine".<br />This module is only needed if you want to send your emails via the "YaBB SMTP Engine". Otherwise you do not need this module.',
 	'integer' => 'Used to send emails via "YaBB SMTP Engine".<br />This module is only needed if you want to send your emails via the "YaBB SMTP Engine". Otherwise you do not need this module.',
+	'Encode' => 'Required for UTF-8 encoding support.<br />This module is essential! Without it YaBB will not work!',
 	);
 }
 
 my ($checker_output,$module,$i);
 
-foreach $module qw(Digest::MD5 Time::HiRes Time::Local File::Find CGI DBI Net::SMTP Net::SMTP::TLS Compress::Zlib Compress::Bzip2 Archive::Tar Archive::Zip MIME::Lite LWP::UserAgent HTTP::Request::Common Crypt::SSLeay IO::Socket::INET Digest::HMAC_MD5 Carp bytes integer) {
+foreach $module qw(Encode Digest::MD5 Time::HiRes Time::Local File::Find CGI DBI Net::SMTP Net::SMTP::TLS Compress::Zlib Compress::Bzip2 Archive::Tar Archive::Zip MIME::Lite LWP::UserAgent HTTP::Request::Common Crypt::SSLeay IO::Socket::INET Digest::HMAC_MD5 Carp bytes integer) {
 	eval "require $module";
 
 	if ($@) {
@@ -138,7 +139,7 @@ if ($ENV{'SCRIPT_FILENAME'} !~ /ModuleChecker\.\w+$/) {
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>YaBB 2 Module Checker</title>
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
 <div style="height: 40px;">&nbsp;</div>

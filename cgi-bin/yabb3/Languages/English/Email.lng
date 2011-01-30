@@ -14,7 +14,7 @@
 
 $emaillngver = 'YaBB 3.0 Beta $Revision: 100 $';
 
-$emailcharset = 'ISO-8859-1';
+# $emailcharset = 'UTF-8'; # All language files need to be UTF-8 encoded now. No need to set $emailcharset anymore
 
 %yabbtagdesc = (
 # Constant tags

@@ -1439,7 +1439,7 @@ sub ModifyProfileAdmin {
 sub ModifyProfile2 {
 	&SidCheck($action);
 	&PrepareProfile;
-
+	
 	my (%member, $key, $value);
 	while (($key, $value) = each(%FORM)) {
 		$value =~ s~\A\s+~~;
@@ -1499,7 +1499,7 @@ sub ModifyProfile2 {
 			&CountChars;
 			$member{'name'} = $convertstr;
 			&fatal_error("name_too_long") if $cliped;
-			&fatal_error("invalid_character","$profile_txt{'68'} $profile_txt{'241re'}") if $member{'name'} =~ /[^ \w\x80-\xFF\[\]\(\)#\%\+,\-\|\.:=\?\@\^]/;
+			&fatal_error("invalid_character","$profile_txt{'68'} $profile_txt{'241re'}") if $member{'name'} =~ /[^ \w\x{80}-\x{10FFFF}\[\]\(\)#\%\+,\-\|\.:=\?\@\^]/;
 
 			&ToHTML($member{'name'});
 			&ToChars($member{'name'});

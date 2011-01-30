@@ -1025,7 +1025,7 @@ sub MessageIndex {
 		}
 		&template;
 	} else {
-		print "Content-type: text/html; charset=ISO-8859-1\n\n";
+		print "Content-type: text/html; charset=UTF-8\n\n";
 		print qq~
 		$messageindex_template
 		$pageindexjs
