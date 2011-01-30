@@ -67,6 +67,7 @@ sub RSS_board {
 	# Otherwise, it's good enough as-is
 	chomp @threadlist;
 
+	&ToChars($boardname);
 	my $i = 0;
 	foreach (@threadlist) {
 		($mnum, $msub, $mname, $memail, $mdate, $mreplies, $musername, $micon, $mstate, $ns) = split(/\|/, $_);
@@ -161,7 +162,6 @@ sub RSS_board {
 		$i++; # Increment
 	}
 
-	&ToChars($boardname);
 	$yytitle = $boardname;
 	$yydesc = ${$uid.$curboard}{'description'};
 
@@ -195,11 +195,16 @@ sub RSS_recent {
 
 		my @bdlist = split(/\,/, $boardlist);
 		my ($catname, $catperms) = split(/\|/, $catinfo{$catid});
+		&ToChars($catname);
 		my $cataccess = &CatAccess($catperms);
 		if (!$cataccess) { next; }
+		&recursive_check(@bdlist)
+	}
 
-		foreach $curboard (@bdlist) {
+	sub recursive_check {
+		foreach $curboard (@_) {
 			($boardname{$curboard}, $boardperms, $boardview) = split(/\|/, $board{$curboard});
+			&ToChars($boardname{$curboard});
 
 			my $access = &AccessCheck($curboard, '', $boardperms);
 			if (!$iamadmin && $access ne 'granted') { next; }
@@ -226,6 +231,8 @@ sub RSS_recent {
 			# Clean out the extra entries in the threadlist
 			@threadlist = reverse sort @threadlist;
 			@threadlist = @threadlist[0 .. $topics - 1];
+			
+			if($subboard{$curboard}) { &recursive_check(split(/\|/,$subboard{$curboard})); }
 		}
 	}
 
