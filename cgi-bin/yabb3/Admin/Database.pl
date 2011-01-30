@@ -552,7 +552,7 @@ sub SaveDatabase {
 	my $buildnew_boards;
 	$buildnew_boards = qq~CREATE TABLE IF NOT EXISTS `$FORM{'db_prefix'}boards` (\n~;
 	$buildnew_boards .= qq~`board` char(20) NOT NULL,\n~;
-	$buildnew_boards .= qq~`txt` text,\n~;
+	$buildnew_boards .= qq~`txt` longtext,\n~;
 	$buildnew_boards .= qq~`mail` text,\n~;
 	$buildnew_boards .= qq~PRIMARY KEY (`board`)) TYPE=MyISAM~;
 
